@@ -1,0 +1,25 @@
+[
+    {
+        "name": "Test",
+        "id": 123,
+        "geofence": "name",
+        "friendcodes_allowed": [
+            123,
+            1234
+        ],
+        "raid_channels": [
+            {
+                "id": 123456,
+                "level": 6,
+                "is_event": false,
+                "auto_name": true
+            },
+            {
+                "id": 123456,
+                "level": 5,
+                "is_event": true,
+                "auto_name": false
+            }
+        ]
+    }
+]

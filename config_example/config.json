@@ -1,0 +1,9 @@
+{
+    "bot_token": "",
+    "trash_channel": 0,
+    "db_host": "0.0.0.0",
+    "db_port": 3306,
+    "db_user": "user",
+    "db_pass": "pass",
+    "db_dbname": "mad"
+}
