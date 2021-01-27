@@ -1,5 +1,7 @@
 import random
 from io import BytesIO
+import json
+from math import floor, ceil
 
 import discord
 import arrow
@@ -10,7 +12,7 @@ from taubsi.utils.utils import asyncget, calculate_cp, reverse_get
 from taubsi.utils.enums import Team
 from taubsi.utils.logging import logging
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.emotes import CONTROL_EMOJIS, TEAM_EMOJIS, NUMBER_EMOJIS
+from taubsi.cogs.raids.emotes import *
 
 log = logging.getLogger("Raids")
 timeformat = "%H:%M"
@@ -204,6 +206,10 @@ class RaidMessage:
 
         self.notified_5_minutes = False
 
+    @property
+    def total_amount(self):
+        return sum([m.amount for m in self.members])
+
     async def from_command(self, gym, start_time, channel_id, channel_settings, init_message):
         self.gym = Gym(gym["id"], gym["name"], gym["img"], gym["lat"], gym["lon"])
 
@@ -301,11 +307,79 @@ class RaidMessage:
 
             await member.member.send(embed=embed)
 
+    async def get_difficulty(self):
+        if not self.raid.boss:
+            return None
+        try:
+            pb_mon_name = self.raid.boss.base_template
+            if self.raid.boss.temp_evolution_id > 0:
+                pb_mon_name += "_" + self.raid.boss.temp_evolution_template
+            path = f"config/pokebattler/{pb_mon_name}.json"
+            try:
+                with open(path, "r") as f:
+                    pb_data = json.load(f)
+            except FileNotFoundError:
+                if self.raid.level == 6:
+                    level = "MEGA"
+                else:
+                    level = self.raid.level
+                url = f"https://fight.pokebattler.com/raids/defenders/{pb_mon_name}/levels/RAID_LEVEL_{level}/attackers/levels/35/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE&randomAssistants=-1&includeLegendary=true&includeShadow=false&attackerTypes=POKEMON_TYPE_ALL"
+                pb_data_raw = await asyncget(url)
+                pb_data_raw = json.loads(pb_data_raw.decode("utf-8"))
+                pb_data = {}
+
+                attackers = pb_data_raw["attackers"][0]
+                for data in attackers["byMove"]:
+                    move1 = data["move1"]
+                    move2 = data["move2"]
+                    pb_data[move1 + "+" + move2] = data["total"]
+                pb_data["?"] = attackers["randomMove"]["total"]
+
+                with open(path, "w+") as f:
+                    f.write(json.dumps(pb_data))
+
+
+            if isinstance(self.raid, BaseRaid) or not self.raid.moves[0]:
+                estimator = pb_data["?"]
+            else:
+                estimator = pb_data["+".join([m.template for m in self.raid.moves])]
+                
+            estimator = estimator["estimator"]
+
+            if self.total_amount < estimator:
+                if self.total_amount < estimator - 0.3:
+                    difficulty = 0
+                else:
+                    difficulty = 1
+            else:
+                if self.total_amount <= ceil(estimator):
+                    difficulty = 2
+                elif self.total_amount <= ceil(estimator) + 1:
+                    difficulty = 3
+                else:
+                    difficulty = 4
+
+            if self.total_amount < floor(estimator):
+                difficulty = 0
+            
+            if self.total_amount == 0:
+                difficulty = 0
+
+            self.embed.color = DIFFICULTY_COLORS[difficulty]
+            
+            return DIFFICULTY_NAMES[difficulty] + "\n\n"
+            
+
+        except Exception as e:
+            log.exception(e)
+            return None
+
     async def make_base_embed(self):
         self.embed.title = self.raid.name + ": " + self.gym.name
+        #difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.embed.description = f"Start: **{self.start_time.strftime(timeformat)}**\n"
+        self.embed.description = f"Start: **{self.start_time.strftime(timeformat)}**\n\n"
         if self.raid.boss:
             self.embed.description += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if isinstance(self.raid, ScannedRaid):
@@ -321,7 +395,6 @@ class RaidMessage:
         self.embed.set_footer(text=f"Insgesamt: {amount}")
 
     async def make_member_fields(self):
-        total_amount = 0
         self.embed.clear_fields()
         for team in Team:
             emoji = TEAM_EMOJIS[team.value]
@@ -334,7 +407,6 @@ class RaidMessage:
 
             members = [m for m in self.members if m.team == team]
             team_amount = sum([m.amount for m in members])
-            total_amount += team_amount
             
             if team_amount > 0:
                 field_name = f"{emoji} ({team_amount})"
@@ -344,7 +416,7 @@ class RaidMessage:
                         field_value += member.make_text()
                 self.embed.insert_field_at(index=index, name=field_name, value=field_value, inline=False)
 
-        self.make_footer(total_amount)
+        self.make_footer(self.total_amount)
         await self.edit_message()
             
     async def edit_message(self):
