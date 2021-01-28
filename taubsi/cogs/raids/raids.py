@@ -49,7 +49,6 @@ class RaidCog(commands.Cog):
             await asyncio.sleep(1)
             raidmessage = self.raidmessages.get(message.id)
             if raidmessage is not None:
-                await asyncio.sleep(1)
                 if raidmessage.embed.thumbnail.url == discord.Embed.Empty:
                     await raidmessage.set_image()
                     await raidmessage.edit_message()
