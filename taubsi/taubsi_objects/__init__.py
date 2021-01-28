@@ -2,7 +2,6 @@ import json
 import discord
 from pogodata import PogoData
 from discord.ext import commands
-from .servers import load_servers
 from .queries import Queries
 
 class TaubsiVars:
@@ -21,8 +20,5 @@ class TaubsiVars:
 
     def reload_pogodata(self):
         self.pogodata = PogoData("german")
-
-    async def reload_servers(self):
-        await load_servers(self)
 
 tb = TaubsiVars()

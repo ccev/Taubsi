@@ -1,4 +1,6 @@
 import json
+from . import tb
+from taubsi.cogs.raids.objects import Gym
 
 def _convert_path_sql(fence):
     sql_fence = []
@@ -8,7 +10,7 @@ def _convert_path_sql(fence):
 
     return "(" + ",".join(sql_fence) + ")"
 
-async def load_servers(tb):
+async def load_servers():
     with open("config/servers.json", "r") as f:
         raw_servers = json.load(f)
     with open("config/geofence.json", "r") as f:
@@ -28,13 +30,7 @@ async def load_servers(tb):
         
         gym_list = []
         for name, gid, url, lat, lon in gyms:
-            gym_list.append({
-                "name": name,
-                "id": gid,
-                "img": url,
-                "lat": lat,
-                "lon": lon
-            })
+            gym_list.append(Gym(gid, name, url, lat, lon))
         tb.gyms[settings["id"]] = gym_list
         
         tb.friendcode_channels += settings["friendcodes_allowed"]

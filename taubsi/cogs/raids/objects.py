@@ -170,12 +170,20 @@ class RaidMember:
 
         self.update(amount)
 
-    def update(self, amount=None):
+    def update(self, amount):
         self.is_late = self.member.id in self.raidmessage.lates
         self.is_remote = self.member.id in self.raidmessage.remotes
 
-        if amount:
+        if amount is not None:
             self.amount = amount
+
+    async def make_role(self):
+        if self.amount > 0:
+            if self.raidmessage.role not in self.member.roles:
+                await self.member.add_roles(self.raidmessage.role)
+        else:
+            if self.raidmessage.role in self.member.roles:
+                await self.member.remove_roles(self.raidmessage.role)
 
     def make_text(self):
         text = self.member.display_name + f" ({self.amount})"
@@ -184,6 +192,36 @@ class RaidMember:
         if self.is_remote:
             text = CONTROL_EMOJIS["remote"] + " " + text
         return text + "\n"
+
+class ChoiceMessage:
+    def __init__(self, message, gyms, start_time):
+        self.embed = discord.Embed()
+        self.init_message = message
+        self.start_time = start_time
+        self.message = None
+        self.gyms = gyms
+
+    def make_embed(self):
+        text = "Bitte wähle die, an der der Raid stattfinden soll.\n"
+        for i, gym in enumerate(self.gyms, start=1):
+            text += f"\n{NUMBER_EMOJIS[i]} **{gym.name}**"
+        self.embed.title = f"Es wurden {len(self.gyms)} Arenen gefunden"
+        self.embed.description = text
+
+    async def react(self):
+        for i in range(1, len(self.gyms)+1):
+            try:
+                await self.message.add_reaction(NUMBER_EMOJIS[i])
+            except Exception as e:
+                log.info(f"Error while reacting to choice message: {e} (Probably because it got deleted before finishing)")
+
+    async def reacted(self, payload):
+        emote = str(payload.emoji)
+        number = reverse_get(NUMBER_EMOJIS, emote)
+        await self.message.delete()
+        raidmessage = RaidMessage()
+        await raidmessage.from_command(self.gyms[number-1], self.start_time, self.init_message)
+        return raidmessage
 
 class RaidMessage:
     def __init__(self):
@@ -210,12 +248,12 @@ class RaidMessage:
     def total_amount(self):
         return sum([m.amount for m in self.members])
 
-    async def from_command(self, gym, start_time, channel_id, channel_settings, init_message):
-        self.gym = Gym(gym["id"], gym["name"], gym["img"], gym["lat"], gym["lon"])
+    async def from_command(self, gym, start_time, init_message):
+        self.gym = gym
 
-        self.channel_settings = channel_settings
         self.start_time = start_time
-        self.channel_id = channel_id
+        self.channel_id = init_message.channel.id
+        self.channel_settings = tb.raid_channels[self.channel_id]
 
         self.init_message = init_message
         self.init_message_id = init_message.id
@@ -264,6 +302,7 @@ class RaidMessage:
 
         member.update(amount)
         await self.make_member_fields()
+        await member.make_role()
 
     async def remove_reaction(self, payload):
         member = self.get_member(payload.user_id)
@@ -271,6 +310,7 @@ class RaidMessage:
             return
 
         #code duplication :thumbsdown:
+        amount = None
         emote = str(payload.emoji)
         if emote in CONTROL_EMOJIS.values():
             control = reverse_get(CONTROL_EMOJIS, emote)
@@ -282,13 +322,14 @@ class RaidMessage:
             elif control == "remote":
                 self.remotes.remove(payload.user_id)
 
-            member.update()
-
         elif emote in NUMBER_EMOJIS.values():
             if member.amount > 0:
                 await self.notify(f"❌ {member.member.display_name} ({member.amount})", member.member)
-                member.amount = 0
+                amount = 0
+
+        member.update(amount)
         await self.make_member_fields()
+        await member.make_role()
 
     async def notify(self, message: str, user=None):
         log.info(f"Raid notification: {message}")
