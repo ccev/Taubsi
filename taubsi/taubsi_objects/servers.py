@@ -18,7 +18,11 @@ async def load_servers():
 
     tb.gyms = {}
     tb.friendcode_channels = []
+    tb.team_choose_channels = []
+    tb.setup_channels = []
+    tb.welcome_channels = []
     tb.raid_channels = {}
+    tb.guilds = []
 
     for settings in raw_servers:
         for fence in raw_fences:
@@ -34,9 +38,15 @@ async def load_servers():
         tb.gyms[settings["id"]] = gym_list
         
         tb.friendcode_channels += settings["friendcodes_allowed"]
+        tb.team_choose_channels += settings["team_choose"]
+        tb.setup_channels += settings["setup"]
+        tb.welcome_channels += settings["welcome"]
 
         for channel_settings in settings["raid_channels"]:
             tb.raid_channels[channel_settings["id"]] = channel_settings
+
+        guild = await tb.bot.fetch_guild(settings["id"])
+        tb.guilds.append(guild)
         
         
 

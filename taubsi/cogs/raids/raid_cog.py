@@ -4,8 +4,8 @@ from dateutil import tz
 from taubsi.utils.logging import logging
 from taubsi.utils.matcher import get_matches
 from taubsi.utils.utils import reverse_get
+from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.errors import *
 from taubsi.cogs.raids.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
 from taubsi.cogs.raids.objects import RaidMessage, BaseRaid, ChoiceMessage
 
@@ -22,7 +22,19 @@ class RaidCog(commands.Cog):
         self.bot = bot
         self.raidmessages = {}
         self.choicemessages = {}
-        
+
+    async def final_init(self):
+        rm_query = """
+        SELECT channel_id, message_id, init_message_id, start_time, gym_id, role_id
+        FROM raids
+        WHERE start_time > utc_timestamp
+        """
+        raidmessages_db = await tb.intern_queries.execute(rm_query)
+        for entry in raidmessages_db:
+            raidmessage = RaidMessage()
+            await raidmessage.from_db(*entry)
+            self.raidmessages[raidmessage.message.id] = raidmessage
+
         self.raid_loop.start()
 
     async def create_raid(self, raidmessage):
@@ -35,6 +47,7 @@ class RaidCog(commands.Cog):
 
         for emoji in emojis:
             await raidmessage.message.add_reaction(emoji)
+        await raidmessage.db_insert()
         log.info(f"Created a raid at {raidmessage.gym.name}, {raidmessage.start_time}")
 
         await asyncio.sleep(60*5)
@@ -88,10 +101,12 @@ class RaidCog(commands.Cog):
         raid_start = final_time[0]
         gym_name_to_match = gym_name_to_match.replace(final_time[1], "")
 
-        if raid_start is None:
-            raise NoTime
-
         gym_names = get_matches([g.name for g in tb.gyms[message.guild.id]], gym_name_to_match, score_cutoff=0)
+
+        if raid_start is None:
+            if gym_names[0][1] > 80:
+                await command_error(message, "invalid_time")
+            return
 
         def match_gym(gym_name):
             return [g for g in tb.gyms[message.guild.id] if g.name == gym_name][0]
@@ -164,26 +179,30 @@ class RaidCog(commands.Cog):
             try:
                 message = raidmessage.message
 
-                if arrow.utcnow() > raidmessage.start_time.shift(minutes=1):
+                if arrow.now() > raidmessage.start_time.shift(minutes=1):
                     log.info(f"Raid {raidmessage.message_id} started. Clearing reactions and deleting its role.")
                     await message.clear_reactions()
                     await raidmessage.delete_role()
                     self.raidmessages.pop(message.id)
-                if arrow.utcnow() > raidmessage.start_time.shift(minutes=-5) and arrow.utcnow() < raidmessage.start_time.shift(minutes=-4):
+                if arrow.now() > raidmessage.start_time.shift(minutes=-5) and arrow.now() < raidmessage.start_time.shift(minutes=-4):
                     if not raidmessage.notified_5_minutes:
                         await raidmessage.notify("‼️ Der Raid startet in 5 Minuten")
                         raidmessage.notified_5_minutes = True
 
-                if isinstance(raidmessage.raid, BaseRaid) or not raidmessage.moves[0]:
+                if isinstance(raidmessage.raid, BaseRaid) or not raidmessage.raid.moves[0]:
+                    if raidmessage.channel_settings["is_event"]:
+                        continue
                     updated_raid = await raidmessage.gym.get_active_raid(raidmessage.raid.level)
                     if updated_raid.compare != raidmessage.raid.compare:
                         log.info(f"Raid Boss at {raidmessage.message_id} changed. Updating")
                         if not raidmessage.raid.boss and updated_raid.boss:
                             await raidmessage.notify(f"🐣 Es ist ein {updated_raid.boss.name} geschlüpft")
-                            await raidmessage.set_image()
+                        
                         raidmessage.raid = updated_raid
+                        await raidmessage.set_image()
                         await raidmessage.make_base_embed()
                         await raidmessage.edit_message()
+                        await raidmessage.db_insert()
             except Exception as e:
                 log.error("Error while Raid looping")
                 log.exception(e)

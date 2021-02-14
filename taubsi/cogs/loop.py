@@ -8,9 +8,10 @@ class Loop(commands.Cog):
 
         self.big_loop.start()
 
-    @tasks.loop(hours=1)   
+    @tasks.loop(hours=12)   
     async def big_loop(self):
         tb.reload_pogodata()
+        log.info("Reloaded PogoData")
 
 def setup(bot):
     bot.add_cog(Loop(bot))

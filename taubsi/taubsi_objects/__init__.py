@@ -9,13 +9,10 @@ class TaubsiVars:
         with open("config/config.json") as f:
             self.config = json.load(f)
 
-        intents = discord.Intents.default()
-        intents.reactions = True
-        intents.members = True
-        intents.messages = True
-
+        intents = discord.Intents.all()
         self.bot = commands.Bot(command_prefix="!", case_insensitive=1, intents=intents)
-        self.queries = Queries(self.config)
+        self.queries = Queries(self.config, self.config["db_dbname"])
+        self.intern_queries = Queries(self.config, self.config["db_taubsiname"])
         self.reload_pogodata()
 
     def reload_pogodata(self):
