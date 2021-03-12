@@ -2,6 +2,7 @@ import random
 from io import BytesIO
 import json
 from math import floor, ceil
+from enum import Enum
 
 import discord
 import arrow
@@ -16,6 +17,17 @@ from taubsi.cogs.raids.emotes import *
 
 log = logging.getLogger("Raids")
 timeformat = "%H:%M"
+
+TOTAL_LIMIT = 20
+REMOTE_LIMIT = 10
+
+RAID_WARNINGS = {
+    "TOO_MANY_REMOTE": f"‼️ An einem Raid können maximal {REMOTE_LIMIT} Fern Raider teilnehmen. Passt darauf auf und sprecht euch ab!",
+    "TOO_MANY_TOTAL": f"‼️ An einem Raid können maximal {TOTAL_LIMIT} Spieler teilnehmen. Passt darauf auf und sprecht euch ab!",
+    "TOO_MANY_BOTH": f"‼️ An einem Raid können maximal {TOTAL_LIMIT} Spieler und {REMOTE_LIMIT} Fern Raider teilnehmen. Passt darauf auf und sprecht euch ab!",
+    "IS_LATE": "‼️ Es kommt jemand maximal fünf Minuten zu spät. Wartet auf die Person und sprecht euch ggf. ab!",
+    "OTHER_TIMES": "‼️ Dieser Raid wurde bereits zu {TIME} Uhr angesetzt"
+}
 
 class Gym:
     def __init__(self, id_: int = 0, name: str = "?", img: str = "", lat: float = 0, lon: float = 0):
@@ -257,6 +269,10 @@ class RaidMessage:
         self.gym = Gym()
         self.raid = None
 
+        self.text = ""
+        self.warnings = set()
+        self.static_warnings = set()
+
         self.members = []
         self.remotes = []
         self.lates = []
@@ -266,6 +282,10 @@ class RaidMessage:
     @property
     def total_amount(self):
         return sum([m.amount for m in self.members])
+
+    @property
+    def formatted_start(self):
+        return self.start_time.strftime(timeformat)
 
     async def from_command(self, gym, start_time, init_message):
         self.gym = gym
@@ -303,6 +323,7 @@ class RaidMessage:
             raidmember = RaidMember(self, entry[0], entry[1])
 
         self.embed = self.message.embeds[0]
+        await self.make_member_fields()
         await self.make_base_embed()
         await self.edit_message()
 
@@ -321,6 +342,8 @@ class RaidMessage:
         emote = str(payload.emoji)
         member = self.get_member(payload.user_id)
         amount = None
+        to_notify = False
+        notification = ""
         if not member:
             member = RaidMember(self, payload.user_id, 1)
             self.members.append(member)
@@ -334,19 +357,23 @@ class RaidMessage:
                     return
             elif control == "late":
                 self.lates.append(payload.user_id)
-                await self.notify(f"🕐 {member.member.display_name}", member.member)
+                notification = f"🕐 {member.member.display_name}"
+                to_notify = True
             elif control == "remote":
                 self.remotes.append(payload.user_id)
 
         elif emote in NUMBER_EMOJIS.values():
             amount = reverse_get(NUMBER_EMOJIS, emote)
-            await self.notify(f"▶️ {member.member.display_name} ({amount})", member.member)
+            notification = f"▶️ {member.member.display_name} ({amount})"
+            to_notify = True
 
         else:
             return
 
         member.update(amount)
         await self.make_member_fields()
+        if to_notify:
+            await self.notify(notification, member.member)
         await member.make_role()
         await member.db_insert()
 
@@ -462,18 +489,25 @@ class RaidMessage:
             log.exception(e)
             return None
 
+    def make_warnings(self):
+        self.embed.description = self.text
+        for warning in self.static_warnings.union(self.warnings):
+            self.embed.description += "\n" + warning
+
     async def make_base_embed(self):
         self.embed.title = self.raid.name + ": " + self.gym.name
+        #self.embed.url = "https://google.com/"
         #difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.embed.description = f"Start: **{self.start_time.strftime(timeformat)}**\n\n"
+        self.text = f"Start: **{self.formatted_start}**\n\n"
         if self.raid.boss:
-            self.embed.description += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
+            self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if isinstance(self.raid, ScannedRaid):
             if self.raid.moves[0]:
-                self.embed.description += "Attacken: " + " | ".join(["**"+m.name+"**" for m in self.raid.moves]) + "\n"
-            self.embed.description += f"Raidzeit: **{self.raid.start.to('local').strftime(timeformat)}** – **{self.raid.end.to('local').strftime(timeformat)}**"
+                self.text += "Attacken: " + " | ".join(["**"+m.name+"**" for m in self.raid.moves]) + "\n"
+            self.text += f"Raidzeit: **{self.raid.start.to('local').strftime(timeformat)}** – **{self.raid.end.to('local').strftime(timeformat)}**"
+        self.make_warnings()
 
     async def set_image(self):
         url = await self.raid.get_image()
@@ -507,6 +541,23 @@ class RaidMessage:
                 self.embed.insert_field_at(index=index, name=field_name, value=field_value, inline=False)
 
         self.make_footer(self.total_amount)
+
+        self.warnings.clear()
+
+        total_remote = sum(m.amount for m in self.members if m.is_remote)
+        remote_cap = (total_remote > REMOTE_LIMIT - 2)
+        total_cap = (self.total_amount > TOTAL_LIMIT - 2)
+        if remote_cap and total_cap:
+            self.warnings.add(RAID_WARNINGS["TOO_MANY_BOTH"])
+        elif remote_cap:
+            self.warnings.add(RAID_WARNINGS["TOO_MANY_REMOTE"])
+        elif total_cap:
+            self.warnings.add(RAID_WARNINGS["TOO_MANY_TOTAL"])
+        
+        if [m for m in self.members if m.is_late]:
+            self.warnings.add(RAID_WARNINGS["IS_LATE"])
+        
+        self.make_warnings()
         await self.edit_message()
 
     async def db_insert(self):
@@ -529,7 +580,7 @@ class RaidMessage:
         await tb.intern_queries.insert("raids", keyvals)
             
     async def edit_message(self):
-        log.info(f"Editing message {self.message_id}")
+        log.info(f"Editing message {self.message.id}")
         await self.message.edit(embed=self.embed)
 
     async def send_message(self):
@@ -538,9 +589,17 @@ class RaidMessage:
         self.make_footer()
         self.embed.timestamp = self.start_time.datetime
         self.message = await channel.send(embed=self.embed)
+        """webhooks = await channel.webhooks()
+        webhook = webhooks[0]
+        self.message = await webhook.send(
+            username=self.gym.name,
+            avatar_url=self.gym.img,
+            embed=self.embed,
+            wait=True
+        )"""
         self.message_id = self.message.id
 
-        self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.start_time.strftime(timeformat)})", mentionable=True)
+        self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)
 
     async def delete_role(self):
         await self.role.delete()

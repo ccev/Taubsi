@@ -7,7 +7,7 @@ from taubsi.utils.utils import reverse_get
 from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.raids.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
-from taubsi.cogs.raids.objects import RaidMessage, BaseRaid, ChoiceMessage
+from taubsi.cogs.raids.objects import RaidMessage, BaseRaid, ChoiceMessage, RAID_WARNINGS
 
 import discord
 import asyncio
@@ -38,6 +38,11 @@ class RaidCog(commands.Cog):
         self.raid_loop.start()
 
     async def create_raid(self, raidmessage):
+        for other_message in self.raidmessages.values():
+            if other_message.gym.id == raidmessage.gym.id:
+                warning = RAID_WARNINGS["OTHER_TIMES"].format(TIME=other_message.formatted_start)
+                raidmessage.static_warnings.add(warning)
+                raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
 
         emojis = []
@@ -57,7 +62,8 @@ class RaidCog(commands.Cog):
     async def on_message(self, message):
         if not message.channel.id in tb.raid_channels.keys():
             return
-        if message.author.id == self.bot.user.id:
+
+        if message.author.id == self.bot.user.id or message.webhook_id:
             # creating a raid icon seperately from the raid message
             await asyncio.sleep(1)
             raidmessage = self.raidmessages.get(message.id)
