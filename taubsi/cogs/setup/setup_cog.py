@@ -90,7 +90,7 @@ class Setup(commands.Cog):
         text = ""
         for rank, (name, xp) in enumerate(players, start=1):
             text += str(rank) + ". " + name.ljust(25) + "{:,}".format(xp).replace(",", ".") + " XP\n"
-        await ctx.send(f"```{text}```")
+        await ctx.send(f"```\n{text}```")
 
     @commands.command(aliases=["code", "freund"])
     @commands.check(is_guild)
