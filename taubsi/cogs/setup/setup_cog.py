@@ -63,6 +63,35 @@ class Setup(commands.Cog):
         user.name = name
         await user.update()
 
+    @commands.command()
+    @commands.check(is_guild)
+    async def link(self, ctx, *, name):
+        ingame = await tb.queries.execute(f"select name, team, level from cev_trainer where name = '{name}';")
+        if len(ingame) == 0:
+            raise NameNotFound
+        name = ingame[0][0]
+        keyvals = {
+            "user_id": ctx.author.id,
+            "ingame_name": name
+        }
+        await tb.intern_queries.insert("users", keyvals)
+        
+        await self.reponse(ctx, f"✅ Du bist nun mit dem Pokémon GO Account {name} verbunden")
+
+        user = TaubsiUser()
+        await user.from_command(ctx.author)
+        user.team, user.level = Team(ingame[0][1]), ingame[0][2]
+        await user.update()
+
+    @commands.command(aliases=["lb"])
+    @commands.check(is_guild)
+    async def leaderboard(self, ctx):
+        players = await tb.queries.execute("select t.name, t.xp from taubsi3.users u left join mad.cev_trainer t on u.ingame_name = t.name where ingame_name is not null order by xp desc limit 10;")
+        text = ""
+        for rank, (name, xp) in enumerate(players, start=1):
+            text += str(rank) + ". " + name.ljust(25) + "{:,}".format(xp).replace(",", ".") + " XP\n"
+        await ctx.send(f"```{text}```")
+
     @commands.command(aliases=["code", "freund"])
     @commands.check(is_guild)
     async def trainercode(self, ctx, *, arg=None):

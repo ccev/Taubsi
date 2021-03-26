@@ -16,7 +16,8 @@ errors = {
     "level_too_small": "🤨 Sicher?",
     "no_team": "❌ Das Team konnte ich nicht finden. Probier stattdessen mal `rot`, `blau` oder `gelb`",
     "no_code_set": "❌ Dieser Spieler hat noch keinen Trainercode gesetzt",
-    "wrong_code_format": "❌ Das Format konnte ich nicht erkennen. Probier stattdessen mal `1234 1234 1234`"
+    "wrong_code_format": "❌ Das Format konnte ich nicht erkennen. Probier stattdessen mal `1234 1234 1234`",
+    "name_not_scanned": "😦 Ich konnte deinen Namen leider nicht finden. Entweder warst du in letzter Zeit in keiner Arena oder du hast den Namen falsch geschrieben."
 }
 
 async def command_error(message, error="Unbekannter Fehler", delete_error=True, delete_message=False):

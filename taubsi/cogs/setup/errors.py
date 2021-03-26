@@ -19,3 +19,7 @@ class NoCodeSet(TaubsiError):
 class WrongCodeFormat(TaubsiError):
     "wrong_code_format"
     pass
+
+class NameNotFound(TaubsiError):
+    "name_not_scanned"
+    pass
