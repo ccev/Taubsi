@@ -506,12 +506,13 @@ class RaidMessage:
         if isinstance(self.raid, ScannedRaid):
             if self.raid.moves[0]:
                 self.text += "Attacken: " + " | ".join(["**"+m.name+"**" for m in self.raid.moves]) + "\n"
-            self.text += f"Raidzeit: **{self.raid.start.to('local').strftime(timeformat)}** – **{self.raid.end.to('local').strftime(timeformat)}**"
+            self.text += f"Raidzeit: **{self.raid.start.to('local').strftime(timeformat)}** – **{self.raid.end.to('local').strftime(timeformat)}**\n"
         self.make_warnings()
 
     async def set_image(self):
         url = await self.raid.get_image()
         self.embed.set_thumbnail(url=url)
+        await self.edit_message()
 
     def make_footer(self, amount: int = 0):
         self.embed.set_footer(text=f"Insgesamt: {amount}")

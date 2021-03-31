@@ -44,6 +44,7 @@ class RaidCog(commands.Cog):
                 raidmessage.static_warnings.add(warning)
                 raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
+        asyncio.create_task(raidmessage.set_image())
 
         emojis = []
         for number in range(1, 7):
@@ -61,16 +62,6 @@ class RaidCog(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if not message.channel.id in tb.raid_channels.keys():
-            return
-
-        if message.author.id == self.bot.user.id or message.webhook_id:
-            # creating a raid icon seperately from the raid message
-            await asyncio.sleep(1)
-            raidmessage = self.raidmessages.get(message.id)
-            if raidmessage is not None:
-                if raidmessage.embed.thumbnail.url == discord.Embed.Empty:
-                    await raidmessage.set_image()
-                    await raidmessage.edit_message()
             return
         
         log.info(f"Trying to create a Raid Message from {message.id}")
@@ -206,9 +197,8 @@ class RaidCog(commands.Cog):
                             await raidmessage.notify(f"🐣 Es ist ein {updated_raid.boss.name} geschlüpft")
                         
                         raidmessage.raid = updated_raid
-                        await raidmessage.set_image()
                         await raidmessage.make_base_embed()
-                        await raidmessage.edit_message()
+                        await raidmessage.set_image()
                         await raidmessage.db_insert()
             except Exception as e:
                 log.error("Error while Raid looping")
