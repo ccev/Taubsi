@@ -102,8 +102,8 @@ class BaseRaid:
             shiny = ""
             if random.randint(1, 30) == 20:
                 shiny = "_shiny"
-            #url = f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/{self.boss.asset}{shiny}.png"
-            url = "https://raw.githubusercontent.com/ccev/pogoafd/master/sprites/pokemon_icon_" + str(self.boss.id).zfill(3) + "_" + str(self.boss.form).zfill(2) + ".png"
+            url = f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/{self.boss.asset}{shiny}.png"
+            #url = "https://raw.githubusercontent.com/ccev/pogoafd/master/sprites/pokemon_icon_" + str(self.boss.id).zfill(3) + "_" + str(self.boss.form).zfill(2) + ".png"
             try:
                 boss_result = await asyncget(url)
             except:
