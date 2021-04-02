@@ -310,10 +310,14 @@ class RaidMessage:
 
         channel = await tb.bot.fetch_channel(self.channel_id)
         self.message = await channel.fetch_message(self.message_id)
-        self.init_message = await channel.fetch_message(self.init_message_id)
         self.gym = [g for g in tb.gyms[self.message.guild.id] if g.id == gym_id][0]
         self.role = self.message.guild.get_role(role_id)
         self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
+
+        try:
+            self.init_message = await channel.fetch_message(self.init_message_id)
+        except:
+            self.init_message = self.message
 
         raidmember_db = await tb.intern_queries.execute(f"select user_id, amount, is_late, is_remote from raidmembers where message_id = {self.message.id}")
         for entry in raidmember_db:
