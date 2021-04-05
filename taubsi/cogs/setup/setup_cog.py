@@ -69,16 +69,6 @@ class Setup(commands.Cog):
         ingame = await tb.queries.execute(f"select name, team, level from cev_trainer where name = '{name}';")
         if len(ingame) == 0:
             raise NameNotFound
-        name = ingame[0][0]
-        _, dc_name = name_level_from_nick(ctx.author.display_name)
-        keyvals = {
-            "user_id": ctx.author.id,
-            "ingame_name": name,
-            "level": ingame[0][2],
-            "team_id": ingame[0][1],
-            "name": dc_name
-        }
-        await tb.intern_queries.insert("users", keyvals)
         
         await self.reponse(ctx, f"✅ Du bist nun mit dem Pokémon GO Account {name} verbunden")
 
@@ -86,6 +76,13 @@ class Setup(commands.Cog):
         await user.from_command(ctx.author)
         user.team, user.level = Team(ingame[0][1]), ingame[0][2]
         await user.update()
+
+        name = ingame[0][0]
+        keyvals = {
+            "user_id": ctx.author.id,
+            "ingame_name": name
+        }
+        await tb.intern_queries.insert("users", keyvals)
 
     @commands.command(aliases=["lb"])
     @commands.check(is_guild)
