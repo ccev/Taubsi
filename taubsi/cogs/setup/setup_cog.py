@@ -3,7 +3,7 @@ from discord.ext import commands
 from taubsi.utils.logging import logging
 from taubsi.cogs.setup.errors import *
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.setup.objects import TaubsiUser
+from taubsi.cogs.setup.objects import TaubsiUser, name_level_from_nick
 from taubsi.utils.errors import command_error, TaubsiError
 from taubsi.utils.checks import is_guild
 from taubsi.utils.enums import Team
@@ -70,9 +70,13 @@ class Setup(commands.Cog):
         if len(ingame) == 0:
             raise NameNotFound
         name = ingame[0][0]
+        _, dc_name = name_level_from_nick(ctx.author.display_name)
         keyvals = {
             "user_id": ctx.author.id,
-            "ingame_name": name
+            "ingame_name": name,
+            "level": ingame[0][2],
+            "team_id": ingame[0][1],
+            "name": dc_name
         }
         await tb.intern_queries.insert("users", keyvals)
         
