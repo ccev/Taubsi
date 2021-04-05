@@ -176,8 +176,8 @@ class Setup(commands.Cog):
             user.level = level
             user.team = Team(team)
 
-            #await user.update()
-            log.info(f"Updating user {user_id} (L{level}) (T{team})")
+            await user.update()
+            log.info(f"Auto-updating user {user_id} (L{level}) (T{team})")
 
 def setup(bot):
     bot.add_cog(Setup(bot))
