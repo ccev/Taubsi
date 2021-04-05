@@ -161,7 +161,7 @@ class Setup(commands.Cog):
     async def autoupdate_loop(self):
         query = (
             "select user_id, t.level, t.team from users u "
-            "left join mad.cev_trainer t on t.name = u.ingame_name where t.level != u.level "
+            "left join mad.cev_trainer t on t.name = u.ingame_name "
             "where t.level > u.level or t.team != u.team_id"
         )
         result = await tb.intern_queries.execute(query)
