@@ -160,7 +160,7 @@ class Setup(commands.Cog):
     @tasks.loop(hours=1)   
     async def autoupdate_loop(self):
         query = (
-            "select user_id, t.level, t.team from users u "
+            "select user_id, name, t.level, t.team from users u "
             "left join mad.cev_trainer t on t.name = u.ingame_name "
             "where t.level > u.level or t.team != u.team_id"
         )
@@ -168,16 +168,17 @@ class Setup(commands.Cog):
         if len(result) == 0:
             return
 
-        for user_id, level, team in result:
+        for user_id, name, level, team in result:
             if level is None or team is None:
                 continue
             user = TaubsiUser()
+            user.name = name
             user.user_id = user_id
             user.level = level
             user.team = Team(team)
 
             await user.update()
-            log.info(f"Auto-updating user {user_id} (L{level}) (T{team})")
+            log.info(f"Auto-updating {name} {user_id} (L{level}) (T{team})")
 
 def setup(bot):
     bot.add_cog(Setup(bot))
