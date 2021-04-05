@@ -165,7 +165,7 @@ class Setup(commands.Cog):
             "where t.level > u.level or t.team != u.team_id"
         )
         result = await tb.intern_queries.execute(query)
-        if not len(result) == 0:
+        if len(result) == 0:
             return
 
         for user_id, level, team in result:
