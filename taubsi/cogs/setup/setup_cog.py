@@ -164,7 +164,7 @@ class Setup(commands.Cog):
             "left join mad.cev_trainer t on t.name = u.ingame_name where t.level != u.level "
             "where t.level > u.level or t.team != u.team_id"
         )
-        result = tb.intern_queries.execute(query)
+        result = await tb.intern_queries.execute(query)
         if not len(result) == 0:
             return
 
