@@ -327,6 +327,7 @@ class RaidMessage:
             if entry[3]:
                 self.remotes.append(entry[0])
             raidmember = RaidMember(self, entry[0], entry[1])
+            self.members.append(raidmember)
 
         self.embed = self.message.embeds[0]
         await self.make_member_fields()
