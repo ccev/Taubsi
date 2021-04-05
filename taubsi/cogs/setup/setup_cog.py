@@ -160,7 +160,7 @@ class Setup(commands.Cog):
     @tasks.loop(hours=1)   
     async def autoupdate_loop(self):
         query = (
-            "select user_id, name, t.level, t.team from users u "
+            "select user_id, u.name, t.level, t.team from users u "
             "left join mad.cev_trainer t on t.name = u.ingame_name "
             "where t.level > u.level or t.team != u.team_id"
         )
