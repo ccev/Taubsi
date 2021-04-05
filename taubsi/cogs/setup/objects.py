@@ -82,11 +82,16 @@ class TaubsiUser:
 
         keyvals = {
             "user_id": self.user_id,
-            "level": self.level,
-            "team_id": self.team.value,
-            "friendcode": self.friendcode,
-            "name": self.name
         }
+
+        if self.level is not None:
+            keyvals["level"] = self.level
+        if self.team.value > 0:
+            keyvals["team_id"] = self.team.value
+        if self.friendcode is not None:
+            keyvals["friendcode"] = self.friendcode
+        if len(self.name) > 0:
+            keyvals["name"] = self.name
         
         await tb.intern_queries.insert("users", keyvals)
         

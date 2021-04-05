@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from taubsi.utils.logging import logging
 from taubsi.cogs.setup.errors import *
 from taubsi.taubsi_objects import tb
@@ -14,6 +14,7 @@ class Setup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.max_level = 50
+        self.autoupdate_loop.start()
 
     async def cog_command_error(self, ctx, error):
         if not isinstance(error, TaubsiError):
@@ -155,6 +156,28 @@ class Setup(commands.Cog):
         user.team = team
         await user.update()
         await self.reponse(ctx, f"✅ Du bist jetzt in Team {team.name.lower().capitalize()}")
+
+    @tasks.loop(hours=1)   
+    async def autoupdate_loop(self):
+        query = (
+            "select user_id, t.level, t.team from users u "
+            "left join mad.cev_trainer t on t.name = u.ingame_name where t.level != u.level "
+            "where t.level > u.level or t.team != u.team_id"
+        )
+        result = tb.intern_queries.execute(query)
+        if not len(result) == 0:
+            return
+
+        for user_id, level, team in result:
+            if level is None or team is None:
+                continue
+            user = TaubsiUser()
+            user.user_id = user_id
+            user.level = level
+            user.team = Team(team)
+
+            #await user.update()
+            log.info(f"Updating user {user_id} (L{level}) (T{team})")
 
 def setup(bot):
     bot.add_cog(Setup(bot))
