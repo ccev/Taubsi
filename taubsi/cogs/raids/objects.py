@@ -7,7 +7,8 @@ from enum import Enum
 import discord
 import arrow
 from PIL import Image, ImageDraw
-from pogodata.objects import Pokemon, Move
+from pogodata.objects import Move
+from pogodata.pokemon import Pokemon
 
 from taubsi.utils.utils import asyncget, calculate_cp, reverse_get
 from taubsi.utils.enums import Team
