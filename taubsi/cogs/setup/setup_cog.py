@@ -172,10 +172,7 @@ class Setup(commands.Cog):
             if level is None or team is None:
                 continue
             user = TaubsiUser()
-            user.name = name
-            user.user_id = user_id
-            user.level = level
-            user.team = Team(team)
+            user.from_db(user_id, team_id=team, level=level, name=name)
 
             await user.update()
             log.info(f"Auto-updating {name} {user_id} (L{level}) (T{team})")

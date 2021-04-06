@@ -24,7 +24,7 @@ class TaubsiUser:
         self.level = None
         self.friendcode = None
 
-    def from_db(self, user_id, team_id, level, friendcode, name):
+    def from_db(self, user_id, team_id=0, level=None, friendcode=None, name=""):
         self.user_id = user_id
         self.team = Team(team_id)
         self.level = level
@@ -32,7 +32,7 @@ class TaubsiUser:
         self.name = name
     
     async def from_command(self, member):
-        result = await tb.intern_queries.execute(f"select level, team_id, level, friendcode, name from users where user_id = {member.id};")
+        result = await tb.intern_queries.execute(f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
         self.user_id = member.id
         if not result:
             nick = member.display_name
@@ -46,6 +46,8 @@ class TaubsiUser:
         
         if result:
             self.level, team_id, self.level, self.friendcode, self.name = result[0]
+            if team_id is None:
+                team_id = 0
             self.team = Team(team_id)
 
     @property
@@ -58,7 +60,11 @@ class TaubsiUser:
     async def update(self):
         for guild in tb.guilds:
             try:
-                member = await guild.fetch_member(self.user_id)
+                try:
+                    member = await guild.fetch_member(self.user_id)
+                except:
+                    member = None
+                
                 if member is None:
                     continue
 
