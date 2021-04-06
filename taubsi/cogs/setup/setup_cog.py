@@ -91,7 +91,7 @@ class Setup(commands.Cog):
         players = await tb.queries.execute("select t.name, t.xp from taubsi3.users u left join mad.cev_trainer t on u.ingame_name = t.name where ingame_name is not null order by xp desc limit 10;")
         text = ""
         for rank, (name, xp) in enumerate(players, start=1):
-            text += str(rank) + ". " + name.ljust(25) + "{:,}".format(xp).replace(",", ".") + " XP\n"
+            text += (str(rank) + ". " + name).ljust(25) + "{:,}".format(xp).replace(",", ".") + " XP\n"
         await ctx.send(f"```\n{text}```")
 
     @commands.command(aliases=["code", "freund"])
