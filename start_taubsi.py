@@ -4,6 +4,7 @@ from taubsi.taubsi_objects.servers import load_servers
 
 extensions = ["taubsi.cogs.raids.raid_cog", "taubsi.cogs.setup.setup_cog", "taubsi.cogs.loop"]
 
+
 @tb.bot.event
 async def on_ready():
     await load_servers()
