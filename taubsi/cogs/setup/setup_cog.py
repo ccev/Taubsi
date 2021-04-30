@@ -10,6 +10,7 @@ from taubsi.utils.enums import Team
 
 log = logging.getLogger("Setup")
 
+
 class Setup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
