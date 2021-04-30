@@ -1,6 +1,6 @@
 import json
 from . import tb
-from taubsi.cogs.raids.objects import Gym
+from taubsi.cogs.raids.pogo import Gym
 
 def _convert_path_sql(fence):
     sql_fence = []
