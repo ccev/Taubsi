@@ -18,6 +18,8 @@ async def on_ready():
 
     for extension in extensions:
         tb.bot.load_extension(extension)
+        if tb.config.get("secret", False):
+            tb.bot.load_extension("taubsi.cogs.setup.auto_setup_cog")
     raidcog = tb.bot.get_cog("RaidCog")
     await raidcog.final_init()
     
