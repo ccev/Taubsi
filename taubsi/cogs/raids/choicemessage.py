@@ -37,8 +37,8 @@ class ChoiceMessage:
 
     def make_embed(self):
         text = "Bitte wähle die, an der der Raid stattfinden soll.\n"
-        #for i, gym in enumerate(self.gyms, start=1):
-        #    text += f"\n{NUMBER_EMOJIS[i]} **{gym.name}**"
+        for i, gym in enumerate(self.gyms, start=1):
+            text += f"\n{NUMBER_EMOJIS[i]} **{gym.name}**"
         self.embed.title = f"Es wurden {len(self.gyms)} Arenen gefunden"
         self.embed.description = text
 
@@ -46,7 +46,6 @@ class ChoiceMessage:
         self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))
 
     async def react(self):
-        return
         for i in range(1, len(self.gyms)+1):
             try:
                 await self.message.add_reaction(NUMBER_EMOJIS[i])
