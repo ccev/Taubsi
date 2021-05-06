@@ -135,7 +135,7 @@ class RaidMessage:
         self.lates = []
 
         self.notified_5_minutes = False
-        self.view = RaidmessageView(self)
+        #self.view = RaidmessageView(self)
 
     @property
     def total_amount(self):
