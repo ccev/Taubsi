@@ -28,6 +28,7 @@ RAID_WARNINGS = {
 }
 
 
+"""
 class RaidmessageView(discord.ui.View):
     def __init__(self, raidmessage):
         super().__init__()
@@ -107,6 +108,7 @@ class RaidmessageView(discord.ui.View):
     async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id == self.raidmessage.init_message.author.id:
             await interaction.message.delete()
+"""
 
 
 class RaidMessage:

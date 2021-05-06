@@ -7,7 +7,7 @@ from taubsi.cogs.raids.raidmessage import RaidMessage
 
 log = logging.getLogger("Raids")
 
-
+"""
 class ChoiceButton(discord.ui.Button):
     def __init__(self, gym, choicemessage):
         super().__init__(style=discord.ButtonStyle.grey, label=gym.name)
@@ -24,6 +24,7 @@ class ChoiceMessageView(discord.ui.View):
 
         for gym in choicemessage.gyms:
             self.add_item(ChoiceButton(gym, choicemessage))
+"""
 
 
 class ChoiceMessage:
