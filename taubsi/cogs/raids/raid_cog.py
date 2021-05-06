@@ -3,19 +3,20 @@ from dateutil import tz
 
 from taubsi.utils.logging import logging
 from taubsi.utils.matcher import get_matches
-from taubsi.utils.utils import reverse_get
 from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.raids.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
-from taubsi.cogs.raids.objects import RaidMessage, BaseRaid, ChoiceMessage, RAID_WARNINGS
+from taubsi.cogs.raids.raidmessage import RaidMessage, RAID_WARNINGS
+from taubsi.cogs.raids.choicemessage import ChoiceMessage
+from taubsi.cogs.raids.pogo import BaseRaid
 
-import discord
 import asyncio
 import dateparser
 import arrow
 from discord.ext import tasks, commands
 
 log = logging.getLogger("Raids")
+
 
 class RaidCog(commands.Cog):
     def __init__(self, bot):
@@ -110,9 +111,9 @@ class RaidCog(commands.Cog):
         
         if len(gym_names) > 1:
             too_many_gyms = [match_gym(name) for name, _ in gym_names]
-            choicemessage = ChoiceMessage(message, too_many_gyms, raid_start)
+            choicemessage = ChoiceMessage(message, too_many_gyms, raid_start, self)
             choicemessage.make_embed()
-            choicemessage.message = await message.channel.send(embed=choicemessage.embed)
+            await choicemessage.send_message()
             self.choicemessages[choicemessage.message.id] = choicemessage
             await choicemessage.react()
             return

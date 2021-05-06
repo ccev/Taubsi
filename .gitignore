@@ -3,6 +3,7 @@ image_process.py
 config/
 secret.txt
 .idea
+venv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
