@@ -43,7 +43,7 @@ class ChoiceMessage:
         self.embed.description = text
 
     async def send_message(self):
-        self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))
+        self.message = await self.init_message.channel.send(embed=self.embed)
 
     async def react(self):
         for i in range(1, len(self.gyms)+1):

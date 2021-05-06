@@ -6,7 +6,6 @@ extensions = ["taubsi.cogs.raids.raid_cog", "taubsi.cogs.setup.setup_cog", "taub
 startup = True
 
 
-
 @tb.bot.event
 async def on_ready():
     global startup
