@@ -7,7 +7,7 @@ from taubsi.cogs.raids.raidmessage import RaidMessage
 
 log = logging.getLogger("Raids")
 
-"""
+
 class ChoiceButton(discord.ui.Button):
     def __init__(self, gym, choicemessage):
         super().__init__(style=discord.ButtonStyle.grey, label=gym.name)
@@ -15,7 +15,9 @@ class ChoiceButton(discord.ui.Button):
         self.choicemessage = choicemessage
 
     async def callback(self, interaction: discord.Interaction):
-        await self.choicemessage.button_clicked(self.gym, interaction)
+        if interaction.user.id != self.choicemessage.init_message.author.id:
+            return
+        await self.choicemessage.button_clicked(self.gym)
 
 
 class ChoiceMessageView(discord.ui.View):
@@ -24,7 +26,6 @@ class ChoiceMessageView(discord.ui.View):
 
         for gym in choicemessage.gyms:
             self.add_item(ChoiceButton(gym, choicemessage))
-"""
 
 
 class ChoiceMessage:
@@ -33,35 +34,21 @@ class ChoiceMessage:
         self.init_message = message
         self.start_time = start_time
         self.message = None
-        self.gyms = gyms
+        self.gyms = gyms[:25]
         self.cog = cog
 
     def make_embed(self):
-        text = "Bitte wähle die, an der der Raid stattfinden soll.\n"
-        for i, gym in enumerate(self.gyms, start=1):
-            text += f"\n{NUMBER_EMOJIS[i]} **{gym.name}**"
         self.embed.title = f"Es wurden {len(self.gyms)} Arenen gefunden"
-        self.embed.description = text
+        self.embed.description = (
+            "Bitte wähle die, an der der Raid stattfinden soll.\n\n"
+            "*Falls du die Optionen nicht siehst, update bitte Discord oder setze den Raid "
+            "mit einem eindeutigen Namen neu an.*"
+        )
 
     async def send_message(self):
-        self.message = await self.init_message.channel.send(embed=self.embed)
+        self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))
 
-    async def react(self):
-        for i in range(1, len(self.gyms)+1):
-            try:
-                await self.message.add_reaction(NUMBER_EMOJIS[i])
-            except Exception as e:
-                log.info(f"Error while reacting to choice message: {e} (Probably because it got deleted before finishing)")
-
-    async def reacted(self, payload):
-        emote = str(payload.emoji)
-        number = reverse_get(NUMBER_EMOJIS, emote)
-        await self.message.delete()
-        raidmessage = RaidMessage()
-        await raidmessage.from_command(self.gyms[number-1], self.start_time, self.init_message)
-        return raidmessage
-
-    async def button_clicked(self, gym, interaction):
+    async def button_clicked(self, gym):
         await self.message.delete()
         raidmessage = RaidMessage()
         await raidmessage.from_command(gym, self.start_time, self.init_message)

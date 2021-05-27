@@ -27,6 +27,14 @@ RAID_WARNINGS = {
     "OTHER_TIMES": "‼️ Dieser Raid wurde bereits zu {TIME} Uhr angesetzt"
 }
 
+GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
+PBATTLER_LINK = (
+    "https://www.pokebattler.com/raids/defenders/{}/levels/RAID_LEVEL_{}/attackers/levels/40/strategies/"
+    "CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER"
+    "&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE&includeLegendary=true&includeShadow=true"
+    "&includeMegas=true&attackerTypes=POKEMON_TYPE_ALL"
+)
+
 
 """
 class RaidmessageView(discord.ui.View):
@@ -108,7 +116,26 @@ class RaidmessageView(discord.ui.View):
     async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
         if interaction.user.id == self.raidmessage.init_message.author.id:
             await interaction.message.delete()
+            
 """
+
+
+class RaidmessageView(discord.ui.View):
+    def __init__(self, raidmessage):
+        super().__init__()
+
+        maps_link = GMAPS_LINK.format(
+            raidmessage.gym.lat, raidmessage.gym.lon
+        )
+        self.add_item(discord.ui.Button(url=maps_link, label="Google Maps", style=discord.ButtonStyle.link))
+
+        if raidmessage.raid.boss:
+            if raidmessage.raid.level == 6:
+                pb_level = "MEGA"
+            else:
+                pb_level = str(raidmessage.raid.level)
+            pb_link = PBATTLER_LINK.format(raidmessage.raid.pokebattler_name, pb_level)
+            self.add_item(discord.ui.Button(url=pb_link, label="Pokebattler", style=discord.ButtonStyle.link))
 
 
 class RaidMessage:
@@ -135,7 +162,6 @@ class RaidMessage:
         self.lates = []
 
         self.notified_5_minutes = False
-        #self.view = RaidmessageView(self)
 
     @property
     def total_amount(self):
@@ -445,14 +471,14 @@ class RaidMessage:
 
     async def edit_message(self):
         log.info(f"Editing message {self.message.id}")
-        await self.message.edit(embed=self.embed)
+        await self.message.edit(embed=self.embed, view=RaidmessageView(self))
 
     async def send_message(self):
         channel = await tb.bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
         self.embed.timestamp = self.start_time.datetime
-        self.message = await channel.send(embed=self.embed)
+        self.message = await channel.send(embed=self.embed, view=RaidmessageView(self))
         self.message_id = self.message.id
 
         self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)

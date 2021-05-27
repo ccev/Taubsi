@@ -52,6 +52,7 @@ class BaseRaid:
     def __init__(self, gym: Gym, level: int = 5):
         self.level = level
         self.gym = gym
+        self.pokebattler_name = ""
 
         available_bosses = tb.pogodata.raids[level]
         boss = None
@@ -63,6 +64,10 @@ class BaseRaid:
         if boss:
             self.boss = boss
             self.name = self.boss.name
+
+            self.pokebattler_name = self.boss.base_template
+            if self.boss.temp_evolution_id > 0:
+                self.pokebattler_name += "_MEGA"
 
             if boss.temp_evolution_id > 0:
                 stats = tb.pogodata.get_mon(template=self.boss.base_template).stats

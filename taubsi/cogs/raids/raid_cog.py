@@ -115,7 +115,6 @@ class RaidCog(commands.Cog):
             choicemessage.make_embed()
             await choicemessage.send_message()
             self.choicemessages[choicemessage.message.id] = choicemessage
-            await choicemessage.react()
             return
 
         gym = match_gym(gym_names[0][0])
@@ -131,13 +130,6 @@ class RaidCog(commands.Cog):
         raidmessage = self.raidmessages.get(payload.message_id)
         if raidmessage is not None:
             await raidmessage.add_reaction(payload)
-            return
-        choicemessage = self.choicemessages.get(payload.message_id)
-        if choicemessage is not None:
-            if payload.user_id == choicemessage.init_message.author.id:
-                raidmessage = await choicemessage.reacted(payload)
-                self.choicemessages.pop(payload.message_id)
-                await self.create_raid(raidmessage)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
