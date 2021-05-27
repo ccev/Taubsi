@@ -70,3 +70,7 @@ class AutoSetup(commands.Cog):
         for rank, (name, xp) in enumerate(players, start=1):
             text += (str(rank) + ". " + name).ljust(25) + "{:,}".format(xp).replace(",", ".") + " XP\n"
         await ctx.send(f"```\n{text}```")
+
+
+def setup(bot):
+    bot.add_cog(AutoSetup(bot))
