@@ -1,0 +1,6 @@
+aiomysql==0.0.21
+arrow==1.1.0
+dateparser==1.0.0
+fuzzywuzzy==0.18.0
+Pillow==8.2.0
+pogodata==0.5.10
