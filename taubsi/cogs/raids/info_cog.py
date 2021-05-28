@@ -57,8 +57,8 @@ class InfoCog(commands.Cog):
                 raidinfo = self.raid_infos.get(gym.id)
 
                 if raidinfo is None:
-                    raidinfo = RaidInfo(gym, tb.info_channels[guild_id])
-                    is_cool = await raidinfo.from_db(db_raid)
+                    raidinfo = RaidInfo(gym)
+                    is_cool = await raidinfo.from_db(db_raid, tb.info_channels[guild_id])
                     if is_cool:
                         self.raid_infos[gym.id] = raidinfo
                     continue
@@ -75,7 +75,6 @@ class InfoCog(commands.Cog):
             except Exception as e:
                 log.error("Exception in RaidInfo Loop")
                 log.exception(e)
-
 
     @info_loop.before_loop
     async def info_purge(self):

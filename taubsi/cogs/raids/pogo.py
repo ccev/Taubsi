@@ -94,10 +94,13 @@ class BaseRaid:
             f"https://raw.githubusercontent.com/ccev/dp-assets/master/emotes/egg{self.level}.png"
         )
 
-        self.boss_url = (
-            f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
-            f"{self.boss.asset}.png"
-        )
+        if self.boss:
+            self.boss_url = (
+                f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
+                f"{self.boss.asset}.png"
+            )
+        else:
+            self.boss_url = ""
 
     @property
     def compare(self):

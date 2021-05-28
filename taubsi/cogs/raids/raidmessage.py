@@ -218,7 +218,7 @@ class RaidMessage:
             self.init_message = await channel.fetch_message(self.init_message_id)
         except:
             self.init_message = self.message
-        self.author_id = self.init_message.autor.id
+        self.author_id = self.init_message.author.id
 
         raidmember_db = await tb.intern_queries.execute(
             f"select user_id, amount, is_late, is_remote from raidmembers where message_id = {self.message.id}")

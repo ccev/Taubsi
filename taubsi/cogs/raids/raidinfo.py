@@ -27,12 +27,11 @@ class InfoTimeButton(discord.ui.Button):
         if self.time < arrow.now().shift(minutes=4):
             return
 
-        for channel_settings in self.raidinfo.channel_settings:
-            for channel_id in channel_settings.get("post_to", []):
-                raidmessage = RaidMessage()
-                await raidmessage.from_raidinfo(self.raidinfo.gym, self.raidinfo.raid, self.time,
-                                                interaction, channel_id)
-                await self.raidinfo.create_raid(raidmessage)
+        for channel_id in self.raidinfo.post_to:
+            raidmessage = RaidMessage()
+            await raidmessage.from_raidinfo(self.raidinfo.gym, self.raidinfo.raid, self.time,
+                                            interaction, channel_id)
+            await self.raidinfo.create_raid(raidmessage)
 
 
 class RaidInfoView(discord.ui.View):
@@ -56,15 +55,16 @@ class RaidInfoView(discord.ui.View):
 
 
 class RaidInfo:
-    def __init__(self, gym, channel_settings):
+    def __init__(self, gym):
         self.gym = gym
-        self.channel_settings = channel_settings
 
         self.raid = None
         self.embed = discord.Embed()
         self.messages = []
-        self.channels = []
         self.hatched = False
+
+        self.channels = []
+        self.post_to = []
 
         raid_cog = tb.bot.get_cog("RaidCog")
         self.create_raid = raid_cog.create_raid
@@ -85,14 +85,15 @@ class RaidInfo:
         move2 = tb.pogodata.get_move(id=move_2)
         self.raid = ScannedRaid(self.gym, move1, move2, start, end, mon, level)
 
-    async def from_db(self, db_raid):
-        for channel_setting in self.channel_settings:
+    async def from_db(self, db_raid, channel_settings):
+        for channel_setting in channel_settings:
             if not db_raid[1] in channel_setting.get("levels", []):
                 continue
 
             channel_id = channel_setting["id"]
             channel = await tb.bot.fetch_channel(channel_id)
             self.channels.append(channel)
+            self.post_to += channel_setting.get("post_to", [])
 
         if not self.channels:
             return False
@@ -149,7 +150,11 @@ class RaidInfo:
         self.embed.set_author(name=self.gym.name, icon_url=self.gym.img)
 
     async def send_message(self):
-        self.view = RaidInfoView(self)
+        if self.post_to:
+            self.view = RaidInfoView(self)
+        else:
+            self.view = None
+
         for channel in self.channels:
             message = await channel.send(embed=self.embed, view=self.view)
             self.messages.append(message)
