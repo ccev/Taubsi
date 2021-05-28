@@ -25,16 +25,20 @@ class RaidCog(commands.Cog):
         self.choicemessages = {}
 
     async def final_init(self):
-        rm_query = """
-        SELECT channel_id, message_id, init_message_id, start_time, gym_id, role_id
-        FROM raids
-        WHERE start_time > utc_timestamp
-        """
-        raidmessages_db = await tb.intern_queries.execute(rm_query)
-        for entry in raidmessages_db:
-            raidmessage = RaidMessage()
-            await raidmessage.from_db(*entry)
-            self.raidmessages[raidmessage.message.id] = raidmessage
+        try:
+            rm_query = """
+            SELECT channel_id, message_id, init_message_id, start_time, gym_id, role_id
+            FROM raids
+            WHERE start_time > utc_timestamp()
+            """
+            raidmessages_db = await tb.intern_queries.execute(rm_query)
+            for entry in raidmessages_db:
+                raidmessage = RaidMessage()
+                await raidmessage.from_db(*entry)
+                self.raidmessages[raidmessage.message.id] = raidmessage
+        except Exception as e:
+            log.error("Error while querying ongoing raids. Existing raids may not be responsive anymore")
+            log.exception(e)
 
         self.raid_loop.start()
 
