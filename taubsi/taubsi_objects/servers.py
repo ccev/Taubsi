@@ -2,6 +2,7 @@ import json
 from . import tb
 from taubsi.cogs.raids.pogo import Gym
 
+
 def _convert_path_sql(fence):
     sql_fence = []
     for lat, lon in fence:
@@ -9,6 +10,7 @@ def _convert_path_sql(fence):
     sql_fence.append(f"{fence[0][0]} {fence[0][1]}")
 
     return "(" + ",".join(sql_fence) + ")"
+
 
 async def load_servers():
     with open("config/servers.json", "r") as f:
@@ -22,6 +24,7 @@ async def load_servers():
     tb.setup_channels = []
     tb.welcome_channels = []
     tb.raid_channels = {}
+    tb.info_channels = {}
     tb.guilds = []
 
     for settings in raw_servers:
@@ -44,6 +47,10 @@ async def load_servers():
 
         for channel_settings in settings["raid_channels"]:
             tb.raid_channels[channel_settings["id"]] = channel_settings
+
+        raw_info_channels = settings.get("info_channels", [])
+        if len(raw_info_channels) > 0:
+            tb.info_channels[settings["id"]] = raw_info_channels
 
         guild = await tb.bot.fetch_guild(settings["id"])
         tb.guilds.append(guild)

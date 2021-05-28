@@ -13,6 +13,7 @@ from taubsi.taubsi_objects import tb
 
 log = logging.getLogger("Raids")
 
+
 class Gym:
     def __init__(self, id_: int = 0, name: str = "?", img: str = "", lat: float = 0, lon: float = 0):
         self.id = id_
@@ -52,7 +53,15 @@ class BaseRaid:
     def __init__(self, gym: Gym, level: int = 5):
         self.level = level
         self.gym = gym
-        self.pokebattler_name = ""
+
+        self.cp20 = 0
+        self.cp25 = 0
+        self.boss = None
+        self.name = "?"
+        self.pokebattler_name = "UNOWN"
+
+        self.egg_url = ""
+        self.boss_url = ""
 
         available_bosses = tb.pogodata.raids[level]
         boss = None
@@ -76,11 +85,19 @@ class BaseRaid:
             self.cp20 = calculate_cp(20, stats, [15, 15, 15])
             self.cp25 = calculate_cp(25, stats, [15, 15, 15])
         else:
-            self.boss = None
             if self.level != 6:
                 self.name = f"Level {self.level} Ei"
             else:
                 self.name = "Mega Ei"
+
+        self.egg_url = (
+            f"https://raw.githubusercontent.com/ccev/dp-assets/master/emotes/egg{self.level}.png"
+        )
+
+        self.boss_url = (
+            f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
+            f"{self.boss.asset}.png"
+        )
 
     @property
     def compare(self):
@@ -98,16 +115,17 @@ class BaseRaid:
             mon_size = (105, 105)
             shiny = ""
             if random.randint(1, 30) == 20:
-                shiny = "_shiny"
-            url = f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/{self.boss.asset}{shiny}.png"
-            #url = "https://raw.githubusercontent.com/ccev/pogoafd/master/sprites/pokemon_icon_" + str(self.boss.id).zfill(3) + "_" + str(self.boss.form).zfill(2) + ".png"
+                url = self.boss_url.replace(".png", "_shiny.png")
+            else:
+                url = self.boss_url
+
             try:
                 boss_result = await asyncget(url)
             except:
                 boss_result = await asyncget(url.replace(shiny, ""))
         else:
             mon_size = (95, 95)
-            boss_result = await asyncget(f"https://raw.githubusercontent.com/ccev/dp-assets/master/emotes/egg{self.level}.png")
+            boss_result = await asyncget(self.boss_url)
         log.info(f"Creating a Raid Icon for Gym {self.gym.name}")
         gym_result = await asyncget(self.gym.img)
 

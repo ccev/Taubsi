@@ -146,7 +146,10 @@ class RaidCog(commands.Cog):
         if not raidmessage:
             return
         log.info(f"Gracefully deleting Raid at {raidmessage.gym.name}, {raidmessage.start_time}, {raidmessage.message_id}")
-        await raidmessage.init_message.delete()
+        try:
+            await raidmessage.init_message.delete()
+        except:
+            pass
         await raidmessage.delete_role()
         self.raidmessages.pop(message.id)
         await tb.intern_queries.execute(f"delete from raids where message_id = {raidmessage.message.id}", result=False, commit=True)
@@ -171,11 +174,9 @@ class RaidCog(commands.Cog):
                 message = raidmessage.message
 
                 if arrow.now() > raidmessage.start_time.shift(minutes=1):
-                    log.info(f"Raid {raidmessage.message_id} started. Clearing reactions and deleting its role.")
-                    await message.clear_reactions()
-                    await raidmessage.delete_role()
+                    await raidmessage.end_raid()
                     self.raidmessages.pop(message.id)
-                if arrow.now() > raidmessage.start_time.shift(minutes=-5) and arrow.now() < raidmessage.start_time.shift(minutes=-4):
+                if raidmessage.start_time.shift(minutes=-5) < arrow.now() < raidmessage.start_time.shift(minutes=-4):
                     if not raidmessage.notified_5_minutes:
                         await raidmessage.notify("‼️ Der Raid startet in 5 Minuten")
                         raidmessage.notified_5_minutes = True

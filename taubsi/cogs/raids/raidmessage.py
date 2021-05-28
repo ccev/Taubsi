@@ -28,6 +28,7 @@ RAID_WARNINGS = {
 }
 
 GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
+AMAPS_LINK = "https://maps.apple.com/maps?daddr={},{}"
 PBATTLER_LINK = (
     "https://www.pokebattler.com/raids/defenders/{}/levels/RAID_LEVEL_{}/attackers/levels/40/strategies/"
     "CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER"
@@ -141,19 +142,23 @@ class RaidmessageView(discord.ui.View):
 class RaidMessage:
     def __init__(self):
         self.embed = discord.Embed()
+        self.channel_settings = None
 
         self.channel_id = 0
         self.message_id = 0
         self.message = None
         self.init_message_id = 0
         self.init_message = None
+        self.author_id = 0
+
         self.start_time = arrow.get(2020, 1, 1, 12, 0)
         self.role = None
+        self.view = None
 
         self.gym = Gym()
         self.raid = None
 
-        self.text = ""
+        self.footer_prefix = ""
         self.warnings = set()
         self.static_warnings = set()
 
@@ -171,6 +176,17 @@ class RaidMessage:
     def formatted_start(self):
         return self.start_time.strftime(timeformat)
 
+    async def from_raidinfo(self, gym, raid, start_time, interaction, channel_id):
+        self.gym = gym
+        self.start_time = start_time
+        self.channel_id = channel_id
+        self.channel_settings = tb.raid_channels[self.channel_id]
+
+        self.author_id = interaction.user.id
+        self.footer_prefix = "Angesetzt von " + interaction.user.display_name + "\n"
+        self.raid = raid
+        await self.send_message()
+
     async def from_command(self, gym, start_time, init_message):
         self.gym = gym
 
@@ -180,6 +196,7 @@ class RaidMessage:
 
         self.init_message = init_message
         self.init_message_id = init_message.id
+        self.author_id = self.init_message.author.id
 
         self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
         await self.send_message()
@@ -201,6 +218,7 @@ class RaidMessage:
             self.init_message = await channel.fetch_message(self.init_message_id)
         except:
             self.init_message = self.message
+        self.author_id = self.init_message.autor.id
 
         raidmember_db = await tb.intern_queries.execute(
             f"select user_id, amount, is_late, is_remote from raidmembers where message_id = {self.message.id}")
@@ -242,7 +260,7 @@ class RaidMessage:
             control = reverse_get(CONTROL_EMOJIS, emote)
 
             if control == "remove":
-                if payload.user_id == self.init_message.author.id:
+                if payload.user_id == self.author_id:
                     await self.message.delete()
                     return
             elif control == "late":
@@ -404,7 +422,7 @@ class RaidMessage:
         await self.edit_message()
 
     def make_footer(self, amount: int = 0):
-        self.embed.set_footer(text=f"Insgesamt: {amount}")
+        self.embed.set_footer(text=self.footer_prefix + f"Insgesamt: {amount}")
 
     async def make_member_fields(self):
         self.embed.clear_fields()
@@ -454,7 +472,7 @@ class RaidMessage:
         keyvals = {
             "channel_id": self.message.channel.id,
             "message_id": self.message.id,
-            "init_message_id": self.init_message.id,
+            "init_message_id": self.init_message_id,
             "gym_id": self.gym.id,
             "start_time": self.start_time.to("utc").naive,
             "raid_level": self.raid.level,
@@ -471,13 +489,14 @@ class RaidMessage:
 
     async def edit_message(self):
         log.info(f"Editing message {self.message.id}")
-        await self.message.edit(embed=self.embed, view=RaidmessageView(self))
+        await self.message.edit(embed=self.embed)
 
     async def send_message(self):
         channel = await tb.bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
         self.embed.timestamp = self.start_time.datetime
+
         self.message = await channel.send(embed=self.embed, view=RaidmessageView(self))
         self.message_id = self.message.id
 
@@ -485,3 +504,10 @@ class RaidMessage:
 
     async def delete_role(self):
         await self.role.delete()
+
+    async def end_raid(self):
+        log.info(f"Raid {self.message.id} started. Clearing reactions and deleting its role.")
+
+        await self.message.edit(embed=self.embed, view=None)
+        await self.message.clear_reactions()
+        await self.delete_role()

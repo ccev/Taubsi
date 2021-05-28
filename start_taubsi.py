@@ -2,7 +2,12 @@ from taubsi.taubsi_objects import tb
 from taubsi.utils.logging import log
 from taubsi.taubsi_objects.servers import load_servers
 
-extensions = ["taubsi.cogs.raids.raid_cog", "taubsi.cogs.setup.setup_cog", "taubsi.cogs.loop"]
+extensions = [
+    "taubsi.cogs.raids.raid_cog",
+    "taubsi.cogs.setup.setup_cog",
+    "taubsi.cogs.loop",
+    "taubsi.cogs.raids.info_cog"
+]
 startup = True
 
 
