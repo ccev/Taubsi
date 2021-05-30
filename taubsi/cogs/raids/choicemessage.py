@@ -1,8 +1,6 @@
 import discord
 
-from taubsi.utils.utils import reverse_get
 from taubsi.utils.logging import logging
-from taubsi.cogs.raids.emotes import *
 from taubsi.cogs.raids.raidmessage import RaidMessage
 
 log = logging.getLogger("Raids")

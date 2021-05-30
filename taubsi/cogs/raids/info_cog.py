@@ -1,17 +1,7 @@
-import time
-
 from taubsi.utils.logging import logging
-from taubsi.utils.matcher import get_matches
-from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
-from taubsi.cogs.raids.raidmessage import RaidMessage, RAID_WARNINGS
-from taubsi.cogs.raids.choicemessage import ChoiceMessage
-from taubsi.cogs.raids.pogo import BaseRaid
 from taubsi.cogs.raids.raidinfo import RaidInfo
 
-import asyncio
-import dateparser
 import arrow
 from discord.ext import tasks, commands
 
@@ -67,11 +57,15 @@ class InfoCog(commands.Cog):
                     await raidinfo.has_hatched(db_raid)
                     continue
 
+            except Exception as e:
+                log.error("Exception in RaidInfo Loop")
+                log.exception(e)
+
+            try:
                 for raidinfo in list(self.raid_infos.values()):
                     if raidinfo.raid.end < arrow.utcnow():
                         await raidinfo.delete()
                         self.raid_infos.pop(raidinfo.gym.id)
-
             except Exception as e:
                 log.error("Exception in RaidInfo Loop")
                 log.exception(e)
