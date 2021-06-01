@@ -128,7 +128,7 @@ class BaseRaid:
                 boss_result = await asyncget(url.replace(shiny, ""))
         else:
             mon_size = (95, 95)
-            boss_result = await asyncget(self.boss_url)
+            boss_result = await asyncget(self.egg_url)
         log.info(f"Creating a Raid Icon for Gym {self.gym.name}")
         gym_result = await asyncget(self.gym.img)
 
