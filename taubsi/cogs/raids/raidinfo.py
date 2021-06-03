@@ -149,17 +149,22 @@ class RaidInfo:
 
         self.embed.set_author(name=self.gym.name, icon_url=self.gym.img)
 
-    async def send_message(self):
-        if self.post_to:
+    def make_view(self):
+        if self.view and self.raid.boss:
+            self.view = RaidInfoView(self)
+        elif not self.view and self.post_to:
             self.view = RaidInfoView(self)
         else:
             self.view = None
 
+    async def send_message(self):
+        self.make_view()
         for channel in self.channels:
             message = await channel.send(embed=self.embed, view=self.view)
             self.messages.append(message)
 
     async def edit_message(self):
+        self.make_view()
         for message in self.messages:
             await message.edit(embed=self.embed, view=self.view)
 

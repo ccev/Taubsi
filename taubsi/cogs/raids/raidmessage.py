@@ -489,7 +489,7 @@ class RaidMessage:
 
     async def edit_message(self):
         log.info(f"Editing message {self.message.id}")
-        await self.message.edit(embed=self.embed)
+        await self.message.edit(embed=self.embed, view=RaidmessageView(self))
 
     async def send_message(self):
         channel = await tb.bot.fetch_channel(self.channel_id)
