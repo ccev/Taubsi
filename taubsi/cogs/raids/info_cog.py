@@ -31,7 +31,6 @@ class InfoCog(commands.Cog):
                 f"order by end asc "
             )
             self.info_loop.start()
-            self.infoview_loop.start()
 
     @tasks.loop(seconds=10)
     async def info_loop(self):
@@ -70,12 +69,6 @@ class InfoCog(commands.Cog):
             except Exception as e:
                 log.error("Exception in RaidInfo Loop")
                 log.exception(e)
-
-    @tasks.loop(minutes=5)
-    async def infoview_loop(self):
-        for raidinfo in list(self.raid_infos.values()):
-            if raidinfo.post_to:
-                await raidinfo.edit_message()
 
     @info_loop.before_loop
     async def info_purge(self):

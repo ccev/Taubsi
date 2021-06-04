@@ -14,7 +14,7 @@ TIMEFORMAT_LONG = "%H:%M:%S"
 
 class InfoTimeButton(discord.ui.Button):
     def __init__(self, raidinfo, time):
-        super().__init__(style=discord.ButtonStyle.grey, label="")
+        super().__init__(style=discord.ButtonStyle.grey, label="", custom_id=time)
 
         self.time = time.to("local")
         self.label = self.time.strftime(TIMEFORMAT_SHORT)
@@ -36,7 +36,7 @@ class InfoTimeButton(discord.ui.Button):
 
 class RaidInfoView(discord.ui.View):
     def __init__(self, raidinfo):
-        super().__init__()
+        super().__init__(timeout=None)
 
         if raidinfo.time_left(raidinfo.raid.end)[0] < 9:
             return
