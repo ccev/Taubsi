@@ -14,11 +14,11 @@ TIMEFORMAT_LONG = "%H:%M:%S"
 
 class InfoTimeButton(discord.ui.Button):
     def __init__(self, raidinfo, time):
-        super().__init__(style=discord.ButtonStyle.grey, label="", custom_id=time)
-
         self.time = time.to("local")
-        self.label = self.time.strftime(TIMEFORMAT_SHORT)
+        label = self.time.strftime(TIMEFORMAT_SHORT)
         self.raidinfo = raidinfo
+
+        super().__init__(style=discord.ButtonStyle.grey, label=label, custom_id=label)
 
     async def callback(self, interaction: discord.Interaction):
         self.disabled = True
