@@ -12,4 +12,4 @@ you interact by tapping reactions.
 weil Taubsi buttons benutzt und discord.py diese erst in 2.0 implementiert und diese version noch in devopment ist, müsst ihr folgendes tun damit alles geht:
 
 - taubsi module in nem venv installieren (https://docs.python.org/3/library/venv.html)
-- In dem venv dann discord.py so installieren: `/path/to/venv/pip3 install git+https://github.com/Rapptz/discord.py.git@interactions`
+- In dem venv dann discord.py so installieren: `/path/to/venv/pip3 install git+https://github.com/Rapptz/discord.py.git`
