@@ -202,6 +202,7 @@ class RaidMessage:
         await self.send_message()
 
     async def from_db(self, channel_id, message_id, init_message_id, start_time, gym_id, role_id):
+        self.text = ""
         self.channel_id = channel_id
         self.message_id = message_id
         self.start_time = arrow.get(start_time)
@@ -233,6 +234,7 @@ class RaidMessage:
         self.embed = self.message.embeds[0]
         await self.make_member_fields()
         await self.make_base_embed()
+        self.make_warnings()
         await self.edit_message()
 
     async def get_message(self):
