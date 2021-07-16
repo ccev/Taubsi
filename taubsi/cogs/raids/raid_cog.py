@@ -1,4 +1,5 @@
 import re
+import discord
 from dateutil import tz
 
 from taubsi.utils.logging import logging
@@ -27,7 +28,7 @@ class RaidCog(commands.Cog):
     async def final_init(self):
         try:
             rm_query = """
-            SELECT channel_id, message_id, init_message_id, start_time, gym_id, role_id
+            SELECT channel_id, message_id, init_message_id, start_time, gym_id, role_id, thread_id
             FROM raids
             WHERE start_time > utc_timestamp()
             """
@@ -66,7 +67,7 @@ class RaidCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not message.channel.id in tb.raid_channels.keys():
+        if message.channel.id not in tb.raid_channels.keys():
             return
         
         log.info(f"Trying to create a Raid Message from {message.id}")
@@ -155,6 +156,7 @@ class RaidCog(commands.Cog):
         except:
             pass
         await raidmessage.delete_role()
+        await raidmessage.delete_thread()
         self.raidmessages.pop(message.id)
         await tb.intern_queries.execute(f"delete from raids where message_id = {raidmessage.message.id}", result=False, commit=True)
 

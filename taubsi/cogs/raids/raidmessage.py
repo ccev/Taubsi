@@ -1,4 +1,5 @@
 import json
+import asyncio
 from math import floor, ceil
 
 import discord
@@ -11,6 +12,7 @@ from taubsi.taubsi_objects import tb
 from taubsi.cogs.raids.emotes import *
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.cogs.raids.pogo import Gym, BaseRaid, ScannedRaid
+from taubsi.cogs.raids.pokebattler import PokeBattler
 
 log = logging.getLogger("Raids")
 
@@ -153,7 +155,7 @@ class RaidMessage:
 
         self.start_time = arrow.get(2020, 1, 1, 12, 0)
         self.role = None
-        self.view = None
+        self.thread = None
 
         self.gym = Gym()
         self.raid = None
@@ -201,7 +203,7 @@ class RaidMessage:
         self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
         await self.send_message()
 
-    async def from_db(self, channel_id, message_id, init_message_id, start_time, gym_id, role_id):
+    async def from_db(self, channel_id, message_id, init_message_id, start_time, gym_id, role_id, thread_id):
         self.text = ""
         self.channel_id = channel_id
         self.message_id = message_id
@@ -213,6 +215,7 @@ class RaidMessage:
         self.message = await channel.fetch_message(self.message_id)
         self.gym = [g for g in tb.gyms[self.message.guild.id] if g.id == gym_id][0]
         self.role = self.message.guild.get_role(role_id)
+        self.thread = self.message.guild.get_thread(thread_id)
         self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
 
         try:
@@ -276,6 +279,7 @@ class RaidMessage:
             amount = reverse_get(NUMBER_EMOJIS, emote)
             notification = f"▶️ {member.member.display_name} ({amount})"
             to_notify = True
+            await self.thread.add_user(member.member)
 
         else:
             return
@@ -309,6 +313,7 @@ class RaidMessage:
             if member.amount > 0:
                 await self.notify(f"❌ {member.member.display_name} ({member.amount})", member.member)
                 amount = 0
+                await self.thread.remove_user(member.member)
 
         member.update(amount)
         await self.make_member_fields()
@@ -317,6 +322,13 @@ class RaidMessage:
 
     async def notify(self, message: str, user=None):
         log.info(f"Raid notification: {message}")
+        embed = discord.Embed()
+        embed.title = self.gym.name
+        embed.url = self.message.jump_url
+        embed.description = message
+
+        await self.thread.send(embed=embed)
+
         for member in self.members:
             if not member.is_subscriber:
                 continue
@@ -324,11 +336,6 @@ class RaidMessage:
                 continue
             if user is not None and user.id == member.member.id:
                 continue
-
-            embed = discord.Embed()
-            embed.title = self.gym.name
-            embed.url = self.message.jump_url
-            embed.description = message
 
             await member.member.send(embed=embed)
 
@@ -409,7 +416,7 @@ class RaidMessage:
         # difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.text = f"Start: **{self.formatted_start}**\n\n"
+        self.text = f"Start: **{self.formatted_start}** " + f"<t:{self.start_time.int_timestamp}:R>" + "\n\n"
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if isinstance(self.raid, ScannedRaid):
@@ -478,7 +485,8 @@ class RaidMessage:
             "gym_id": self.gym.id,
             "start_time": self.start_time.to("utc").naive,
             "raid_level": self.raid.level,
-            "role_id": self.role.id
+            "role_id": self.role.id,
+            "thread_id": self.thread.id
         }
         if self.raid.boss:
             keyvals["mon_id"] = self.raid.boss.id
@@ -489,23 +497,36 @@ class RaidMessage:
 
         await tb.intern_queries.insert("raids", keyvals)
 
+    def get_role_name(self):
+        return f"{self.gym.name} ({self.formatted_start})"
+
+    def get_thread_name(self):
+        formatted_thread_time = self.start_time.strftime("%H꞉%M")
+        return f"{formatted_thread_time} | {self.gym.name}"
+
     async def edit_message(self):
         log.info(f"Editing message {self.message.id}")
-        await self.message.edit(embed=self.embed, view=RaidmessageView(self))
+        await self.message.edit(embed=self.embed)
 
     async def send_message(self):
         channel = await tb.bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
-        self.embed.timestamp = self.start_time.datetime
 
-        self.message = await channel.send(embed=self.embed, view=RaidmessageView(self))
+        self.message = await channel.send(embed=self.embed)
         self.message_id = self.message.id
 
-        self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)
+        self.thread = await self.message.start_thread(name=self.get_thread_name())
+
+        self.role = await channel.guild.create_role(name=self.get_role_name(), mentionable=True)
+
+        await PokeBattler.init(self, self.raid.boss.moves)
 
     async def delete_role(self):
         await self.role.delete()
+
+    async def delete_thread(self):
+        await self.thread.delete()
 
     async def end_raid(self):
         log.info(f"Raid {self.message.id} started. Clearing reactions and deleting its role.")
@@ -513,3 +534,5 @@ class RaidMessage:
         await self.message.edit(embed=self.embed, view=None)
         await self.message.clear_reactions()
         await self.delete_role()
+        await asyncio.sleep(60*3)
+        await self.delete_thread()

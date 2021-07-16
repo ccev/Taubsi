@@ -4,6 +4,7 @@ from pogodata import PogoData
 from discord.ext import commands
 from .queries import Queries
 
+
 class TaubsiVars:
     def __init__(self):
         with open("config/config.json") as f:
