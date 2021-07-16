@@ -61,14 +61,15 @@ class InfoCog(commands.Cog):
                 log.error("Exception in RaidInfo Loop")
                 log.exception(e)
 
-            try:
-                for raidinfo in list(self.raid_infos.values()):
-                    if raidinfo.raid.end < arrow.utcnow():
-                        await raidinfo.delete()
-                        self.raid_infos.pop(raidinfo.gym.id)
-            except Exception as e:
-                log.error("Exception in RaidInfo Loop")
-                log.exception(e)
+        try:
+            for raidinfo in list(self.raid_infos.values()):
+                await raidinfo.update_buttons()
+                if raidinfo.raid.end < arrow.utcnow():
+                    await raidinfo.delete()
+                    self.raid_infos.pop(raidinfo.gym.id)
+        except Exception as e:
+            log.error("Exception in RaidInfo Loop")
+            log.exception(e)
 
     @info_loop.before_loop
     async def info_purge(self):

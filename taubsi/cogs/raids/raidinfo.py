@@ -110,32 +110,25 @@ class RaidInfo:
         self.make_embed()
         await self.edit_message()
 
-    @staticmethod
-    def time_left(time):
-        seconds_between = time.int_timestamp - arrow.utcnow().int_timestamp
-        return floor(seconds_between / 60), seconds_between % 60
-
     def make_embed(self):
         formatted_end = self.raid.end.to("local").strftime(TIMEFORMAT_LONG)
         self.embed.title = self.raid.name
 
         if self.hatched:
             self.embed.title += " Raid"
-            minutes_left, seconds_left = self.time_left(self.raid.end)
 
             self.embed.description = (
-                f"Bis **{formatted_end}** ({minutes_left}m {seconds_left}s)\n"
+                f"Bis **{formatted_end}** (<t:{self.raid.end.int_timestamp}:R>)\n"
                 f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
                 f"Attacken: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
             )
             self.embed.set_thumbnail(url=self.raid.boss_url)
 
         else:
-            minutes_left, seconds_left = self.time_left(self.raid.start)
             formatted_start = self.raid.start.to("local").strftime(TIMEFORMAT_LONG)
 
             self.embed.description = (
-                f"Schlüpft in **{minutes_left}m {seconds_left}s**\n"
+                f"Schlüpft in <t:{self.raid.end.int_timestamp}:R>\n"
                 f"Raidzeit: **{formatted_start} – {formatted_end}**"
             )
             self.embed.set_thumbnail(url=self.raid.egg_url)
@@ -150,22 +143,40 @@ class RaidInfo:
 
         self.embed.set_author(name=self.gym.name, icon_url=self.gym.img)
 
-    def make_view(self):
+    def get_view(self):
         if self.view and self.raid.boss:
-            self.view = RaidInfoView(self)
+            view = RaidInfoView(self)
         elif not self.view and self.post_to:
-            self.view = RaidInfoView(self)
+            view = RaidInfoView(self)
         else:
-            self.view = None
+            view = None
+
+        return view
+
+    async def update_buttons(self):
+        if not self.view:
+            return
+
+        new_view = self.get_view()
+
+        if not new_view:
+            await self.edit_message(new_view)
+            return
+
+        if len(new_view.children) != len(self.view.children):
+            await self.edit_message(new_view)
 
     async def send_message(self):
-        self.make_view()
+        self.view = self.get_view()
         for channel in self.channels:
             message = await channel.send(embed=self.embed, view=self.view)
             self.messages.append(message)
 
-    async def edit_message(self):
-        self.make_view()
+    async def edit_message(self, view=None):
+        if not view:
+            self.view = self.get_view()
+        else:
+            self.view = view
         for message in self.messages:
             await message.edit(embed=self.embed, view=self.view)
 
