@@ -110,6 +110,11 @@ class RaidInfo:
         self.make_embed()
         await self.edit_message()
 
+    @staticmethod
+    def time_left(time):
+        seconds_between = time.int_timestamp - arrow.utcnow().int_timestamp
+        return floor(seconds_between / 60), seconds_between % 60
+
     def make_embed(self):
         formatted_end = self.raid.end.to("local").strftime(TIMEFORMAT_LONG)
         self.embed.title = self.raid.name
