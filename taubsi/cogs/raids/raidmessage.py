@@ -205,7 +205,7 @@ class RaidMessage:
         self.text = ""
         self.channel_id = channel_id
         self.message_id = message_id
-        self.start_time = arrow.get(start_time)
+        self.start_time = arrow.get(start_time).to("local")
         self.init_message_id = init_message_id
         self.channel_settings = tb.raid_channels[self.channel_id]
 
