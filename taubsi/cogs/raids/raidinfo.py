@@ -133,7 +133,7 @@ class RaidInfo:
             formatted_start = self.raid.start.to("local").strftime(TIMEFORMAT_LONG)
 
             self.embed.description = (
-                f"Schlüpft <t:{self.raid.end.int_timestamp}:R>\n"
+                f"Schlüpft <t:{self.raid.start.int_timestamp}:R>\n"
                 f"Raidzeit: **{formatted_start} – {formatted_end}**"
             )
             self.embed.set_thumbnail(url=self.raid.egg_url)
