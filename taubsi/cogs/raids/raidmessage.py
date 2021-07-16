@@ -409,7 +409,7 @@ class RaidMessage:
         # difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.text = f"Start: **{self.formatted_start}**\n\n"
+        self.text = f"Start: **{self.formatted_start}** " + f"<t:{self.start_time.int_timestamp}:R>" + "\n\n"
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if isinstance(self.raid, ScannedRaid):
@@ -497,7 +497,6 @@ class RaidMessage:
         channel = await tb.bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
-        self.embed.timestamp = self.start_time.datetime
 
         self.message = await channel.send(embed=self.embed, view=RaidmessageView(self))
         self.message_id = self.message.id
