@@ -123,7 +123,7 @@ class RaidInfo:
             self.embed.title += " Raid"
 
             self.embed.description = (
-                f"Bis **{formatted_end}** (<t:{self.raid.end.int_timestamp}:R>)\n"
+                f"Bis **{formatted_end}** <t:{self.raid.end.int_timestamp}:R>\n"
                 f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
                 f"Attacken: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
             )
