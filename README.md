@@ -13,3 +13,4 @@ weil Taubsi buttons benutzt und discord.py diese erst in 2.0 implementiert und d
 
 - taubsi module in nem venv installieren (https://docs.python.org/3/library/venv.html)
 - In dem venv dann discord.py so installieren: `/path/to/venv/pip3 install git+https://github.com/Rapptz/discord.py.git`
+- Zusätlich muss noch pogodata in Version 1.0 installiert werden: `/path/to/venv/pip3 install git+https://github.com/ccev/pogodata.git`
