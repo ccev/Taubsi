@@ -5,6 +5,7 @@ from taubsi.utils.logging import logging
 
 log = logging.getLogger("Setup")
 
+
 def name_level_from_nick(nick):
     match = re.match(r"^\[([0-5][0-9]|[0-9])\] .*", nick)
     if match:
@@ -15,6 +16,7 @@ def name_level_from_nick(nick):
         level = None
         name = nick
     return level, name
+
 
 class TaubsiUser:
     def __init__(self):
