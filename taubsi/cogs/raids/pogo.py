@@ -126,7 +126,9 @@ class BaseRaid:
             mon_size = (105, 105)
             shiny = ""
             if random.randint(1, 30) == 20:
-                url = self.boss_url.replace(".png", "_shiny.png")
+                # hotfix
+                if self.boss.id not in (888, 889):
+                    url = self.boss_url.replace(".png", "_shiny.png")
             else:
                 url = self.boss_url
 
