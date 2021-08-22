@@ -129,6 +129,8 @@ class BaseRaid:
                 # hotfix
                 if self.boss.id not in (888, 889):
                     url = self.boss_url.replace(".png", "_shiny.png")
+                else:
+                    url = self.boss_url
             else:
                 url = self.boss_url
 
