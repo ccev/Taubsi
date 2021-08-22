@@ -99,6 +99,14 @@ class BaseRaid:
                 f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
                 f"{self.boss.asset}.png"
             )
+
+            # hotfix
+            if self.boss.id == 888:
+                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
+                                "Addressable%20Assets/pm888.fHERO.icon.png"
+            elif self.boss.id == 889:
+                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
+                                "Addressable%20Assets/pm889.fHERO.icon.png"
         else:
             self.boss_url = ""
 
