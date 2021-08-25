@@ -1,7 +1,7 @@
 from taubsi.utils.enums import Team
 from taubsi.utils.logging import logging
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.emotes import *
+from config.emotes import *
 
 log = logging.getLogger("Raids")
 
