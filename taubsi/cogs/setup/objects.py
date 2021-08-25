@@ -5,6 +5,7 @@ from taubsi.utils.logging import logging
 
 log = logging.getLogger("Setup")
 
+
 def name_level_from_nick(nick):
     match = re.match(r"^\[([0-5][0-9]|[0-9])\] .*", nick)
     if match:
@@ -15,6 +16,7 @@ def name_level_from_nick(nick):
         level = None
         name = nick
     return level, name
+
 
 class TaubsiUser:
     def __init__(self):
@@ -32,7 +34,8 @@ class TaubsiUser:
         self.name = name
     
     async def from_command(self, member):
-        result = await tb.intern_queries.execute(f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
+        result = await tb.intern_queries.execute(
+            f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
         self.user_id = member.id
         if not result:
             nick = member.display_name

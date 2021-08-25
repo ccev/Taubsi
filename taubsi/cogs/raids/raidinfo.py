@@ -8,8 +8,8 @@ from taubsi.cogs.raids.raidmessage import GMAPS_LINK, AMAPS_LINK, RaidMessage
 from taubsi.cogs.raids.pogo import ScannedRaid
 
 
-TIMEFORMAT_SHORT = "%H:%M"
-TIMEFORMAT_LONG = "%H:%M:%S"
+TIMEFORMAT_SHORT = tb.translate("timeformat_short")
+TIMEFORMAT_LONG = tb.translate("timeformat_long")
 
 
 class InfoTimeButton(discord.ui.Button):
@@ -120,12 +120,12 @@ class RaidInfo:
         self.embed.title = self.raid.name
 
         if self.hatched:
-            self.embed.title += " Raid"
+            self.embed.title += " " + tb.translate("Raid")
 
             self.embed.description = (
-                f"Bis **{formatted_end}** <t:{self.raid.end.int_timestamp}:R>\n"
+                f"{tb.translate('Bis')} **{formatted_end}** <t:{self.raid.end.int_timestamp}:R>\n"
                 f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
-                f"Attacken: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
+                f"{tb.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
             )
             self.embed.set_thumbnail(url=self.raid.boss_url)
 
@@ -133,13 +133,13 @@ class RaidInfo:
             formatted_start = self.raid.start.to("local").strftime(TIMEFORMAT_LONG)
 
             self.embed.description = (
-                f"Schlüpft <t:{self.raid.start.int_timestamp}:R>\n"
-                f"Raidzeit: **{formatted_start} – {formatted_end}**"
+                f"{tb.translate('Hatches')} <t:{self.raid.start.int_timestamp}:R>\n"
+                f"{tb.translate('Raidzeit')}: **{formatted_start} – {formatted_end}**"
             )
             self.embed.set_thumbnail(url=self.raid.egg_url)
 
             if self.raid.boss:
-                self.embed.title += " Ei"
+                self.embed.title += " " + tb.translate("Egg")
 
         self.embed.description += "\n\n" + (
             f"[Google Maps]({GMAPS_LINK.format(self.gym.lat, self.gym.lon)}) | "

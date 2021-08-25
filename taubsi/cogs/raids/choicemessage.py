@@ -2,6 +2,7 @@ import discord
 
 from taubsi.utils.logging import logging
 from taubsi.cogs.raids.raidmessage import RaidMessage
+from taubsi.taubsi_objects import tb
 
 log = logging.getLogger("Raids")
 
@@ -36,12 +37,8 @@ class ChoiceMessage:
         self.cog = cog
 
     def make_embed(self):
-        self.embed.title = f"Es wurden {len(self.gyms)} Arenen gefunden"
-        self.embed.description = (
-            "Bitte wähle die, an der der Raid stattfinden soll.\n\n"
-            "*Falls du die Optionen nicht siehst, update bitte Discord oder setze den Raid "
-            "mit einem eindeutigen Namen neu an.*"
-        )
+        self.embed.title = tb.translate("choice_x_gyms").format(len(self.gyms))
+        self.embed.description = tb.translate("choice_please_choose")
 
     async def send_message(self):
         self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))

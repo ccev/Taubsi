@@ -36,7 +36,7 @@ class Setup(commands.Cog):
     @commands.check(is_guild)
     async def level(self, ctx, level: int):
         self.__check_level(level)
-        await self.reponse(ctx, f"✅ Du bist nun Level {level}")
+        await self.reponse(ctx, tb.translate("setup_set_level").format(level))
         user = TaubsiUser()
         await user.from_command(ctx.author)
         user.level = level
@@ -50,7 +50,7 @@ class Setup(commands.Cog):
 
         level = user.level + 1
         self.__check_level(level)
-        await self.reponse(ctx, f"🆙 Glückwunsch! Du bist nun Level {level}")
+        await self.reponse(ctx, tb.translate("setup_level_up").format(level))
 
         user.level = level
         await user.update()
@@ -58,7 +58,7 @@ class Setup(commands.Cog):
     @commands.command(aliases=["n"])
     @commands.check(is_guild)
     async def name(self, ctx, *, name):
-        await self.reponse(ctx, f"✅ Dein Name ist jetzt {name}")
+        await self.reponse(ctx, tb.translate("setup_name").format(name))
         user = TaubsiUser()
         await user.from_command(ctx.author)
         user.name = name
@@ -91,7 +91,7 @@ class Setup(commands.Cog):
             await user.from_command(ctx.author)
             user.friendcode = int(arg)
             await user.update()
-            await self.reponse(ctx, f"✅ Dein Trainercode ist nun gespeichert")
+            await self.reponse(ctx, tb.translate("tb_saved_code"))
 
     def __team_aliases(self, team_name):
         aliases = {
@@ -125,7 +125,8 @@ class Setup(commands.Cog):
             raise NoTeam
         user.team = team
         await user.update()
-        await self.reponse(ctx, f"✅ Du bist jetzt in Team {team.name.lower().capitalize()}")
+        await self.reponse(ctx, tb.translate("setup_team").format(team.name.lower().capitalize()))
+
 
 def setup(bot):
     bot.add_cog(Setup(bot))

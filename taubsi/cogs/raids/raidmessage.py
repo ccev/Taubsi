@@ -14,18 +14,10 @@ from taubsi.cogs.raids.pogo import Gym, BaseRaid, ScannedRaid
 
 log = logging.getLogger("Raids")
 
-timeformat = "%H:%M"
+timeformat = tb.translate("timeformat_short")
 
 TOTAL_LIMIT = 20
 REMOTE_LIMIT = 10
-
-RAID_WARNINGS = {
-    "TOO_MANY_REMOTE": f"‼️ An einem Raid können maximal {REMOTE_LIMIT} Fern Raider teilnehmen. Passt darauf auf und sprecht euch ab!",
-    "TOO_MANY_TOTAL": f"‼️ An einem Raid können maximal {TOTAL_LIMIT} Spieler teilnehmen. Passt darauf auf und sprecht euch ab!",
-    "TOO_MANY_BOTH": f"‼️ An einem Raid können maximal {TOTAL_LIMIT} Spieler und {REMOTE_LIMIT} Fern Raider teilnehmen. Passt darauf auf und sprecht euch ab!",
-    "IS_LATE": "‼️ Es kommt jemand maximal fünf Minuten zu spät. Wartet auf die Person und sprecht euch ggf. ab!",
-    "OTHER_TIMES": "‼️ Dieser Raid wurde bereits zu {TIME} Uhr angesetzt"
-}
 
 GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
 AMAPS_LINK = "https://maps.apple.com/maps?daddr={},{}"
@@ -183,7 +175,7 @@ class RaidMessage:
         self.channel_settings = tb.raid_channels[self.channel_id]
 
         self.author_id = interaction.user.id
-        self.footer_prefix = "Angesetzt von " + interaction.user.display_name + "\n"
+        self.footer_prefix = tb.translate("Scheduled_by").format(interaction.user.display_name) + "\n"
         self.raid = raid
         await self.send_message()
 
@@ -301,7 +293,7 @@ class RaidMessage:
             if control == "late":
                 self.lates.remove(payload.user_id)
                 if member.amount > 0:
-                    await self.notify(f"{member.member.display_name} kommt doch pünktlich", member.member)
+                    await self.notify(tb.translate("notify_on_time").format(member.member.display_name), member.member)
             elif control == "remote":
                 self.remotes.remove(payload.user_id)
 
@@ -348,7 +340,11 @@ class RaidMessage:
                     level = "MEGA"
                 else:
                     level = self.raid.level
-                url = f"https://fight.pokebattler.com/raids/defenders/{pb_mon_name}/levels/RAID_LEVEL_{level}/attackers/levels/35/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE&randomAssistants=-1&includeLegendary=true&includeShadow=false&attackerTypes=POKEMON_TYPE_ALL"
+                url = f"https://fight.pokebattler.com/raids/defenders/{pb_mon_name}/levels/RAID_LEVEL_{level}/" \
+                      f"attackers/levels/35/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC" \
+                      f"?sort=ESTIMATOR&weatherCondition=NO_WEATHER&dodgeStrategy=DODGE_REACTION_TIME" \
+                      f"&aggregation=AVERAGE&randomAssistants=-1&includeLegendary=true&includeShadow=false" \
+                      f"&attackerTypes=POKEMON_TYPE_ALL"
                 pb_data_raw = await asyncget(url)
                 pb_data_raw = json.loads(pb_data_raw.decode("utf-8"))
                 pb_data = {}
@@ -409,13 +405,18 @@ class RaidMessage:
         # difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.text = f"Start: **{self.formatted_start}** " + f"<t:{self.start_time.int_timestamp}:R>" + "\n\n"
+        self.text = tb.translate("Start") + f": **{self.formatted_start}** " \
+                    + f"<t:{self.start_time.int_timestamp}:R>" + "\n\n"
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if isinstance(self.raid, ScannedRaid):
             if self.raid.moves[0]:
-                self.text += "Attacken: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves]) + "\n"
-            self.text += f"Raidzeit: **{self.raid.start.to('local').strftime(timeformat)}** – **{self.raid.end.to('local').strftime(timeformat)}**\n"
+                self.text += tb.translate("Moves") + ": " \
+                             + " | ".join(["**" + m.name + "**" for m in self.raid.moves]) + "\n"
+
+            format_start = self.raid.start.to('local').strftime(timeformat)
+            format_end = self.raid.end.to('local').strftime(timeformat)
+            self.text += tb.translate("Raidzeit") + f": **{format_start}** – **{format_end}**\n"
         self.make_warnings()
 
     async def set_image(self):
@@ -424,7 +425,7 @@ class RaidMessage:
         await self.edit_message()
 
     def make_footer(self, amount: int = 0):
-        self.embed.set_footer(text=self.footer_prefix + f"Insgesamt: {amount}")
+        self.embed.set_footer(text=self.footer_prefix + tb.translate("Total") + f": {amount}")
 
     async def make_member_fields(self):
         self.embed.clear_fields()
@@ -458,14 +459,14 @@ class RaidMessage:
         remote_cap = (total_remote > REMOTE_LIMIT - 2)
         total_cap = (self.total_amount > TOTAL_LIMIT - 2)
         if remote_cap and total_cap:
-            self.warnings.add(RAID_WARNINGS["TOO_MANY_BOTH"])
+            self.warnings.add(tb.translate("warn_too_many_both").format(TOTAL_LIMIT, REMOTE_LIMIT))
         elif remote_cap:
-            self.warnings.add(RAID_WARNINGS["TOO_MANY_REMOTE"])
+            self.warnings.add(tb.translate("warn_too_many_remote").format(REMOTE_LIMIT))
         elif total_cap:
-            self.warnings.add(RAID_WARNINGS["TOO_MANY_TOTAL"])
+            self.warnings.add(tb.translate("warn_too_many_total").format(TOTAL_LIMIT))
 
         if [m for m in self.members if m.is_late]:
-            self.warnings.add(RAID_WARNINGS["IS_LATE"])
+            self.warnings.add(tb.translate("warn_is_late"))
 
         self.make_warnings()
         await self.edit_message()

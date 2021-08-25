@@ -6,7 +6,7 @@ from taubsi.utils.matcher import get_matches
 from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
 from config.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
-from taubsi.cogs.raids.raidmessage import RaidMessage, RAID_WARNINGS
+from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.cogs.raids.choicemessage import ChoiceMessage
 from taubsi.cogs.raids.pogo import BaseRaid
 
@@ -45,7 +45,7 @@ class RaidCog(commands.Cog):
     async def create_raid(self, raidmessage):
         for other_message in self.raidmessages.values():
             if other_message.gym.id == raidmessage.gym.id:
-                warning = RAID_WARNINGS["OTHER_TIMES"].format(TIME=other_message.formatted_start)
+                warning = tb.translate("warn_other_times").format(other_message.formatted_start)
                 raidmessage.static_warnings.add(warning)
                 raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
@@ -182,7 +182,7 @@ class RaidCog(commands.Cog):
                     self.raidmessages.pop(message.id)
                 if raidmessage.start_time.shift(minutes=-5) < arrow.now() < raidmessage.start_time.shift(minutes=-4):
                     if not raidmessage.notified_5_minutes:
-                        await raidmessage.notify("‼️ Der Raid startet in 5 Minuten")
+                        await raidmessage.notify(tb.translate("notify_raid_starts"))
                         raidmessage.notified_5_minutes = True
 
                 if isinstance(raidmessage.raid, BaseRaid) or not raidmessage.raid.moves[0]:
@@ -192,7 +192,7 @@ class RaidCog(commands.Cog):
                     if updated_raid.compare != raidmessage.raid.compare:
                         log.info(f"Raid Boss at {raidmessage.message_id} changed. Updating")
                         if not raidmessage.raid.boss and updated_raid.boss:
-                            await raidmessage.notify(f"🐣 Es ist ein {updated_raid.boss.name} geschlüpft")
+                            await raidmessage.notify(tb.translate("notify_hatched").format(updated_raid.boss.name))
                         
                         raidmessage.raid = updated_raid
                         await raidmessage.make_base_embed()

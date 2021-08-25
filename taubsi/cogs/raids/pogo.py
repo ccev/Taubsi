@@ -174,7 +174,7 @@ class BaseRaid:
         final_img = Image.alpha_composite(bg, monbg)
 
         with BytesIO() as stream:
-            final_img.save(stream, 'PNG')
+            final_img.save(stream, "PNG")
             stream.seek(0)
             image_msg = await tb.trash_channel.send(file=discord.File(stream, filename="raid-icon.png"))
             final_link = image_msg.attachments[0].url

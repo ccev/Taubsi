@@ -6,5 +6,6 @@
     "db_user": "user",
     "db_pass": "pass",
     "db_dbname": "mad",
-    "db_taubsiname": "taubsi"
+    "db_taubsiname": "taubsi",
+    "language": "german"
 }
