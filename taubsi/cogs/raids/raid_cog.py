@@ -1,12 +1,14 @@
 import re
+
+from typing import Dict, List
 from dateutil import tz
 
 from taubsi.utils.logging import logging
 from taubsi.utils.matcher import get_matches
 from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
-from taubsi.cogs.raids.raidmessage import RaidMessage, RAID_WARNINGS
+from config.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
+from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.cogs.raids.choicemessage import ChoiceMessage
 from taubsi.cogs.raids.pogo import BaseRaid
 
@@ -21,7 +23,7 @@ log = logging.getLogger("Raids")
 class RaidCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.raidmessages = {}
+        self.raidmessages: Dict[int, RaidMessage] = {}
         self.choicemessages = {}
 
     async def final_init(self):
@@ -33,8 +35,7 @@ class RaidCog(commands.Cog):
             """
             raidmessages_db = await tb.intern_queries.execute(rm_query)
             for entry in raidmessages_db:
-                raidmessage = RaidMessage()
-                await raidmessage.from_db(*entry)
+                raidmessage = await RaidMessage.from_db(*entry)
                 self.raidmessages[raidmessage.message.id] = raidmessage
         except Exception as e:
             log.error("Error while querying ongoing raids. Existing raids may not be responsive anymore")
@@ -42,10 +43,10 @@ class RaidCog(commands.Cog):
 
         self.raid_loop.start()
 
-    async def create_raid(self, raidmessage):
+    async def create_raid(self, raidmessage: RaidMessage):
         for other_message in self.raidmessages.values():
             if other_message.gym.id == raidmessage.gym.id:
-                warning = RAID_WARNINGS["OTHER_TIMES"].format(TIME=other_message.formatted_start)
+                warning = tb.translate("warn_other_times").format(other_message.formatted_start)
                 raidmessage.static_warnings.add(warning)
                 raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
@@ -66,7 +67,7 @@ class RaidCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if not message.channel.id in tb.raid_channels.keys():
+        if message.channel.id not in tb.raid_channels.keys():
             return
         
         log.info(f"Trying to create a Raid Message from {message.id}")
@@ -75,7 +76,7 @@ class RaidCog(commands.Cog):
 
         possible_times = []
         for text in message.content.split(" "):
-            times = re.split(":|\.|;|,", text)
+            times = re.split("[:.;,]", text)
             if [n for n in times if not n.isdigit()]:
                 continue
 
@@ -123,8 +124,7 @@ class RaidCog(commands.Cog):
 
         gym = match_gym(gym_names[0][0])
 
-        raidmessage = RaidMessage()
-        await raidmessage.from_command(gym, raid_start, message)
+        raidmessage = await RaidMessage.from_command(gym, raid_start, message)
         await self.create_raid(raidmessage)
     
     @commands.Cog.listener()
@@ -146,43 +146,31 @@ class RaidCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        raidmessage = self.raidmessages.get(message.id)
+        raidmessage: RaidMessage = self.raidmessages.get(message.id)
         if not raidmessage:
             return
-        log.info(f"Gracefully deleting Raid at {raidmessage.gym.name}, {raidmessage.start_time}, {raidmessage.message_id}")
+        log.info("Gracefully deleting Raid at", raidmessage.gym.name, raidmessage.start_time, raidmessage.message.id)
         try:
             await raidmessage.init_message.delete()
-        except:
+        except Exception:
             pass
-        await raidmessage.delete_role()
+        await raidmessage.role.delete()
         self.raidmessages.pop(message.id)
-        await tb.intern_queries.execute(f"delete from raids where message_id = {raidmessage.message.id}", result=False, commit=True)
+        await tb.intern_queries.execute(f"delete from raids where message_id = {message.id}", result=False, commit=True)
 
     @tasks.loop(seconds=10)   
     async def raid_loop(self):
-        """for channel_id in tb.raid_channels:
-            channel = self.bot.get_channel(channel_id)
-            messages = await channel.history(after=arrow.utcnow().shift(hours=-2).naive, oldest_first=False).flatten()
-            for message in messages:
-                if not message.author.id == self.bot.user.id:
-                    continue
-                raidmessage = self.raidmessages.get(message.id)
-                if raidmessage is None:
-                    continue
-                if len(message.reactions) == 0:
-                    continue"""
-        
-        raidmessages = self.raidmessages.copy().values()
+        raidmessages: List[RaidMessage] = list(self.raidmessages.copy().values())
         for raidmessage in raidmessages:
             try:
                 message = raidmessage.message
 
-                if arrow.now() > raidmessage.start_time.shift(minutes=1):
+                if arrow.now() > raidmessage.start_time.shift(minutes=6):
                     await raidmessage.end_raid()
                     self.raidmessages.pop(message.id)
                 if raidmessage.start_time.shift(minutes=-5) < arrow.now() < raidmessage.start_time.shift(minutes=-4):
                     if not raidmessage.notified_5_minutes:
-                        await raidmessage.notify("‼️ Der Raid startet in 5 Minuten")
+                        await raidmessage.notify(tb.translate("notify_raid_starts"))
                         raidmessage.notified_5_minutes = True
 
                 if isinstance(raidmessage.raid, BaseRaid) or not raidmessage.raid.moves[0]:
@@ -190,9 +178,9 @@ class RaidCog(commands.Cog):
                         continue
                     updated_raid = await raidmessage.gym.get_active_raid(raidmessage.raid.level)
                     if updated_raid.compare != raidmessage.raid.compare:
-                        log.info(f"Raid Boss at {raidmessage.message_id} changed. Updating")
+                        log.info(f"Raid Boss at {raidmessage.message.id} changed. Updating")
                         if not raidmessage.raid.boss and updated_raid.boss:
-                            await raidmessage.notify(f"🐣 Es ist ein {updated_raid.boss.name} geschlüpft")
+                            await raidmessage.notify(tb.translate("notify_hatched").format(updated_raid.boss.name))
                         
                         raidmessage.raid = updated_raid
                         await raidmessage.make_base_embed()

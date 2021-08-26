@@ -1,5 +1,7 @@
+from __future__ import annotations
 import random
 from io import BytesIO
+from typing import Union
 
 import discord
 import arrow
@@ -24,7 +26,7 @@ class Gym:
 
         self.active_raid = None
 
-    async def get_active_raid(self, level):
+    async def get_active_raid(self, level: int) -> Union[BaseRaid, ScannedRaid]:
         query = (
             f"select level, pokemon_id, form, costume, start, end, move_1, move_2, evolution "
             f"from raid "
@@ -99,6 +101,14 @@ class BaseRaid:
                 f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
                 f"{self.boss.asset}.png"
             )
+
+            # hotfix
+            if self.boss.id == 888:
+                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
+                                "Addressable%20Assets/pm888.fHERO.icon.png"
+            elif self.boss.id == 889:
+                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
+                                "Addressable%20Assets/pm889.fHERO.icon.png"
         else:
             self.boss_url = ""
 
@@ -118,7 +128,11 @@ class BaseRaid:
             mon_size = (105, 105)
             shiny = ""
             if random.randint(1, 30) == 20:
-                url = self.boss_url.replace(".png", "_shiny.png")
+                # hotfix
+                if self.boss.id not in (888, 889):
+                    url = self.boss_url.replace(".png", "_shiny.png")
+                else:
+                    url = self.boss_url
             else:
                 url = self.boss_url
 
@@ -162,7 +176,7 @@ class BaseRaid:
         final_img = Image.alpha_composite(bg, monbg)
 
         with BytesIO() as stream:
-            final_img.save(stream, 'PNG')
+            final_img.save(stream, "PNG")
             stream.seek(0)
             image_msg = await tb.trash_channel.send(file=discord.File(stream, filename="raid-icon.png"))
             final_link = image_msg.attachments[0].url

@@ -34,7 +34,8 @@ class TaubsiUser:
         self.name = name
     
     async def from_command(self, member):
-        result = await tb.intern_queries.execute(f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
+        result = await tb.intern_queries.execute(
+            f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
         self.user_id = member.id
         if not result:
             nick = member.display_name

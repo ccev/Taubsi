@@ -1,11 +1,16 @@
 from taubsi.utils.enums import Team
 from taubsi.utils.logging import logging
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.emotes import *
+from config.emotes import *
 
 log = logging.getLogger("Raids")
 
+
 class RaidMember:
+    is_late: bool
+    is_remote: bool
+    amount: int
+
     def __init__(self, raidmessage, user_id, amount):
         self.raidmessage = raidmessage
 
@@ -18,7 +23,7 @@ class RaidMember:
                 self.team = team
                 break
 
-        if "raidnachrichten" in roles:
+        if tb.translate("notify_role_name") in roles:
             self.is_subscriber = True
         else:
             self.is_subscriber = False

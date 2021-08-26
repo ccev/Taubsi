@@ -3,6 +3,8 @@ import discord
 from pogodata import PogoData
 from discord.ext import commands
 from .queries import Queries
+from .translator import Translator
+
 
 class TaubsiVars:
     def __init__(self):
@@ -13,9 +15,13 @@ class TaubsiVars:
         self.bot = commands.Bot(command_prefix="!", case_insensitive=1, intents=intents)
         self.queries = Queries(self.config, self.config["db_dbname"])
         self.intern_queries = Queries(self.config, self.config["db_taubsiname"])
+
+        translator_ = Translator(self.config.get("language", "german"))
+        self.translate = translator_.translate
         self.reload_pogodata()
 
     def reload_pogodata(self):
-        self.pogodata = PogoData("german")
+        self.pogodata = PogoData(self.config.get("language", "german"))
+
 
 tb = TaubsiVars()
