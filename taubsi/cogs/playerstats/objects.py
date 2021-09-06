@@ -3,6 +3,7 @@ from typing import Optional, Dict, List, Union
 from enum import Enum
 
 import discord
+from discord.ext import commands
 
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.playerstats.errors import *
@@ -133,19 +134,21 @@ class Player:
         )
 
     @classmethod
-    async def from_command(cls, player, guild: discord.Guild):
+    async def from_command(cls, player, ctx: commands.Context):
         if isinstance(player, discord.Member):
             ign = await tb.intern_queries.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}")
             if not ign:
+                if player.id == ctx.author.id:
+                    raise SelfNotLinked
                 raise UserNotLinked
             ign = ign[0][0]
         else:
             user_id = await tb.intern_queries.execute(f"SELECT user_id FROM users WHERE ingame_name = '{player}'")
             if not user_id:
-                raise UserNotLinked
+                raise PlayerNotLinked
             user_id = user_id[0][0]
             ign = player
-            player = await guild.fetch_member(int(user_id))
+            player = await ctx.guild.fetch_member(int(user_id))
 
         player_ = cls(ign, player)
         await player_.get_stats()
@@ -227,6 +230,8 @@ class StatSelect(discord.ui.Select):
             self.options.append(category)
 
     async def callback(self, interaction: discord.Interaction):
+        if self.stat_view.author_id != interaction.user.id:
+            return
         category = self.categories[self.values[0]]
         embed = self.stat_view.get_embed(category)
         for option in self.options:
@@ -238,27 +243,41 @@ class StatSelect(discord.ui.Select):
 
 
 class StatView(discord.ui.View):
-    def __init__(self, player: Player):
+    def __init__(self, player: Player, author_id: int):
         super().__init__()
         self.player = player
+        self.author_id = author_id
         self.stat_select = StatSelect(self)
         self.add_item(self.stat_select)
 
-    def get_embed(self, category: _StatCategory):
+    def _stat_text(self, stat_enum: Stat):
+        stat_id = stat_enum.value
+        stat_name = tb.translate("stats_" + stat_id)
+        stat_value = self.player.stats.get(stat_id)
+        if not stat_value:
+            return ""
+        return f"{stat_name}: **{stat_value:,}**\n".replace(",", tb.translate("dot"))
+
+    def _base_embed(self):
         embed = discord.Embed()
         embed.title = tb.translate("stats_title").format(self.player.ign)
         embed.colour = TEAM_COLORS[self.player.team.value]
         embed.set_thumbnail(url=f"https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/team/"
                                 f"{self.player.team.value}.png")
+        return embed
+
+    def get_gym_embed(self):
+        embed = self._base_embed()
+        embed.description = ""
+        for stat in [Stat.XP, Stat.CAUGHT_POKEMON, Stat.TOTAL_BATTLES_WON]:
+            embed.description += self._stat_text(stat)
+
+    def get_embed(self, category: _StatCategory):
+        embed = self._base_embed()
         for title, stat_list in category.stats.items():
             text = ""
             for stat_enum in stat_list:
-                stat_id = stat_enum.value
-                stat_name = tb.translate("stats_" + stat_id)
-                stat_value = self.player.stats.get(stat_id)
-                if not stat_value:
-                    continue
-                text += f"{stat_name}: **{stat_value:,}**\n".replace(",", tb.translate("dot"))
+                text += self._stat_text(stat_enum)
 
             if title is None:
                 embed.description = text

@@ -9,7 +9,7 @@ from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
 from taubsi.utils.enums import Team
-from taubsi.cogs.playerstats.objects import Player, StatView
+from taubsi.cogs.playerstats.objects import Player, StatView, DataLevel
 from taubsi.cogs.playerstats.errors import *
 from taubsi.utils.errors import command_error
 
@@ -66,11 +66,16 @@ class PlayerStats(commands.Cog):
     async def stats(self, ctx: commands.Context, player: Optional[Union[discord.Member, str]]):
         if not player:
             player = ctx.author
-        player = await Player.from_command(player, ctx.guild)
-        view = StatView(player)
-        embed = view.get_embed(list(view.stat_select.categories.values())[0])
-
-        await ctx.send(embed=embed, view=view)
+        player = await Player.from_command(player, ctx)
+        view = StatView(player, ctx.author.id)
+        if player.data_level.value >= DataLevel.FRIEND.value:
+            embed = view.get_embed(list(view.stat_select.categories.values())[0])
+            await ctx.send(embed=embed, view=view)
+            return
+        elif player.data_level.value >= DataLevel.GYM.value:
+            embed = view.get_gym_embed()
+            await ctx.send(embed=embed)
+            return
 
 
 def setup(bot):
