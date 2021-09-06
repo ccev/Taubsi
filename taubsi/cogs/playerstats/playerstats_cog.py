@@ -9,7 +9,7 @@ from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
 from taubsi.utils.enums import Team
-from taubsi.cogs.playerstats.objects import Player
+from taubsi.cogs.playerstats.objects import Player, StatView
 from taubsi.cogs.playerstats.errors import *
 from taubsi.utils.errors import command_error
 
@@ -67,8 +67,10 @@ class PlayerStats(commands.Cog):
         if not player:
             player = ctx.author
         player = await Player.from_command(player, ctx.guild)
+        view = StatView(player)
+        embed = view.get_embed(list(view.stat_select.categories.values())[0])
 
-        await ctx.send(embed=discord.Embed(description=player.make_text()))
+        await ctx.send(embed=embed, view=view)
 
 
 def setup(bot):

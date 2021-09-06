@@ -35,5 +35,6 @@
     "error_no_team": "❌ Couldn't find this team. Please try `valor`, `mystic` or `instinct` instead",
     "error_no_code_set": "❌ This player didn't set a trainercode yet",
     "error_wrong_code_format": "❌ I could not recognize this format. Please try `1234 1234 1234` instead",
-    "error_name_not_scanned": "😦 I was not able to find your name. Either you didn't deploy any Pokémon recently or you mistyped it"
+    "error_name_not_scanned": "😦 I was not able to find your name. Either you didn't deploy any Pokémon recently or you mistyped it",
+    "error_user_not_linked": "❌ This player hasn't linked a Pokémon GO profile yet"
 }

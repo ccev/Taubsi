@@ -1,15 +1,20 @@
 import aiomysql
 
-class Queries():
+
+class Queries:
     def __init__(self, config, dbname):
         self.config = config
         self.dbname = dbname
         
-    async def execute(self, query: str, result=True, commit=False, args=[]):
+    async def execute(self, query: str, result=True, commit=False, args=[], as_dict=False):
+        if as_dict:
+            conn_args = (aiomysql.DictCursor, )
+        else:
+            conn_args = ()
         r = None
         pool = await aiomysql.create_pool(host=self.config["db_host"], port=self.config["db_port"], user=self.config["db_user"], password=self.config["db_pass"], db=self.dbname)
         async with pool.acquire() as conn:
-            async with conn.cursor() as cursor:
+            async with conn.cursor(*conn_args) as cursor:
                 await cursor.execute(query, args)
                 if result:
                     r = await cursor.fetchall()

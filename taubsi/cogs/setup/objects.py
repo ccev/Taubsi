@@ -1,3 +1,4 @@
+from typing import Optional
 import re
 from taubsi.taubsi_objects import tb
 from taubsi.utils.enums import Team
@@ -19,12 +20,11 @@ def name_level_from_nick(nick):
 
 
 class TaubsiUser:
-    def __init__(self):
-        self.user_id = 0
-        self.name = ""
-        self.team = Team(0)
-        self.level = None
-        self.friendcode = None
+    user_id: int
+    team: Team
+    level: Optional[int]
+    friendcode: Optional[int]
+    name: str
 
     def from_db(self, user_id, team_id=0, level=None, friendcode=None, name=""):
         self.user_id = user_id

@@ -26,6 +26,7 @@ async def load_servers():
     tb.raid_channels = {}
     tb.info_channels = {}
     tb.guilds = []
+    tb.guild_ids = []
 
     for settings in raw_servers:
         for fence in raw_fences:
@@ -54,6 +55,7 @@ async def load_servers():
 
         guild = await tb.bot.fetch_guild(settings["id"])
         tb.guilds.append(guild)
+        tb.guild_ids.append(guild.id)
         
         
 
