@@ -271,6 +271,7 @@ class StatView(discord.ui.View):
         embed.description = ""
         for stat in [Stat.XP, Stat.CAUGHT_POKEMON, Stat.TOTAL_BATTLES_WON]:
             embed.description += self._stat_text(stat)
+        return embed
 
     def get_embed(self, category: _StatCategory):
         embed = self._base_embed()
