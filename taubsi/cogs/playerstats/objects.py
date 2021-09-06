@@ -120,7 +120,7 @@ class Player:
         self.team = Team(self.stats["team"])
         if self.stats["stops_spun"]:
             self.data_level = DataLevel.FRIEND
-        elif self.stats["caught_mons"]:
+        elif self.stats["caught_pokemon"]:
             self.data_level = DataLevel.RAID
         elif self.stats["xp"]:
             self.data_level = DataLevel.GYM
