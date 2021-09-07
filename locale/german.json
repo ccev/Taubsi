@@ -40,7 +40,7 @@
     "error_player_not_linked": "❌ Dieser Spieler hat sich noch nicht mit einem Discord Account gelinkt",
     "error_self_not_linked": "❌ Benutze zuerst `!link [Trainername]` um dich mit einem Pokémon GO Account zu linken",
     "error_missing_name": "❌ Du musst noch den Trainernamen angeben! `!link [Trainername]`",
-    "days": "Tage",
+    "days": "Tagen",
     "hours": "Stunden",
     "minutes": "Minuten",
     "dot": ".",
