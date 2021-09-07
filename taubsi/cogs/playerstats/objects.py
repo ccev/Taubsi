@@ -186,7 +186,7 @@ class Player:
 class _StatCategory(discord.SelectOption):
     name: str
     id: str
-    stats: Dict[str, List[Stat]]
+    stats: Dict[str, List[Badge]]
     
     def __init__(self):
         self.id = self.name
@@ -278,14 +278,15 @@ class StatView(discord.ui.View):
         self.stat_select = StatSelect(self)
         self.add_item(self.stat_select)
 
-    def _stat_text(self, stat_enum: Badge):
+    def _stat_text(self, stat_enum: Badge, badge_levels=False):
         stat_id = stat_enum.value
         stat_value = self.player.stats.get(stat_id)
         if not stat_value:
             return ""
         stat_name = tb.translate("stats_" + stat_id)
-        stat_emoji = stat_enum.get_tier_prefix(stat_value)
-        stat_suffix = stat_enum.next_target(stat_value)
+        if badge_levels:
+            stat_emoji = stat_enum.get_tier_prefix(stat_value)
+            stat_suffix = stat_enum.next_target(stat_value)
         return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", tb.translate("dot"))
 
     def _base_embed(self):
@@ -313,7 +314,7 @@ class StatView(discord.ui.View):
         for title, stat_list in category.stats.items():
             text = ""
             for stat_enum in stat_list:
-                text += self._stat_text(stat_enum)
+                text += self._stat_text(stat_enum, badge_levels=True)
 
             if title is None:
                 embed.description = text
