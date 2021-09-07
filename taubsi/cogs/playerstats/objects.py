@@ -115,7 +115,7 @@ class Player:
         result = await tb.queries.execute(
             "SELECT team, level, last_seen AS last_seen, {} "
             "FROM cev_trainer "
-            "WHERE LOWER(name) = '{}'".format(fetch_stats, self.ign.lower()),
+            "WHERE name = '{}'".format(fetch_stats, self.ign),
             as_dict=True
         )
         self.stats = result[0]
@@ -148,11 +148,14 @@ class Player:
                 raise UserNotLinked
             ign = ign[0][0]
         else:
-            user_id = await tb.intern_queries.execute(f"SELECT user_id FROM users WHERE ingame_name = '{player}'")
-            if not user_id:
+            if any(not c.isalnum() for c in player):
                 raise PlayerNotLinked
-            user_id = user_id[0][0]
-            ign = player
+            result = await tb.intern_queries.execute(f"SELECT user_id, ingame_name FROM users "
+                                                      f"WHERE ingame_name = '{player}'")
+            if not result:
+                raise PlayerNotLinked
+            user_id = result[0][0]
+            ign = result[0][1]
             player = await ctx.guild.fetch_member(int(user_id))
 
         player_ = cls(ign, player)
