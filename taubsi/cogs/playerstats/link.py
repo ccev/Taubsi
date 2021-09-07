@@ -20,10 +20,13 @@ class LinkView(discord.ui.View):
         if interaction.user.id != self.author.id or not self.interacted:
             return
         self.interacted = True
-        user = TaubsiUser()
-        await user.from_command(self.author)
-        user.team, user.level = Team(self.ingame[0][1]), self.ingame[0][2]
-        await user.update()
+        try:
+            user = TaubsiUser()
+            await user.from_command(self.author)
+            user.team, user.level = Team(self.ingame[0][1]), self.ingame[0][2]
+            await user.update()
+        except:
+            pass
 
         name = self.ingame[0][0]
         keyvals = {
