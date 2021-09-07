@@ -103,4 +103,3 @@ class TaubsiUser:
             keyvals["name"] = self.name
         
         await tb.intern_queries.insert("users", keyvals)
-        

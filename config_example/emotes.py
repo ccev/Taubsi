@@ -29,3 +29,11 @@ DIFFICULTY_COLORS = {
     3: 7909721,
     4: 5614830
 }
+
+BADGE_LEVELS = {
+    0: "<:bl:123>",
+    1: "<:bronze:123>",
+    2: "<:silver:123>",
+    3: "<:gold:123>",
+    4: "<:platinum:123>"
+}
