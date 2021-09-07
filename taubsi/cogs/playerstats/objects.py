@@ -66,7 +66,7 @@ class Player:
     async def from_command(cls, player, ctx: commands.Context):
         if isinstance(player, discord.Member):
             ign = await tb.intern_queries.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}")
-            if not ign[0]:
+            if not ign or not ign[0] or not ign[0][0]:
                 if player.id == ctx.author.id:
                     raise SelfNotLinked
                 raise UserNotLinked

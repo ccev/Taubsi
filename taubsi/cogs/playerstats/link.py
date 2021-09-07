@@ -17,7 +17,7 @@ class LinkView(discord.ui.View):
 
     @discord.ui.button(label=tb.translate("link_accept"), style=discord.ButtonStyle.green)
     async def accept(self, _, interaction: discord.Interaction):
-        if interaction.user.id != self.author.id or not self.interacted:
+        if interaction.user.id != self.author.id or self.interacted:
             return
         self.interacted = True
         try:
@@ -42,7 +42,7 @@ class LinkView(discord.ui.View):
 
     @discord.ui.button(label=tb.translate("link_deny"), style=discord.ButtonStyle.red)
     async def deny(self, _, interaction: discord.Interaction):
-        if interaction.user.id != self.author.id or not self.interacted:
+        if interaction.user.id != self.author.id or self.interacted:
             return
         self.interacted = True
         embed = discord.Embed(description=tb.translate("link_denied"), color=3092790)
