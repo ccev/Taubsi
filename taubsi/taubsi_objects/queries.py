@@ -6,13 +6,18 @@ class Queries:
         self.config = config
         self.dbname = dbname
         
-    async def execute(self, query: str, result=True, commit=False, args=[], as_dict=False):
+    async def execute(self, query: str, result=True, commit=False, args=[], as_dict=False, loop=None):
         if as_dict:
             conn_args = (aiomysql.DictCursor, )
         else:
             conn_args = ()
         r = None
-        pool = await aiomysql.create_pool(host=self.config["db_host"], port=self.config["db_port"], user=self.config["db_user"], password=self.config["db_pass"], db=self.dbname)
+
+        pool_kwargs = {"host": self.config["db_host"], "port": self.config["db_port"], "user": self.config["db_user"],
+                       "password": self.config["db_pass"], "db": self.dbname}
+        if loop:
+            pool_kwargs["loop"] = loop
+        pool = await aiomysql.create_pool(**pool_kwargs)
         async with pool.acquire() as conn:
             async with conn.cursor(*conn_args) as cursor:
                 await cursor.execute(query, args)

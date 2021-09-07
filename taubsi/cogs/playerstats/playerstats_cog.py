@@ -9,7 +9,9 @@ from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
 from taubsi.utils.enums import Team
-from taubsi.cogs.playerstats.objects import Player, StatView, DataLevel
+from taubsi.cogs.playerstats.stats import StatView
+from taubsi.cogs.playerstats.objects import Player, DataLevel
+from taubsi.cogs.playerstats.leaderboard import LeaderboardView
 from taubsi.cogs.playerstats.errors import *
 from taubsi.utils.errors import command_error
 
@@ -33,7 +35,7 @@ class PlayerStats(commands.Cog):
         if any(not c.isalnum() for c in name):
             raise NameNotFound
         ingame = await tb.queries.execute(f"select name, team, level from cev_trainer "
-                                          f"where name = '{name}';")
+                                          f"where name = %s;", args=name)
         if len(ingame) == 0:
             raise NameNotFound
 
@@ -55,6 +57,10 @@ class PlayerStats(commands.Cog):
     @commands.command(aliases=["lb"])
     @commands.check(is_guild)
     async def leaderboard(self, ctx):
+        view = LeaderboardView(ctx.author.id)
+        await view.prepare()
+        await ctx.send(embed=view.embed, view=view)
+        return
         players = await tb.queries.execute(
             "select t.name, t.xp from taubsi3.users u "
             "left join mad.cev_trainer t on u.ingame_name = t.name "

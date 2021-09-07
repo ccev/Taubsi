@@ -39,6 +39,9 @@
     "error_user_not_linked": "❌ Dieser Spieler hat sich noch nicht mit einem Pokémon GO Account gelinkt",
     "error_player_not_linked": "❌ Dieser Spieler hat sich noch nicht mit einem Discord Account gelinkt",
     "error_self_not_linked": "❌ Benutze zuerst `!link [Trainername]` um dich mit einem Pokémon GO Account zu linken",
+    "days": "Tage",
+    "hours": "Stunden",
+    "minutes": "Minuten",
     "dot": ".",
     "stats_last_seen": "Zuletzt aktualisiert vor {}",
     "stats_title": "{}'s Stats",
@@ -125,5 +128,17 @@
     "stats_caught_ice": "Eis",
     "stats_caught_dragon": "Drache",
     "stats_caught_dark": "Unlicht",
-    "stats_caught_fairy": "Fee"
+    "stats_caught_fairy": "Fee",
+    "lb_placeholder": "Wähle eine Kategorie",
+    "lb_category_xp": "XP",
+    "lb_category_battles_won": "Gewonnene Kämpfe",
+    "lb_category_caught_pokemon": "Gefangene Pokémon",
+    "lb_category_stops_spun": "Gedrehte Pokéstops",
+    "lb_category_hatched": "Ausgebrütete Eier",
+    "lb_category_quests": "Quests",
+    "lb_category_trades": "Tausche",
+    "lb_category_gbl_rank": "GBL Rang",
+    "lb_category_legendary_raids_won": "Legendäre Raids",
+    "lb_category_grunts_defeated": "Besiegte Rüpel",
+    "lb_category_unique_unown": "Verschiedene Icognito"
 }
