@@ -287,6 +287,9 @@ class StatView(discord.ui.View):
         if badge_levels:
             stat_emoji = stat_enum.get_tier_prefix(stat_value)
             stat_suffix = stat_enum.next_target(stat_value)
+        else:
+            stat_emoji = ""
+            stat_suffix = ""
         return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", tb.translate("dot"))
 
     def _base_embed(self):
