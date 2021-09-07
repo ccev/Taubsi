@@ -14,3 +14,8 @@ class PlayerNotLinked(TaubsiError):
 class SelfNotLinked(TaubsiError):
     "self_not_linked"
     pass
+
+
+class MissingName(TaubsiError):
+    "missing_name"
+    pass

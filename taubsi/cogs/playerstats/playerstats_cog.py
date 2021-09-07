@@ -5,13 +5,12 @@ from discord.ext import commands
 
 from taubsi.utils.logging import logging
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
-from taubsi.utils.enums import Team
 from taubsi.cogs.playerstats.stats import StatView
 from taubsi.cogs.playerstats.objects import Player, DataLevel
 from taubsi.cogs.playerstats.leaderboard import LeaderboardView
+from taubsi.cogs.playerstats.link import LinkView
 from taubsi.cogs.playerstats.errors import *
 from taubsi.utils.errors import command_error
 
@@ -31,7 +30,9 @@ class PlayerStats(commands.Cog):
 
     @commands.command()
     @commands.check(is_guild)
-    async def link(self, ctx, *, name):
+    async def link(self, ctx, *, name=None):
+        if not name:
+            raise MissingName
         if any(not c.isalnum() for c in name):
             raise NameNotFound
         ingame = await tb.queries.execute(f"select name, team, level from cev_trainer "
@@ -39,20 +40,21 @@ class PlayerStats(commands.Cog):
         if len(ingame) == 0:
             raise NameNotFound
 
-        embed = discord.Embed(description=f"✅ Du bist nun mit dem Pokémon GO Account {name} verbunden", color=3092790)
+        embed = discord.Embed(
+            title=tb.translate("link_title"),
+            description=tb.translate("link_terms")
+        )
+        view = LinkView(ctx.author, ingame)
+        message = await ctx.send(embed=embed, view=view)
+        view.message = message
+
+    @commands.command()
+    @commands.check(is_guild)
+    async def unlink(self, ctx):
+        embed = discord.Embed(description=tb.translate("unlink"), color=3092790)
+        await tb.intern_queries.execute(f"update users set ingame_name = NULL where user_id = {ctx.author.id}",
+                                        commit=True)
         await ctx.send(embed=embed)
-
-        user = TaubsiUser()
-        await user.from_command(ctx.author)
-        user.team, user.level = Team(ingame[0][1]), ingame[0][2]
-        await user.update()
-
-        name = ingame[0][0]
-        keyvals = {
-            "user_id": ctx.author.id,
-            "ingame_name": name
-        }
-        await tb.intern_queries.insert("users", keyvals)
 
     @commands.command(aliases=["lb"])
     @commands.check(is_guild)
