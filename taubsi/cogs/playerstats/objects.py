@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Optional, Dict, List, Union
 from enum import Enum
+from datetime import datetime
+import time
 
 import discord
 from discord.ext import commands
@@ -100,7 +102,8 @@ class Player:
 
     team: Team
     level: int
-    stats: Dict[str, int]
+    updated: datetime
+    stats: Dict[str, Union[int, datetime]]
 
     def __init__(self, ign, user):
         self.ign = ign
@@ -109,13 +112,14 @@ class Player:
     async def get_stats(self):
         fetch_stats = ",".join([s.value for s in Stat])
         result = await tb.queries.execute(
-            "SELECT team, level, {} "
+            "SELECT team, level, last_seen, {} "
             "FROM cev_trainer "
             "WHERE name = '{}'".format(fetch_stats, self.ign),
             as_dict=True
         )
         self.stats = result[0]
 
+        self.updated = self.stats["last_seen"]
         self.level = self.stats["level"]
         self.team = Team(self.stats["team"])
         if self.stats["stops_spun"]:
@@ -264,6 +268,7 @@ class StatView(discord.ui.View):
         embed.colour = TEAM_COLORS[self.player.team.value]
         embed.set_thumbnail(url=f"https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/team/"
                                 f"{self.player.team.value}.png")
+        embed.set_footer(text=f"Zuletzt aktualisiert: <t:{self.player.updated.timestamp()}:R>")
         return embed
 
     def get_gym_embed(self):
