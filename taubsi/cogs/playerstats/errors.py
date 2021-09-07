@@ -7,7 +7,7 @@ class UserNotLinked(TaubsiError):
 
 
 class PlayerNotLinked(TaubsiError):
-    "player_not_inked"
+    "player_not_linked"
     pass
 
 

@@ -30,7 +30,8 @@ class PlayerStats(commands.Cog):
     @commands.command()
     @commands.check(is_guild)
     async def link(self, ctx, *, name):
-        ingame = await tb.queries.execute(f"select name, team, level from cev_trainer where name = '{name}';")
+        ingame = await tb.queries.execute(f"select name, team, level from cev_trainer "
+                                          f"where LOWER(name) = '{name.lower()}';")
         if len(ingame) == 0:
             raise NameNotFound
 

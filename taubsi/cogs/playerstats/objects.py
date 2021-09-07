@@ -3,6 +3,7 @@ from typing import Optional, Dict, List, Union
 from enum import Enum
 from datetime import datetime
 import time
+import arrow
 
 import discord
 from discord.ext import commands
@@ -102,8 +103,8 @@ class Player:
 
     team: Team
     level: int
-    updated: datetime
-    stats: Dict[str, Union[int, datetime]]
+    updated: int
+    stats: Dict[str, int]
 
     def __init__(self, ign, user):
         self.ign = ign
@@ -112,9 +113,9 @@ class Player:
     async def get_stats(self):
         fetch_stats = ",".join([s.value for s in Stat])
         result = await tb.queries.execute(
-            "SELECT team, level, last_seen, {} "
+            "SELECT team, level, last_seen AS last_seen, {} "
             "FROM cev_trainer "
-            "WHERE name = '{}'".format(fetch_stats, self.ign),
+            "WHERE LOWER(name) = '{}'".format(fetch_stats, self.ign.lower()),
             as_dict=True
         )
         self.stats = result[0]
@@ -268,7 +269,11 @@ class StatView(discord.ui.View):
         embed.colour = TEAM_COLORS[self.player.team.value]
         embed.set_thumbnail(url=f"https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/team/"
                                 f"{self.player.team.value}.png")
-        embed.set_footer(text=f"Zuletzt aktualisiert: <t:{self.player.updated.timestamp()}:R>")
+        updated = arrow.get(self.player.updated)
+        updated = updated.to("local")
+        time_diff = time.time() - updated.timestamp()
+        hours, minutes = time_diff // 3600, time_diff % 3600 // 60
+        embed.set_footer(text=tb.translate("stats_last_seen").format(f"{int(hours)}h {int(minutes)}m"))
         return embed
 
     def get_gym_embed(self):
