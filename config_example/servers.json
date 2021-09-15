@@ -10,6 +10,12 @@
         "team_choose": [
             1234567891234
         ],
+        "welcome": [
+
+        ],
+        "setup": [
+
+        ],
         "raid_channels": [
             {
                 "id": 123456,

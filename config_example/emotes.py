@@ -14,6 +14,16 @@ TEAM_EMOJIS = {
     3: "<:team_gelb:1234567899323214>"
 }
 
+
+TEAM_COLORS = {
+    0: 38536,
+    1: 4367861,
+    2: 15684432,
+    3: 16635957
+}
+
+
+
 DIFFICULTY_NAMES = {
     0: "🟥 Nicht möglich",
     1: "🟧 Sehr schwer",
@@ -28,4 +38,12 @@ DIFFICULTY_COLORS = {
     2: 16632664,
     3: 7909721,
     4: 5614830
+}
+
+BADGE_LEVELS = {
+    0: "<:bl:123>",
+    1: "<:bronze:123>",
+    2: "<:silver:123>",
+    3: "<:gold:123>",
+    4: "<:platinum:123>"
 }

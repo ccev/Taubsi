@@ -10,6 +10,7 @@ class TaubsiError(CommandError):
     pass
 
 
+
 async def command_error(message, error="Unbekannter Fehler", delete_error=True, delete_message=False):
     try:
         log.info(f"Command Error: {error}")
