@@ -33,6 +33,7 @@ class LBPage:
 
 class _LBCategory(discord.SelectOption):
     stat: Badge
+    name: str
     pages: List[LBPage]
     selected_page: int = 0
 
@@ -40,9 +41,9 @@ class _LBCategory(discord.SelectOption):
         self.stat = stat
         value = self.stat.value
         lang_key = "lb_category_" + value
-        name = tb.translate(lang_key)
+        self.name = tb.translate(lang_key)
 
-        super().__init__(label=name, value=value)
+        super().__init__(label=self.name, value=value)
 
     def get_current_text(self):
         return self.pages[self.selected_page].get_text()
@@ -167,6 +168,7 @@ class LeaderboardView(discord.ui.View):
 
     def update_embed(self):
         self.embed.description = self.current_category.get_current_text()
+        self.embed.title = self.current_category.name
         current_page = self.current_category.selected_page + 1
         total_pages = len(self.current_category.pages)
         self.embed.set_footer(text=tb.translate("Page").format(current_page, total_pages))
