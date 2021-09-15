@@ -25,8 +25,9 @@ class LBPage:
     def get_text(self) -> str:
         text = "```\n"
         for player in self.players:
-            text += f"{player.pos}. {player.name}".ljust(23) \
-                    + f"{player.value:,} \n".replace(",", tb.translate("dot"))
+            left = f"{player.pos}. {player.name}"
+            right = f"{player.value:,}".replace(",", tb.translate("dot"))
+            text += f"{left:<23}{right:>14} \n"
         return text + "```"
 
 
@@ -76,13 +77,11 @@ class LeaderboardSelect(discord.ui.Select):
                          min_values=0, max_values=1)
 
     async def prepare(self):
-        for i, stat in enumerate([Stat.XP, Stat.TOTAL_BATTLES_WON, Stat.CAUGHT_POKEMON, Stat.STOPS,
-                                  Stat.HATCHED, Stat.QUESTS, Stat.TRADES, Stat.GBL_RANK, Stat.LEGENDARY_RAIDS_WON,
-                                  Stat.GRUNTS, Stat.UNIQUE_UNOWN]):
+        for stat in [Stat.XP, Stat.TOTAL_BATTLES_WON, Stat.CAUGHT_POKEMON, Stat.STOPS,
+                     Stat.HATCHED, Stat.QUESTS, Stat.TRADES, Stat.GBL_RANK, Stat.LEGENDARY_RAIDS_WON,
+                     Stat.GRUNTS, Stat.UNIQUE_UNOWN]:
             category = _LBCategory(stat)
             await category.prepare()
-            if i == 0:
-                category.default = True
 
             self.categories[category.value] = category
             self.options.append(category)
@@ -168,6 +167,9 @@ class LeaderboardView(discord.ui.View):
 
     def update_embed(self):
         self.embed.description = self.current_category.get_current_text()
+        current_page = self.current_category.selected_page + 1
+        total_pages = len(self.current_category.pages)
+        self.embed.set_footer(text=tb.translate("Page").format(current_page, total_pages))
 
     def check_buttons(self):
         for button in self.buttons:

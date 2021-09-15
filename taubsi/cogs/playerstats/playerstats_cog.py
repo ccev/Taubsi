@@ -85,7 +85,7 @@ class PlayerStats(commands.Cog):
             return
         elif player.data_level.value >= DataLevel.GYM.value:
             embed = view.get_gym_embed()
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, view=view)
             return
 
 

@@ -87,6 +87,16 @@ class Player:
         return player_
 
 
+class LinkAdButton(discord.ui.Button):
+    def __init__(self, row: int = 0):
+        super().__init__(style=discord.ButtonStyle.blurple,
+                         label=tb.translate("link_ad_label"),
+                         row=row)
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(ephemeral=True, content=tb.translate("link_ad_text"))
+
+
 class Badge:
     value: str
     targets: List[int]

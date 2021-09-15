@@ -5,6 +5,20 @@ from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.enums import Team
 
 
+class AcceptView(discord.ui.View):
+    def __init__(self, author_id: int):
+        self.author_id = author_id
+        super().__init__()
+
+    @discord.ui.button(label=tb.translate("link_send_again"), style=discord.ButtonStyle.blurple)
+    async def send_code_again(self, _, interaction: discord.Interaction):
+        if interaction.user.id != self.author_id:
+            return
+        content = f"```\n{tb.config['botcode']}\n```"
+        await interaction.response.send_message(content=content,
+                                                ephemeral=True)
+
+
 class LinkView(discord.ui.View):
     message: discord.Message
 
@@ -37,8 +51,9 @@ class LinkView(discord.ui.View):
 
         embed = discord.Embed(description=tb.translate("link_success").format(self.ingame[0][0]),
                               color=3092790)
-        await self.message.edit(embed=embed, view=None)
-        await interaction.response.send_message(tb.translate("link_botcode").format(tb.config["botcode"]), ephemeral=True)
+        await self.message.edit(embed=embed, view=AcceptView(self.author.id))
+        await interaction.response.send_message(
+            tb.translate("link_botcode").format(tb.config["botcode"]), ephemeral=True)
 
     @discord.ui.button(label=tb.translate("link_deny"), style=discord.ButtonStyle.red)
     async def deny(self, _, interaction: discord.Interaction):

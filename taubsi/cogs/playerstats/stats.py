@@ -6,7 +6,7 @@ import discord
 
 from taubsi.taubsi_objects import tb
 from config.emotes import TEAM_COLORS
-from taubsi.cogs.playerstats.objects import Player, Stat, Badge
+from taubsi.cogs.playerstats.objects import Player, Stat, Badge, LinkAdButton, DataLevel
 
 
 class _StatCategory(discord.SelectOption):
@@ -75,11 +75,9 @@ class StatSelect(discord.ui.Select):
         super().__init__(custom_id="stats_select", placeholder=tb.translate("stats_placeholder"),
                          min_values=0, max_values=1)
 
-        for i, category in enumerate([StatCategoryGeneral, StatCategoryBattles, StatCategoryCollection,
-                                      StatCategoryMisc]):
+        for category in [StatCategoryGeneral, StatCategoryBattles, StatCategoryCollection,
+                         StatCategoryMisc]:
             category = category()
-            if i == 0:
-                category.default = True
 
             self.categories[category.id] = category
             self.options.append(category)
@@ -102,8 +100,12 @@ class StatView(discord.ui.View):
         super().__init__()
         self.player = player
         self.author_id = author_id
-        self.stat_select = StatSelect(self)
-        self.add_item(self.stat_select)
+
+        if self.player.data_level.value < DataLevel.FRIEND.value:
+            self.add_item(LinkAdButton())
+        else:
+            self.stat_select = StatSelect(self)
+            self.add_item(self.stat_select)
 
     def _stat_text(self, stat_enum: Badge, badge_levels=False):
         stat_id = stat_enum.value
