@@ -77,7 +77,7 @@ class LeaderboardSelect(discord.ui.Select):
                          min_values=0, max_values=1)
 
     async def prepare(self):
-        for stat in [Stat.XP, Stat.TOTAL_BATTLES_WON, Stat.CAUGHT_POKEMON, Stat.STOPS,
+        for stat in [Stat.XP, Stat.TOTAL_BATTLES_WON, Stat.CAUGHT_POKEMON, Stat.STOPS, Stat.UNIQUE_STOPS,
                      Stat.HATCHED, Stat.QUESTS, Stat.TRADES, Stat.GBL_RANK, Stat.LEGENDARY_RAIDS_WON,
                      Stat.GRUNTS, Stat.UNIQUE_UNOWN]:
             category = _LBCategory(stat)
