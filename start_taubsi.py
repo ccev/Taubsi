@@ -25,6 +25,7 @@ async def on_ready():
     if tb.config.get("secret", False):
         tb.bot.load_extension("taubsi.cogs.setup.auto_setup_cog")
         tb.bot.load_extension("taubsi.cogs.playerstats.playerstats_cog")
+        tb.bot.load_extension("taubsi.cogs.articlepreview.preview_cog")
     raidcog = tb.bot.get_cog("RaidCog")
     await raidcog.final_init()
     
