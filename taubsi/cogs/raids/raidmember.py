@@ -1,5 +1,5 @@
-from taubsi.utils.enums import Team
-from taubsi.utils.logging import logging
+from taubsi.core.pogo import Team
+from taubsi.core import logging
 from taubsi.taubsi_objects import tb
 from config.emotes import *
 

@@ -3,14 +3,14 @@ import re
 from typing import Dict, List
 from dateutil import tz
 
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.utils.matcher import get_matches
 from taubsi.utils.errors import command_error
 from taubsi.taubsi_objects import tb
 from config.emotes import NUMBER_EMOJIS, CONTROL_EMOJIS
 from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.cogs.raids.choicemessage import ChoiceMessage
-from taubsi.cogs.raids.pogo import BaseRaid
+from taubsi.core.pogo import BaseRaid
 
 import asyncio
 import dateparser
@@ -108,7 +108,7 @@ class RaidCog(commands.Cog):
 
         if raid_start is None:
             if gym_names[0][1] > 80:
-                await command_error(message, "invalid_time")
+                await command_error(self.bot, message, "invalid_time")
             return
 
         def match_gym(gym_name):

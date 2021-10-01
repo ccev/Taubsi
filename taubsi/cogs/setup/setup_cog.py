@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.cogs.setup.errors import *
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.setup.objects import TaubsiUser
 from taubsi.utils.errors import command_error, TaubsiError
 from taubsi.utils.checks import is_guild
-from taubsi.utils.enums import Team
+from taubsi.core.pogo import Team
 
 log = logging.getLogger("Setup")
 
@@ -20,7 +20,7 @@ class Setup(commands.Cog):
         if not isinstance(error, TaubsiError):
             log.exception(error)
             return
-        await command_error(ctx.message, error.__doc__, False)
+        await command_error(self.bot, ctx.message, error.__doc__, False)
 
     def __check_level(self, level):
         if level > self.max_level:

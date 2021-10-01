@@ -1,6 +1,6 @@
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.taubsi_objects import tb
-from taubsi.cogs.raids.raidinfo import RaidInfo
+from taubsi.cogs.raid_info.raidinfo import RaidInfo
 
 import arrow
 from discord.ext import tasks, commands

@@ -1,42 +1,21 @@
 from __future__ import annotations
+from typing import List, Dict, Optional, TYPE_CHECKING
 import json
 from enum import Enum
-from typing import List, Dict, Optional, TYPE_CHECKING
+
 import discord
 
-from taubsi.utils.logging import log
-from taubsi.cogs.raids.pogo import Gym
+from taubsi.core.logging import log
+from taubsi.core.pogo import Gym
+from taubsi.core.cogs import Cog
 
 if TYPE_CHECKING:
-    from start_taubsi import TaubsiBot
-
-
-class Cog(Enum):
-    RAIDS = "taubsi.cogs.raids.raid_cog"
-    SETUP = "taubsi.cogs.setup.setup_cog"
-    MAIN_LOOPS = "taubsi.cogs.loop"
-    RAIDINFO = "taubsi.cogs.raids.info_cog"
-    DMAP = "taubsi.cogs.dmap.dmap_cog"
-    AUTOSETUP = "taubsi.cogs.setup.auto_setup_cog"
-    PLAYERSTATS = "taubsi.cogs.playerstats.playerstats_cog"
-    ARTICLEPREVIEW = "taubsi.cogs.articlepreview.preview_cog"
-
-    @classmethod
-    def all(cls):
-        return list(cls)
-
-    @classmethod
-    def basic(cls):
-        return [cls.RAIDS, cls.SETUP, cls.MAIN_LOOPS, cls.RAIDINFO, cls.DMAP]
-
-    @classmethod
-    def v(cls):
-        return list(cls)[:-1]
+    from taubsi.core.bot import TaubsiBot
 
 
 class Language(Enum):
-    GERMAN = 0
-    ENGLISH = 1
+    GERMAN = "german"
+    ENGLISH = "english"
 
 
 class RaidChannel:
@@ -86,7 +65,10 @@ class Server:
     dmap_messages: List[DMapMessage]
     gyms: List[Gym]
     guild: discord.Guild
+    _bot: TaubsiBot
     _raw_fences: list
+    _gym_dict: Dict[str, Gym]
+    _sql_fence: Optional[str] = None
 
     def __init__(self,
                  name: str,
@@ -115,12 +97,12 @@ class Server:
         return "(" + ",".join(sql_fence) + ")"
 
     async def load(self, bot: TaubsiBot):
-        sql_fence = False
+        self._bot = bot
         for fence in self._raw_fences:
             if fence["name"].lower() == self.geofence.lower():
-                sql_fence = self._convert_path_sql(fence["path"])
+                self._sql_fence = self._convert_path_sql(fence["path"])
                 break
-        if not sql_fence:
+        if not self._sql_fence:
             log.error(f"No geofence found for {self.name}")
             raise
 
@@ -133,10 +115,39 @@ class Server:
         gyms = await bot.mad_db.execute(query)
 
         self.gyms = []
+        self._gym_dict = {}
         for gym_data in gyms:
-            self.gyms.append(Gym(gym_data))
+            gym = Gym(bot, gym_data)
+            await gym.set_raid()
+            self.gyms.append(gym)
+            self._gym_dict[gym.id] = gym
 
         self.guild = await bot.fetch_guild(self.id)
+
+    async def update_gyms(self):
+        query = (
+            f"select gym.gym_id as id, url, team, latitude, longitude, raid.level, raid.start, raid.end, raid.move_1, "
+            f"raid.move_2, raid.pokemon_id, raid.form, raid.costume, raid.evolution "
+            f"from gym "
+            f"left join gymdetails on gymdetails.gym_id = gym.gym_id "
+            f"left join raid on raid.gym_id = gym.gym_id "
+            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude))"
+        )
+        gyms = await self._bot.mad_db.execute(query)
+        for data in gyms:
+            gym_data = {}
+            raid_data = {}
+            for k, v in data:
+                if k.startswith("raid"):
+                    raid_data[k] = v
+                else:
+                    gym_data[k] = v
+            gym = self.get_gym(data["id"])
+            if gym:
+                gym.update(gym_data, raid_data)
+
+    def get_gym(self, id_: str) -> Optional[Gym]:
+        return self._gym_dict.get(id_)
 
 
 class BaseConfig:

@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.playerstats.errors import *
-from taubsi.utils.enums import Team
+from taubsi.core.pogo import Team
 from config.emotes import BADGE_LEVELS
 
 

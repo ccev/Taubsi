@@ -7,8 +7,10 @@ import requests
 import arrow
 from pogodata.pokemon import Pokemon
 
+from taubsi.core.pogo import Raid
+
 if TYPE_CHECKING:
-    from taubsi.cogs.raids.pogo import Gym, Raid
+    from taubsi.core.pogo import Gym, Raid
 
 
 class IconSetManager:
@@ -61,7 +63,7 @@ class UIconManager:
             args.append(("h", ""))
         return self.get(UIconCategory.RAID_EGG, iconset, args)
 
-    def raid(self, raid: BaseRaid, shiny_chance: int = 0, iconset: Optional[IconSet] = None) -> str:
+    def raid(self, raid: Raid, shiny_chance: int = 0, iconset: Optional[IconSet] = None) -> str:
         if raid.boss:
             if shiny_chance:
                 shiny = random.randint(1, shiny_chance) == 1

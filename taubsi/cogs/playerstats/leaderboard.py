@@ -3,7 +3,6 @@ from typing import List, Dict
 
 import discord
 
-from taubsi.taubsi_objects import tb
 from taubsi.cogs.playerstats.objects import Stat, Badge
 
 

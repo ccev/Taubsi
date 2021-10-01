@@ -1,24 +1,18 @@
+from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands, tasks
-from taubsi.utils.logging import logging
-from taubsi.taubsi_objects import tb
+
+from taubsi.core import log
 from taubsi.cogs.setup.objects import TaubsiUser
-from taubsi.utils.checks import is_guild
-from taubsi.cogs.setup.errors import *
-from taubsi.utils.enums import Team
 
-
-log = logging.getLogger("AutoSetup")
+if TYPE_CHECKING:
+    from taubsi.core import TaubsiBot
 
 
 class AutoSetup(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: TaubsiBot = bot
         self.autoupdate_loop.start()
-
-    async def reponse(self, ctx, text):
-        embed = discord.Embed(description=text, color=3092790)
-        await ctx.send(embed=embed)
 
     @tasks.loop(hours=1)
     async def autoupdate_loop(self):
@@ -27,7 +21,7 @@ class AutoSetup(commands.Cog):
             "left join mad.cev_trainer t on t.name = u.ingame_name "
             "where t.level > u.level or t.team != u.team_id"
         )
-        result = await tb.intern_queries.execute(query)
+        result = await self.bot.mad_db.execute(query, as_dict=False)
         if len(result) == 0:
             return
 

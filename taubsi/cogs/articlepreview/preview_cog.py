@@ -1,15 +1,12 @@
 from __future__ import annotations
 import re
 import json
-import logging
 
 import arrow
 import discord
 from discord.ext import commands
 
 from taubsi.utils.utils import asyncget
-
-log = logging.getLogger("Preview")
 
 
 class NextButton(discord.ui.Button):

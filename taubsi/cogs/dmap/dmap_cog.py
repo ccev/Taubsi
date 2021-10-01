@@ -3,15 +3,7 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-from taubsi.taubsi_objects import tb
 from taubsi.utils.checks import is_admin
-from taubsi.cogs.setup.errors import *
-from taubsi.cogs.playerstats.stats import StatView
-from taubsi.cogs.playerstats.objects import Player, DataLevel
-from taubsi.cogs.playerstats.leaderboard import LeaderboardView
-from taubsi.cogs.playerstats.link import LinkView
-from taubsi.cogs.playerstats.errors import *
-from taubsi.utils.errors import command_error
 from taubsi.cogs.dmap.map import Map
 
 

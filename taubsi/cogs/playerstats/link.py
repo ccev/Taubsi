@@ -2,7 +2,7 @@ import discord
 
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.setup.objects import TaubsiUser
-from taubsi.utils.enums import Team
+from taubsi.core.pogo import Team
 
 
 class AcceptView(discord.ui.View):

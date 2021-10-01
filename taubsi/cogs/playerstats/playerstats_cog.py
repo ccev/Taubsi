@@ -3,7 +3,7 @@ from typing import Optional, Union
 import discord
 from discord.ext import commands
 
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.taubsi_objects import tb
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
@@ -26,7 +26,7 @@ class PlayerStats(commands.Cog):
         if not isinstance(error, TaubsiError):
             log.exception(error)
             return
-        await command_error(ctx.message, error.__doc__, False)
+        await command_error(self.bot, ctx.message, error.__doc__, False)
 
     @commands.command()
     @commands.check(is_guild)

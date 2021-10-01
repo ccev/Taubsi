@@ -7,12 +7,11 @@ import discord
 import arrow
 
 from taubsi.utils.utils import asyncget, reverse_get
-from taubsi.utils.enums import Team
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.taubsi_objects import tb
 from config.emotes import *
 from taubsi.cogs.raids.raidmember import RaidMember
-from taubsi.cogs.raids.pogo import Gym, BaseRaid, ScannedRaid
+from taubsi.core.pogo import Gym, BaseRaid, ScannedRaid, Team
 
 if TYPE_CHECKING:
     from datetime import datetime

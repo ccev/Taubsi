@@ -8,7 +8,7 @@ from math import floor
 
 from taubsi.taubsi_objects import tb
 from taubsi.cogs.raids.raidmessage import GMAPS_LINK, AMAPS_LINK, RaidMessage
-from taubsi.cogs.raids.pogo import ScannedRaid, Gym
+from taubsi.core.pogo import ScannedRaid, Gym
 
 
 TIMEFORMAT_SHORT = tb.translate("timeformat_short")

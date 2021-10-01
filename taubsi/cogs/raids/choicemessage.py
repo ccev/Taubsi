@@ -1,6 +1,6 @@
 import discord
 
-from taubsi.utils.logging import logging
+from taubsi.core import logging
 from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.taubsi_objects import tb
 
