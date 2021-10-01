@@ -8,7 +8,7 @@ import arrow
 from pogodata.pokemon import Pokemon
 
 if TYPE_CHECKING:
-    from taubsi.cogs.raids.pogo import Gym, BaseRaid, ScannedRaid
+    from taubsi.cogs.raids.pogo import Gym, Raid
 
 
 class IconSetManager:
@@ -55,7 +55,7 @@ class UIconManager:
             args.append(("s", ""))
         return self.get(UIconCategory.POKEMON, iconset, args)
 
-    def egg(self, raid: Union[BaseRaid, ScannedRaid], iconset: Optional[IconSet] = None) -> str:
+    def egg(self, raid: Raid, iconset: Optional[IconSet] = None) -> str:
         args = [("", raid.level)]
         if raid.__dict__.get("start") and raid.start > arrow.utcnow():
             args.append(("h", ""))

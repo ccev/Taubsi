@@ -5,7 +5,15 @@ from taubsi.taubsi_objects import tb
 from taubsi.utils.logging import log
 from taubsi.taubsi_objects.servers import load_servers
 from config.dmap_config import MESSAGES
+
+from typing import List
+from pogodata import PogoData
+from taubsi.taubsi_objects.queries import Queries
+from taubsi.taubsi_objects.uicons import UIconManager
+from taubsi.taubsi_objects.translator import Translator
+from taubsi.taubsi_objects.config_classes import Server
 from taubsi.cogs.dmap.dmap_cog import PermaMap
+from config import Config
 
 extensions = [
     "taubsi.cogs.raids.raid_cog",
@@ -45,6 +53,40 @@ tb.bot.run(tb.config["bot_token"])
 
 
 class TaubsiBot(commands.Bot):
+    _startup: bool = True
+    config: Config
+    mad_db: Queries
+    taubsi_db: Queries
+    uicons: UIconManager
+    translate: Translator.translate
+    pogodata: PogoData
+    servers: List[Server]
+    trash_channel: discord.TextChannel
+
     def __init__(self):
         intents = discord.Intents(members=True, guild_messages=True, reactions=True)
         super().__init__(command_prefix="!", case_insensitive=True, intents=intents)
+        self.config = Config()
+        self.mad_db = Queries(self.config, self.loop, self.config.MAD_DB_NAME)
+        self.taubsi_db = Queries(self.config, self.loop, self.config.TAUBSI_DB_NAME)
+        self.uicons = UIconManager()
+        self.servers = self.config.SERVERS
+
+        translator_ = Translator(self.config.LANGUAGE.value)
+        self.translate = translator_.translate
+        self.reload_pogodata()
+
+        for cog in self.config.COGS:
+            self.load_extension(cog.value)
+
+    def reload_pogodata(self):
+        self.pogodata = PogoData(self.config.LANGUAGE.value)
+
+    async def on_ready(self):
+        if not self._startup:
+            return
+        self._startup = False
+
+        self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
+
+        log.info("Fully loaded, ready for action")
