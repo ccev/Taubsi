@@ -1,5 +1,4 @@
-from taubsi.core import TaubsiBot
+from taubsi.core import bot
 
 
-bot = TaubsiBot()
 bot.run(bot.config.BOT_TOKEN)

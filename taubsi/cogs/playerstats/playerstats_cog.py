@@ -1,10 +1,9 @@
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
 
 import discord
 from discord.ext import commands
 
-from taubsi.core import logging
-from taubsi.taubsi_objects import tb
+from taubsi.core import log
 from taubsi.utils.checks import is_guild
 from taubsi.cogs.setup.errors import *
 from taubsi.cogs.playerstats.stats import StatView
@@ -14,13 +13,13 @@ from taubsi.cogs.playerstats.link import LinkView
 from taubsi.cogs.playerstats.errors import *
 from taubsi.utils.errors import command_error
 
-
-log = logging.getLogger("PlayerStats")
+if TYPE_CHECKING:
+    from taubsi.core import TaubsiBot
 
 
 class PlayerStats(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: TaubsiBot = bot
 
     async def cog_command_error(self, ctx, error):
         if not isinstance(error, TaubsiError):
@@ -35,14 +34,14 @@ class PlayerStats(commands.Cog):
             raise MissingName
         if any(not c.isalnum() for c in name):
             raise NameNotFound
-        ingame = await tb.queries.execute(f"select name, team, level from cev_trainer "
-                                          f"where name = %s;", args=name)
+        ingame = await self.bot.mad_db.execute(f"select name, team, level from cev_trainer "
+                                               f"where name = %s;", args=name, as_dict=False)
         if len(ingame) == 0:
             raise NameNotFound
 
         embed = discord.Embed(
-            title=tb.translate("link_title"),
-            description=tb.translate("link_terms")
+            title=self.bot.translate("link_title"),
+            description=self.bot.translate("link_terms")
         )
         view = LinkView(ctx.author, ingame)
         message = await ctx.send(embed=embed, view=view)
@@ -51,9 +50,9 @@ class PlayerStats(commands.Cog):
     @commands.command()
     @commands.check(is_guild)
     async def unlink(self, ctx):
-        embed = discord.Embed(description=tb.translate("unlink"), color=3092790)
-        await tb.intern_queries.execute(f"update users set ingame_name = NULL where user_id = {ctx.author.id}",
-                                        commit=True)
+        embed = discord.Embed(description=self.bot.translate("unlink"), color=3092790)
+        await self.bot.taubsi_db.execute(f"update users set ingame_name = NULL where user_id = {ctx.author.id}",
+                                         commit=True)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["lb"])

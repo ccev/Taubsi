@@ -1,16 +1,17 @@
-from taubsi.core import logging
-from taubsi.taubsi_objects import tb
-from taubsi.cogs.raid_info.raidinfo import RaidInfo
-
+from typing import TYPE_CHECKING
 import arrow
 from discord.ext import tasks, commands
 
-log = logging.getLogger("Raids")
+from taubsi.core import log
+from taubsi.cogs.raid_info.raidinfo import RaidInfo
+
+if TYPE_CHECKING:
+    from taubsi.core import TaubsiBot
 
 
 class InfoCog(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: TaubsiBot = bot
         self.raid_infos = {}
 
         if tb.info_channels:

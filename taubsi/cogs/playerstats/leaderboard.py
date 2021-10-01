@@ -3,7 +3,8 @@ from typing import List, Dict
 
 import discord
 
-from taubsi.cogs.playerstats.objects import Stat, Badge
+from taubsi.core.pogo import Stat, Badge
+from taubsi.core import bot
 
 
 class Player:
@@ -25,7 +26,7 @@ class LBPage:
         text = "```\n"
         for player in self.players:
             left = f"{player.pos}. {player.name}"
-            right = f"{player.value:,}".replace(",", tb.translate("dot"))
+            right = f"{player.value:,}".replace(",", bot.translate("dot"))
             text += f"{left:<23}{right:>14} \n"
         return text + "```"
 
@@ -40,7 +41,7 @@ class _LBCategory(discord.SelectOption):
         self.stat = stat
         value = self.stat.value
         lang_key = "lb_category_" + value
-        self.name = tb.translate(lang_key)
+        self.name = bot.translate(lang_key)
 
         super().__init__(label=self.name, value=value)
 
@@ -49,13 +50,13 @@ class _LBCategory(discord.SelectOption):
 
     async def prepare(self):
         self.pages = []
-        players = await tb.queries.execute(
-            f"select t.name, t.{self.value} from {tb.config['db_taubsiname']}.users u "
-            f"left join {tb.config['db_dbname']}.cev_trainer t on u.ingame_name = t.name "
+        query = (
+            f"select t.name, t.{self.value} from {bot.config['db_taubsiname']}.users u "
+            f"left join {bot.config.MAD_DB_NAME}.cev_trainer t on u.ingame_name = t.name "
             f"where ingame_name is not null and {self.value} is not null "
             f"order by {self.value} desc",
-            loop=tb.bot.loop
         )
+        players = await bot.taubsi_db.execute(query, as_dict=False)
 
         n = 10
         i = 1
@@ -73,7 +74,7 @@ class LeaderboardSelect(discord.ui.Select):
         self.lb_view = view
         self.categories: Dict[str, _LBCategory] = {}
 
-        super().__init__(custom_id="lb_select", placeholder=tb.translate("lb_placeholder"),
+        super().__init__(custom_id="lb_select", placeholder=bot.translate("lb_placeholder"),
                          min_values=0, max_values=1)
 
     async def prepare(self):
@@ -170,7 +171,7 @@ class LeaderboardView(discord.ui.View):
         self.embed.title = self.current_category.name
         current_page = self.current_category.selected_page + 1
         total_pages = len(self.current_category.pages)
-        self.embed.set_footer(text=tb.translate("Page").format(current_page, total_pages))
+        self.embed.set_footer(text=bot.translate("Page").format(current_page, total_pages))
 
     def check_buttons(self):
         for button in self.buttons:
