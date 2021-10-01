@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 from io import BytesIO
-from typing import Union
+from typing import Union, Dict, Any
 
 import discord
 import arrow
@@ -17,12 +17,13 @@ log = logging.getLogger("Raids")
 
 
 class Gym:
-    def __init__(self, id_: int = 0, name: str = "?", img: str = "", lat: float = 0, lon: float = 0):
-        self.id = id_
-        self.name = name
-        self.img = img
-        self.lat = lat
-        self.lon = lon
+    def __init__(self, data: Dict[str, Any]):
+        self.id = data.get("gym_id")
+        self.name = data.get("name")
+        self.img = data.get("url")
+        self.lat = data.get("latitude")
+        self.lon = data.get("longitude")
+        self.team = 0
 
         self.active_raid = None
 
@@ -62,9 +63,6 @@ class BaseRaid:
         self.name = "?"
         self.pokebattler_name = "UNOWN"
 
-        self.egg_url = ""
-        self.boss_url = ""
-
         available_bosses = tb.pogodata.raids[level]
         boss = None
         if len(available_bosses) == 1:
@@ -92,26 +90,6 @@ class BaseRaid:
             else:
                 self.name = "Mega Ei"
 
-        self.egg_url = (
-            f"https://raw.githubusercontent.com/ccev/dp-assets/master/emotes/egg{self.level}.png"
-        )
-
-        if self.boss:
-            self.boss_url = (
-                f"https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/"
-                f"{self.boss.asset}.png"
-            )
-
-            # hotfix
-            if self.boss.id == 888:
-                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
-                                "Addressable%20Assets/pm888.fHERO.icon.png"
-            elif self.boss.id == 889:
-                self.boss_url = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon/" \
-                                "Addressable%20Assets/pm889.fHERO.icon.png"
-        else:
-            self.boss_url = ""
-
     @property
     def compare(self):
         if self.boss:
@@ -126,23 +104,9 @@ class BaseRaid:
         """
         if self.boss:
             mon_size = (105, 105)
-            shiny = ""
-            if random.randint(1, 30) == 20:
-                # hotfix
-                if self.boss.id not in (888, 889):
-                    url = self.boss_url.replace(".png", "_shiny.png")
-                else:
-                    url = self.boss_url
-            else:
-                url = self.boss_url
-
-            try:
-                boss_result = await asyncget(url)
-            except:
-                boss_result = await asyncget(url.replace(shiny, ""))
         else:
             mon_size = (95, 95)
-            boss_result = await asyncget(self.egg_url)
+        boss_result = await asyncget(tb.uicons.raid(self, shiny_chance=30))
         log.info(f"Creating a Raid Icon for Gym {self.gym.name}")
         gym_result = await asyncget(self.gym.img)
 

@@ -34,11 +34,17 @@ async def load_servers():
                 sql_fence = _convert_path_sql(fence["path"])
                 break
 
-        gyms = await tb.queries.execute(f"select name, gym.gym_id, url, latitude, longitude from gymdetails left join gym on gym.gym_id = gymdetails.gym_id where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({sql_fence})'), point(latitude, longitude))")
+        query = (
+            f"select name, gym.gym_id, url, latitude, longitude "
+            f"from gymdetails "
+            f"left join gym on gym.gym_id = gymdetails.gym_id "
+            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({sql_fence})'), point(latitude, longitude))"
+        )
+        gyms = await tb.queries.execute(query, as_dict=True)
         
         gym_list = []
-        for name, gid, url, lat, lon in gyms:
-            gym_list.append(Gym(gid, name, url, lat, lon))
+        for gym_data in gyms:
+            gym_list.append(Gym(gym_data))
         tb.gyms[settings["id"]] = gym_list
         
         tb.friendcode_channels += settings["friendcodes_allowed"]

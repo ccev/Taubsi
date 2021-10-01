@@ -136,7 +136,7 @@ class RaidInfo:
                 f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
                 f"{tb.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
             )
-            self.embed.set_thumbnail(url=self.raid.boss_url)
+            self.embed.set_thumbnail(url=tb.uicons.raid(self.raid))
 
         else:
             formatted_start = self.raid.start.to("local").strftime(TIMEFORMAT_LONG)
@@ -145,7 +145,7 @@ class RaidInfo:
                 f"{tb.translate('Hatches')} <t:{self.raid.start.int_timestamp}:R>\n"
                 f"{tb.translate('Raidzeit')}: **{formatted_start} – {formatted_end}**"
             )
-            self.embed.set_thumbnail(url=self.raid.egg_url)
+            self.embed.set_thumbnail(url=tb.uicons.egg(self.raid))
 
             if self.raid.boss:
                 self.embed.title += " " + tb.translate("Egg")

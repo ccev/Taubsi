@@ -235,10 +235,10 @@ class RaidMessage:
             self.members.append(raidmember)
 
         self.embed = self.message.embeds[0]
+        self.view = self._get_view()
         await self.make_member_fields()
         await self.make_base_embed()
         self.make_warnings()
-        self.view = self._get_view()
         await self.edit_message()
 
         return self
