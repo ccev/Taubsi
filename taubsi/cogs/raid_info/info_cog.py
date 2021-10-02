@@ -1,65 +1,50 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict
+
 import arrow
 from discord.ext import tasks, commands
 
-from taubsi.core import log
 from taubsi.cogs.raid_info.raidinfo import RaidInfo
+from taubsi.core import log
 
 if TYPE_CHECKING:
-    from taubsi.core import TaubsiBot
+    from taubsi.core import TaubsiBot, InfoChannel
 
 
 class InfoCog(commands.Cog):
     def __init__(self, bot):
         self.bot: TaubsiBot = bot
-        self.raid_infos = {}
+        self.raid_infos: Dict[str, RaidInfo] = {}
+        self.info_channels: List[InfoChannel] = []
 
-        if tb.info_channels:
-            gym_ids = []
-            self.gyms = {}
-            for guild_id in tb.info_channels.keys():
-                for guild_gym in tb.gyms[guild_id]:
-                    gym_ids.append("'" + guild_gym.id + "'")
-                    self.gyms[guild_gym.id] = {
-                        "gym": guild_gym,
-                        "guild_id": guild_id
-                    }
+        for server in self.bot.servers:
+            server.gyms = list(sorted(server.gyms, key=lambda g: g.raid.end))
+            for info_channel in server.info_channels:
+                info_channel.set_gyms(server.gyms)
+                self.info_channels.append(info_channel)
 
-            self.query = (
-                f"select gym_id, level, pokemon_id, form, costume, start, end, move_1, move_2, evolution "
-                f"from raid "
-                f"where end > utc_timestamp() and gym_id in ({','.join(gym_ids)}) "
-                f"order by end asc "
-            )
+        if self.info_channels:
             self.info_loop.start()
 
     @tasks.loop(seconds=10)
     async def info_loop(self):
-        result = await tb.queries.execute(self.query)
+        for info_channel in self.info_channels:
+            for gym in info_channel.gyms:
+                try:
+                    if not gym.raid.is_scanned:
+                        continue
+                    if gym.raid.end < arrow.utcnow():
+                        continue
+                    if gym.raid.level not in info_channel.levels:
+                        continue
 
-        for db_raid in result:
-            try:
-                raw_gym = self.gyms.get(db_raid[0], {})
-                gym = raw_gym.get("gym")
-                if gym is None:
-                    continue
+                    raidinfo = self.raid_infos.get(gym.id)
 
-                guild_id = raw_gym["guild_id"]
-                raidinfo = self.raid_infos.get(gym.id)
-
-                if raidinfo is None:
-                    raidinfo = await RaidInfo.from_db(gym, db_raid, tb.info_channels[guild_id])
-                    if raidinfo:
+                    if raidinfo is None:
+                        raidinfo = await RaidInfo.make(gym, info_channel)
                         self.raid_infos[gym.id] = raidinfo
-                    continue
-
-                if db_raid[2] is not None and not raidinfo.hatched:
-                    await raidinfo.has_hatched(db_raid)
-                    continue
-
-            except Exception as e:
-                log.error("Exception in RaidInfo Loop")
-                log.exception(e)
+                except Exception as e:
+                    log.error("Exception in RaidInfo loop")
+                    log.exception(e)
 
         try:
             for raidinfo in list(self.raid_infos.values()):
@@ -73,10 +58,9 @@ class InfoCog(commands.Cog):
 
     @info_loop.before_loop
     async def info_purge(self):
-        for channel_settings in tb.info_channels.values():
-            for channel_setting in channel_settings:
-                channel = await tb.bot.fetch_channel(channel_setting["id"])
-                await channel.purge(limit=1000)
+        for info_channel in self.info_channels:
+            await info_channel.channel.purge(limit=1000)
+
 
 def setup(bot):
     bot.add_cog(InfoCog(bot))

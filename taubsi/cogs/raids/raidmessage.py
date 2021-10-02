@@ -177,13 +177,13 @@ class RaidMessage:
 
     @classmethod
     async def from_raidinfo(cls,
-                            gym: Gym, raid: BaseRaid, start_time: arrow.Arrow,
+                            gym: Gym, start_time: arrow.Arrow,
                             interaction: discord.Interaction, channel_id: int) -> RaidMessage:
         self = cls(gym, start_time, channel_id)
 
         self.author_id = interaction.user.id
         self.footer_prefix = tb.translate("Scheduled_by").format(interaction.user.display_name) + "\n"
-        self.raid = raid
+        self.raid = gym.raid
         self.init_message = None
         self.view = self._get_view()
 

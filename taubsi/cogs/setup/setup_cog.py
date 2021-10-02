@@ -1,19 +1,21 @@
+from typing import TYPE_CHECKING
+
 import discord
 from discord.ext import commands
-from taubsi.core import logging
-from taubsi.cogs.setup.errors import *
-from taubsi.taubsi_objects import tb
-from taubsi.cogs.setup.objects import TaubsiUser
-from taubsi.utils.errors import command_error, TaubsiError
-from taubsi.utils.checks import is_guild
-from taubsi.core.pogo import Team
 
-log = logging.getLogger("Setup")
+from taubsi.cogs.setup.errors import *
+from taubsi.cogs.setup.objects import TaubsiUser
+from taubsi.core import log, Team
+from taubsi.utils.checks import is_guild
+from taubsi.utils.errors import command_error, TaubsiError
+
+if TYPE_CHECKING:
+    from taubsi.core import TaubsiBot
 
 
 class Setup(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: TaubsiBot = bot
         self.max_level = 50
 
     async def cog_command_error(self, ctx, error):
@@ -28,7 +30,8 @@ class Setup(commands.Cog):
         if level <= 1:
             raise LevelTooSmall
 
-    async def reponse(self, ctx, text):
+    @staticmethod
+    async def response(ctx, text):
         embed = discord.Embed(description=text, color=3092790)
         await ctx.send(embed=embed)
 
@@ -36,7 +39,7 @@ class Setup(commands.Cog):
     @commands.check(is_guild)
     async def level(self, ctx, level: int):
         self.__check_level(level)
-        await self.reponse(ctx, tb.translate("setup_set_level").format(level))
+        await self.response(ctx, self.bot.translate("setup_set_level").format(level))
         user = TaubsiUser()
         await user.from_command(ctx.author)
         user.level = level
@@ -50,7 +53,7 @@ class Setup(commands.Cog):
 
         level = user.level + 1
         self.__check_level(level)
-        await self.reponse(ctx, tb.translate("setup_level_up").format(level))
+        await self.response(ctx, self.bot.translate("setup_level_up").format(level))
 
         user.level = level
         await user.update()
@@ -58,7 +61,7 @@ class Setup(commands.Cog):
     @commands.command(aliases=["n"])
     @commands.check(is_guild)
     async def name(self, ctx, *, name):
-        await self.reponse(ctx, tb.translate("setup_name").format(name))
+        await self.response(ctx, self.bot.translate("setup_name").format(name))
         user = TaubsiUser()
         await user.from_command(ctx.author)
         user.name = name
@@ -70,7 +73,7 @@ class Setup(commands.Cog):
         member = None
         try:
             member = await commands.MemberConverter().convert(ctx, arg)
-        except:
+        except commands.CommandError:
             member = ctx.author
         
         user = TaubsiUser()
@@ -91,9 +94,10 @@ class Setup(commands.Cog):
             await user.from_command(ctx.author)
             user.friendcode = int(arg)
             await user.update()
-            await self.reponse(ctx, tb.translate("tb_saved_code"))
+            await self.response(ctx, self.bot.translate("tb_saved_code"))
 
-    def __team_aliases(self, team_name):
+    @staticmethod
+    def __team_aliases(team_name):
         aliases = {
             Team(1): ["mystic", "blau", "weisheit", "team_blau"],
             Team(2): ["valor", "rot", "wagemut", "team_rot"],
@@ -106,14 +110,15 @@ class Setup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if payload.channel_id in tb.team_choose_channels:
-            channel = self.bot.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            member = message.guild.get_member(payload.user_id)
-            user = TaubsiUser()
-            await user.from_command(member)
-            user.team = self.__team_aliases(payload.emoji.name)
-            await user.update()
+        if payload.channel_id not in self.bot.team_choose_ids:
+            return
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        member = message.guild.get_member(payload.user_id)
+        user = TaubsiUser()
+        await user.from_command(member)
+        user.team = self.__team_aliases(payload.emoji.name)
+        await user.update()
     
     @commands.command()
     @commands.check(is_guild)
@@ -125,7 +130,7 @@ class Setup(commands.Cog):
             raise NoTeam
         user.team = team
         await user.update()
-        await self.reponse(ctx, tb.translate("setup_team").format(team.name.lower().capitalize()))
+        await self.response(ctx, self.bot.translate("setup_team").format(team.name.lower().capitalize()))
 
 
 def setup(bot):

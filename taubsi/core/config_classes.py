@@ -33,6 +33,8 @@ class InfoChannel:
     id: int
     levels: List[int]
     post_to: List[int]
+    gyms: List[Gym]
+    channel: discord.TextChannel
 
     def __init__(self, id_: int, levels: List[int], post_to: Optional[List[int]] = None):
         self.id = id_
@@ -42,6 +44,9 @@ class InfoChannel:
             self.post_to = post_to
         else:
             self.post_to = []
+
+    def set_gyms(self, gyms: List[Gym]):
+        self.gyms = gyms
 
 
 class DMapMessage:
@@ -63,6 +68,7 @@ class Server:
     raid_channels: List[RaidChannel]
     info_channels: List[InfoChannel]
     dmap_messages: List[DMapMessage]
+    team_choose_ids: List[int]
     gyms: List[Gym]
     guild: discord.Guild
     _bot: TaubsiBot
@@ -76,13 +82,15 @@ class Server:
                  geofence: str,
                  raid_channels: List[RaidChannel],
                  info_channels: List[InfoChannel],
-                 dmap_messages: List[DMapMessage]):
+                 dmap_messages: List[DMapMessage],
+                 team_choose: List[int]):
         self.name = name
         self.id = id_
         self.geofence = geofence.lower()
         self.raid_channels = raid_channels
         self.info_channels = info_channels
         self.dmap_messages = dmap_messages
+        self.team_choose_ids = team_choose
 
         with open("geofence.json", "r") as f:
             self._raw_fences = json.load(f)
@@ -117,7 +125,7 @@ class Server:
         self.gyms = []
         self._gym_dict = {}
         for gym_data in gyms:
-            gym = Gym(bot, gym_data)
+            gym = Gym(bot, self, gym_data)
             await gym.set_raid()
             self.gyms.append(gym)
             self._gym_dict[gym.id] = gym

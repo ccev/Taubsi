@@ -16,6 +16,7 @@ from taubsi.core.logging import log
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
+    from taubsi.core.config_classes import Server
 
 
 class Team(Enum):
@@ -111,9 +112,12 @@ class Gym:
     lat: float = 0
     lon: float = 0
     team: Team = Team.NOTEAM
+    server: Server
+    _bot: TaubsiBot
 
-    def __init__(self, bot: TaubsiBot, data: Dict[str, Any]):
-        self._bot = bot
+    def __init__(self, bot_: TaubsiBot, server: Server, data: Dict[str, Any]):
+        self._bot = bot_
+        self.server = server
         self.id = data.get("id")
         self.update(data)
 

@@ -23,6 +23,7 @@ class TaubsiBot(commands.Bot):
     pogodata: PogoData
     servers: List[Server]
     server_ids: List[int]
+    team_choose_ids: List[int]
     trash_channel: discord.TextChannel
 
     def __init__(self):
@@ -33,7 +34,12 @@ class TaubsiBot(commands.Bot):
         self.taubsi_db = Queries(self.config, self.loop, self.config.TAUBSI_DB_NAME)
         self.uicons = UIconManager()
         self.servers = self.config.SERVERS
-        self.server_ids = [s.id for s in self.servers]
+
+        self.server_ids = []
+        self.team_choose_ids = []
+        for server in self.servers:
+            self.server_ids.append(server.id)
+            self.team_choose_ids += server.team_choose_ids
 
         translator_ = Translator(self.config.LANGUAGE.value)
         self.translate = translator_.translate
@@ -51,6 +57,10 @@ class TaubsiBot(commands.Bot):
         self._startup = False
 
         self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
+
+        for server in self.servers:
+            for info_channel in server.info_channels:
+                info_channel.channel = await self.fetch_channel(info_channel.id)
 
         if Cog.RAIDS in self.config.COGS:
             raidcog = self.get_cog("RaidCog")

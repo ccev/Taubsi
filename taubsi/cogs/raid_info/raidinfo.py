@@ -1,24 +1,22 @@
 from __future__ import annotations
-from typing import NoReturn, List, Callable, Optional
-
-import discord
-import arrow
 
 from math import floor
+from typing import NoReturn, Callable, Optional, TYPE_CHECKING
 
-from taubsi.taubsi_objects import tb
+import arrow
+import discord
+
 from taubsi.cogs.raids.raidmessage import GMAPS_LINK, AMAPS_LINK, RaidMessage
-from taubsi.core.pogo import ScannedRaid, Gym
+from taubsi.core import bot, Gym
 
-
-TIMEFORMAT_SHORT = tb.translate("timeformat_short")
-TIMEFORMAT_LONG = tb.translate("timeformat_long")
+if TYPE_CHECKING:
+    from taubsi.core import InfoChannel
 
 
 class InfoTimeButton(discord.ui.Button):
     def __init__(self, raidinfo: RaidInfo, time: arrow.Arrow):
         self.time = time.to("local")
-        label = self.time.strftime(TIMEFORMAT_SHORT)
+        label = self.time.strftime(bot.translate("timeformat_short"))
         self.raidinfo = raidinfo
 
         super().__init__(style=discord.ButtonStyle.grey, label=label,
@@ -32,8 +30,8 @@ class InfoTimeButton(discord.ui.Button):
         if self.time < arrow.now().shift(minutes=4):
             return
 
-        for channel_id in self.raidinfo.post_to:
-            raidmessage = await RaidMessage.from_raidinfo(self.raidinfo.gym, self.raidinfo.raid, self.time,
+        for channel_id in self.raidinfo.info_channel.post_to:
+            raidmessage = await RaidMessage.from_raidinfo(self.raidinfo.gym, self.time,
                                                           interaction, channel_id)
             await self.raidinfo.create_raid(raidmessage)
 
@@ -61,94 +59,57 @@ class RaidInfoView(discord.ui.View):
 
 class RaidInfo:
     gym: Gym
-    raid: ScannedRaid
+    info_channel: InfoChannel
 
     embed: discord.Embed
-    messages: List[discord.Message]
-    channels: List[discord.TextChannel]
-    post_to: List[int]
-    view: Optional[RaidInfoView]
+    message: discord.Message
+    view: Optional[RaidInfoView] = None
 
-    hatched: bool
     create_raid: Callable
 
-    def __init__(self, gym: Gym):
+    def __init__(self, gym: Gym, info_channel: InfoChannel):
         self.gym = gym
-        raid_cog = tb.bot.get_cog("RaidCog")
+        self.info_channel = info_channel
+        raid_cog = bot.get_cog("RaidCog")
         self.create_raid = raid_cog.create_raid
-
         self.embed = discord.Embed()
-        self.messages = []
-        self.channels = []
-        self.post_to = []
-        self.view = None
-        self.hatched = False
 
     @classmethod
-    async def from_db(cls, gym: Gym, db_raid, channel_settings) -> Optional[RaidInfo]:
-        self = cls(gym)
-        for channel_setting in channel_settings:
-            if db_raid[1] not in channel_setting.get("levels", []):
-                continue
-
-            channel_id = channel_setting["id"]
-            channel = await tb.bot.fetch_channel(channel_id)
-            self.channels.append(channel)
-            self.post_to += channel_setting.get("post_to", [])
-
-        if not self.channels:
-            return None
-
-        self._make_raid(db_raid)
-        self.make_embed()
+    async def make(cls, gym: Gym, info_channel: InfoChannel) -> RaidInfo:
+        self = cls(gym, info_channel)
         await self.send_message()
-
         return self
 
-    def _make_raid(self, db_raid: tuple) -> NoReturn:
-        gym_id, level, mon_id, form, costume, start, end, move_1, move_2, evolution = db_raid
-
-        start = arrow.get(start)
-        end = arrow.get(end)
-
-        if mon_id is not None:
-            self.hatched = True
-
-        mon = tb.pogodata.get_mon(id=mon_id, form=form, costume=costume, temp_evolution_id=evolution)
-        move1 = tb.pogodata.get_move(id=move_1)
-        move2 = tb.pogodata.get_move(id=move_2)
-        self.raid = ScannedRaid(self.gym, move1, move2, start, end, mon, level)
-    
-    async def has_hatched(self, db_raid: tuple) -> NoReturn:
-        self._make_raid(db_raid)
+    async def send_message(self):
         self.make_embed()
-        await self.edit_message()
+        self.make_view()
+        self.message = await self.info_channel.channel.send(embed=self.embed, view=self.view)
 
     def make_embed(self) -> NoReturn:
-        formatted_end = self.raid.end.to("local").strftime(TIMEFORMAT_LONG)
-        self.embed.title = self.raid.name
+        formatted_end = self.gym.raid.end.to("local").strftime(bot.translate("timeformat_long"))
+        self.embed.title = self.gym.raid.name
 
-        if self.hatched:
-            self.embed.title += " " + tb.translate("Raid")
+        if self.gym.raid.boss and not self.gym.raid.is_predicted:
+            self.embed.title += " " + bot.translate("Raid")
 
             self.embed.description = (
-                f"{tb.translate('Bis')} **{formatted_end}** <t:{self.raid.end.int_timestamp}:R>\n"
-                f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
-                f"{tb.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.raid.moves])
+                f"{bot.translate('Bis')} **{formatted_end}** <t:{self.gym.raid.end.int_timestamp}:R>\n"
+                f"100%: **{self.gym.raid.cp20}** | **{self.gym.raid.cp25}**\n"
+                f"{bot.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.gym.raid.moves])
             )
-            self.embed.set_thumbnail(url=tb.uicons.raid(self.raid))
+            self.embed.set_thumbnail(url=bot.uicons.raid(self.gym.raid))
 
         else:
-            formatted_start = self.raid.start.to("local").strftime(TIMEFORMAT_LONG)
+            formatted_start = self.gym.raid.start.to("local").strftime(bot.translate("timeformat_long"))
 
             self.embed.description = (
-                f"{tb.translate('Hatches')} <t:{self.raid.start.int_timestamp}:R>\n"
-                f"{tb.translate('Raidzeit')}: **{formatted_start} – {formatted_end}**"
+                f"{bot.translate('Hatches')} <t:{self.gym.raid.start.int_timestamp}:R>\n"
+                f"{bot.translate('Raidzeit')}: **{formatted_start} – {formatted_end}**"
             )
-            self.embed.set_thumbnail(url=tb.uicons.egg(self.raid))
+            self.embed.set_thumbnail(url=bot.uicons.egg(self.gym.raid))
 
-            if self.raid.boss:
-                self.embed.title += " " + tb.translate("Egg")
+            if self.gym.raid.boss:
+                self.embed.title += " " + bot.translate("Egg")
 
         self.embed.description += "\n\n" + (
             f"[Google Maps]({GMAPS_LINK.format(self.gym.lat, self.gym.lon)}) | "
@@ -157,38 +118,28 @@ class RaidInfo:
 
         self.embed.set_author(name=self.gym.name, icon_url=self.gym.img)
 
-    def get_view(self) -> Optional[RaidInfoView]:
-        if self.post_to:
-            return RaidInfoView(self)
-        return None
+    def make_view(self):
+        if self.info_channel.post_to:
+            self.view = RaidInfoView(self)
 
     async def update_buttons(self) -> NoReturn:
         if not self.view:
             return
+        old_view = self.view
+        self.make_view()
 
-        new_view = self.get_view()
+        if not self.view:
+            await self.edit_message()
 
-        if not new_view:
-            await self.edit_message(new_view)
-            return
+        if len(old_view.children) != len(self.view.children):
+            await self.edit_message()
 
-        if len(new_view.children) != len(self.view.children):
-            await self.edit_message(new_view)
-
-    async def send_message(self) -> NoReturn:
-        self.view = self.get_view()
-        for channel in self.channels:
-            message = await channel.send(embed=self.embed, view=self.view)
-            self.messages.append(message)
-
-    async def edit_message(self, view: Optional[RaidInfoView] = None) -> NoReturn:
-        if not view:
-            self.view = self.get_view()
-        else:
-            self.view = view
-        for message in self.messages:
-            await message.edit(embed=self.embed, view=self.view)
+    async def edit_message(self, view: bool = False, embed: bool = False) -> NoReturn:
+        if view:
+            self.make_view()
+        if embed:
+            self.make_embed()
+        await self.message.edit(embed=self.embed, view=self.view)
 
     async def delete(self) -> NoReturn:
-        for message in self.messages:
-            await message.delete()
+        await self.message.delete()
