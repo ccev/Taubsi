@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from taubsi.cogs.playerstats.objects import Player
-from taubsi.core import Stat, Badge
+from taubsi.corgs.playerstats.objects import Badge, Stat
 
 
 class TrueXP:

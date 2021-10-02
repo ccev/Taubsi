@@ -1,10 +1,7 @@
 import discord
 
-from taubsi.core import logging
 from taubsi.cogs.raids.raidmessage import RaidMessage
-from taubsi.taubsi_objects import tb
-
-log = logging.getLogger("Raids")
+from taubsi.core import bot
 
 
 class ChoiceButton(discord.ui.Button):
@@ -37,8 +34,8 @@ class ChoiceMessage:
         self.cog = cog
 
     def make_embed(self):
-        self.embed.title = tb.translate("choice_x_gyms").format(len(self.gyms))
-        self.embed.description = tb.translate("choice_please_choose")
+        self.embed.title = bot.translate("choice_x_gyms").format(len(self.gyms))
+        self.embed.description = bot.translate("choice_please_choose")
 
     async def send_message(self):
         self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))

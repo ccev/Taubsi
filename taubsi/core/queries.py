@@ -22,9 +22,7 @@ class Queries:
             args = []
         r = None
 
-        pool_kwargs = {"host": self.config["db_host"], "port": self.config["db_port"], "user": self.config["db_user"],
-                       "password": self.config["db_pass"], "db": self.dbname}
-        pool = await aiomysql.create_pool(**pool_kwargs)
+        pool = await aiomysql.create_pool(**self.pool_kwargs)
         async with pool.acquire() as conn:
             async with conn.cursor(*conn_args) as cursor:
                 await cursor.execute(query, args)

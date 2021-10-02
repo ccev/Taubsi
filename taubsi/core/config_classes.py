@@ -118,7 +118,7 @@ class Server:
             f"select name, gym.gym_id as id, url, latitude, longitude "
             f"from gymdetails "
             f"left join gym on gym.gym_id = gymdetails.gym_id "
-            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({sql_fence})'), point(latitude, longitude))"
+            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude))"
         )
         gyms = await bot.mad_db.execute(query)
 
@@ -126,16 +126,16 @@ class Server:
         self._gym_dict = {}
         for gym_data in gyms:
             gym = Gym(bot, self, gym_data)
-            await gym.set_raid()
             self.gyms.append(gym)
             self._gym_dict[gym.id] = gym
+        await self.update_gyms()
 
         self.guild = await bot.fetch_guild(self.id)
 
     async def update_gyms(self):
         query = (
-            f"select gym.gym_id as id, url, team, latitude, longitude, raid.level, raid.start, raid.end, raid.move_1, "
-            f"raid.move_2, raid.pokemon_id, raid.form, raid.costume, raid.evolution "
+            f"select gym.gym_id as id, url, team_id as team, latitude, longitude, raid.level, raid.start, raid.end, "
+            f"raid.move_1, raid.move_2, raid.pokemon_id, raid.form, raid.costume, raid.evolution "
             f"from gym "
             f"left join gymdetails on gymdetails.gym_id = gym.gym_id "
             f"left join raid on raid.gym_id = gym.gym_id "
@@ -143,16 +143,9 @@ class Server:
         )
         gyms = await self._bot.mad_db.execute(query)
         for data in gyms:
-            gym_data = {}
-            raid_data = {}
-            for k, v in data:
-                if k.startswith("raid"):
-                    raid_data[k] = v
-                else:
-                    gym_data[k] = v
             gym = self.get_gym(data["id"])
             if gym:
-                gym.update(gym_data, raid_data)
+                gym.update(data)
 
     def get_gym(self, id_: str) -> Optional[Gym]:
         return self._gym_dict.get(id_)

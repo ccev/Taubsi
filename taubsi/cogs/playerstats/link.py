@@ -13,7 +13,7 @@ class AcceptView(discord.ui.View):
     async def send_code_again(self, _, interaction: discord.Interaction):
         if interaction.user.id != self.author_id:
             return
-        content = f"```\n{bot.config['botcode']}\n```"
+        content = f"```\n{bot.config.FRIEND_CODE}\n```"
         await interaction.response.send_message(content=content,
                                                 ephemeral=True)
 
@@ -56,7 +56,7 @@ class LinkView(discord.ui.View):
                               color=3092790)
         await self.message.edit(embed=embed, view=AcceptView(self.author.id))
         await interaction.response.send_message(
-            bot.translate("link_botcode").format(bot.config["botcode"]), ephemeral=True)
+            bot.translate("link_botcode").format(bot.config.FRIEND_CODE), ephemeral=True)
 
     @discord.ui.button(label=bot.translate("link_deny"), style=discord.ButtonStyle.red)
     async def deny(self, _, interaction: discord.Interaction):

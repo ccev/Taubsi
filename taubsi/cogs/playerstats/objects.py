@@ -7,7 +7,8 @@ import discord
 from discord.ext import commands
 
 from taubsi.cogs.playerstats.errors import *
-from taubsi.core import bot, Team, Stat, Badge
+from taubsi.core import bot, Team
+from taubsi.corgs.playerstats.objects import Badge, Stat
 
 
 class DataLevel(Enum):

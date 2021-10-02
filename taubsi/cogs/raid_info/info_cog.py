@@ -16,8 +16,10 @@ class InfoCog(commands.Cog):
         self.raid_infos: Dict[str, RaidInfo] = {}
         self.info_channels: List[InfoChannel] = []
 
+    def final_init(self):
         for server in self.bot.servers:
-            server.gyms = list(sorted(server.gyms, key=lambda g: g.raid.end))
+            now = arrow.utcnow()
+            server.gyms = list(sorted(server.gyms, key=lambda g: g.raid.end if g.raid else now))
             for info_channel in server.info_channels:
                 info_channel.set_gyms(server.gyms)
                 self.info_channels.append(info_channel)
@@ -30,6 +32,9 @@ class InfoCog(commands.Cog):
         for info_channel in self.info_channels:
             for gym in info_channel.gyms:
                 try:
+                    if not gym.raid:
+                        continue
+                    print(gym.raid)
                     if not gym.raid.is_scanned:
                         continue
                     if gym.raid.end < arrow.utcnow():

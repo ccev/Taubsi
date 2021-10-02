@@ -5,7 +5,8 @@ import arrow
 import discord
 
 from taubsi.cogs.playerstats.objects import Player, LinkAdButton, DataLevel
-from taubsi.core import bot, Stat, Badge
+from taubsi.core import bot
+from taubsi.corgs.playerstats.objects import Badge, Stat
 
 
 class _StatCategory(discord.SelectOption):
@@ -118,7 +119,7 @@ class StatView(discord.ui.View):
         else:
             stat_emoji = ""
             stat_suffix = ""
-        return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", tb.translate("dot"))
+        return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", bot.translate("dot"))
 
     def _base_embed(self):
         embed = discord.Embed()

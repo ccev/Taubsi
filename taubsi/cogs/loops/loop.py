@@ -10,11 +10,12 @@ if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
 
 
-class Loop(commands.Cog):
+class LoopCog(commands.Cog):
     def __init__(self, bot):
         self.bot: TaubsiBot = bot
         self._last_pogodata_update = arrow.utcnow()
 
+    def final_init(self):
         self.pogodata_loop.start()
         self.gym_loop.start()
 
@@ -31,4 +32,4 @@ class Loop(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Loop(bot))
+    bot.add_cog(LoopCog(bot))

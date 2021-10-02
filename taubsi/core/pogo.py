@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Union, Dict, Any, Optional, TYPE_CHECKING, List
+from typing import Dict, Any, Optional, TYPE_CHECKING, List
 from io import BytesIO
 from enum import Enum
 from datetime import datetime
+from copy import deepcopy
 
 import arrow
 import discord
@@ -10,7 +11,6 @@ from PIL import Image, ImageDraw
 from pogodata.objects import Move
 from pogodata.pokemon import Pokemon
 
-from taubsi.core import bot
 from taubsi.utils.utils import asyncget, calculate_cp
 from taubsi.core.logging import log
 
@@ -30,12 +30,10 @@ class Raid:
     is_scanned: bool
     is_predicted: bool = False
 
-    boss: Optional[Pokemon]
-
     level: int
     cp20: int = 0
     cp25: int = 0
-    boss: Optional[Pokemon]
+    boss: Optional[Pokemon] = None
     name: str = "?"
     pokebattler_name: str = "UNOWN"
 
@@ -95,7 +93,13 @@ class Raid:
                 self.name = "Mega Ei"
 
     def __eq__(self, other: Raid):
-        return True
+        if self.boss:
+            return self.boss.id == other.boss.id and self.is_predicted == other.is_predicted
+        else:
+            return self.is_scanned == other.is_scanned
+
+    def copy(self) -> Raid:
+        return deepcopy(self)
 
     @property
     def has_hatched(self) -> bool:
@@ -121,15 +125,18 @@ class Gym:
         self.id = data.get("id")
         self.update(data)
 
-    def update(self, data: Dict[str, Any], raid_data: Optional[dict] = None):
+    def update(self, data: Dict[str, Any] = None):
         self.name = data.get("name", self.name)
         self.img = data.get("url", self.img)
         self.lat = data.get("latitude", self.lat)
         self.lon = data.get("longitude", self.lon)
         self.team = Team(data.get("team", self.team.value))
 
-        if raid_data and raid_data["end"] > datetime.utcnow():
-            self.set_raid(raid_data)
+        if not data.get("end"):
+            return
+
+        if data["end"] > datetime.utcnow():
+            self.set_raid(data)
         else:
             if self.raid and self.raid.is_scanned:
                 self.raid = None
@@ -146,6 +153,7 @@ class Gym:
             raid = await self._bot.mad_db.execute(query)
             if not raid:
                 return
+            raid = raid[0]
             self.raid = Raid(self._bot, raid)
 
     def get_raid(self, level: int = 0) -> Raid:
@@ -155,21 +163,19 @@ class Gym:
         if not self.raid or (level and self.raid.level != level):
             return Raid(self._bot, {"level": level})
         else:
-            return self.raid
+            return self.raid.copy()
 
-    async def get_raid_image(self) -> str:
+    async def get_raid_image(self, raid: Optional[Raid] = None) -> str:
         """
         Generate a circuar Gym Img with the boss in front of it.
         Similiar to how it'd show on the in-game nearby view.
         """
-        if not self.raid:
+        if raid is None:
+            raid = self.raid
+        if not raid:
             return ""
 
-        if self.raid.boss:
-            mon_size = (105, 105)
-        else:
-            mon_size = (95, 95)
-        boss_result = await asyncget(self._bot.uicons.raid(self.raid, shiny_chance=30))
+        boss_result = await asyncget(self._bot.uicons.raid(raid, shiny_chance=30))
         log.info(f"Creating a Raid Icon for Gym {self.name}")
         gym_result = await asyncget(self.img)
 
@@ -179,10 +185,10 @@ class Gym:
 
         # gym resizing
         size = min(gym.size)
-        gym = gym.crop((gym.width - size) // 2,
-                       (gym.height - size) // 2,
-                       (gym.width + size) // 2,
-                       (gym.height + size) // 2)
+        gym = gym.crop(((gym.width - size) // 2,
+                        (gym.height - size) // 2,
+                        (gym.width + size) // 2,
+                        (gym.height + size) // 2))
 
         mask = Image.new("L", (size*2, size*2), 0)
         draw = ImageDraw.Draw(mask)
@@ -198,6 +204,13 @@ class Gym:
 
         # boss resizing & combining
         mon = Image.open(bossstream).convert("RGBA")
+
+        if raid.boss:
+            size = 105
+        else:
+            size = 95
+        multiplier = size / max(mon.size)
+        mon_size = tuple([int(round(multiplier * s)) for s in mon.size])
 
         monbg = Image.new("RGBA", bg.size, 0)
         mon = mon.resize(mon_size, Image.ANTIALIAS)
@@ -215,97 +228,3 @@ class Gym:
         bossstream.close()
 
         return final_link
-
-
-class Badge:
-    value: str
-    targets: List[int]
-
-    def __init__(self, value: str, targets: List[int]):
-        self.value = value
-        self.targets = targets
-
-    def next_target(self, number: int) -> str:
-        for target in self.targets:
-            if target > number:
-                return f"/{target:,}"
-        return ""
-
-    def get_tier_prefix(self, number: int) -> str:
-        level = sum([1 for t in self.targets if t <= number])
-        emoji = bot.config.BADGE_LEVELS[level]
-        return emoji
-
-
-class Stat:
-    XP = Badge("xp", [])
-    KM_WALKED = Badge("km_walked", [10, 100, 1000, 10000])
-    CAUGHT_POKEMON = Badge("caught_pokemon", [30, 500, 2000, 50000])
-    STOPS = Badge("stops_spun", [100, 1000, 2000, 50000])
-    EVOLVED = Badge("evolved", [3, 20, 200, 2000])
-    HATCHED = Badge("hatched", [10, 100, 500, 2500])
-    QUESTS = Badge("quests", [10, 100, 1000, 2500])
-    TRADES = Badge("trades", [10, 100, 1000, 2500])
-    UNIQUE_STOPS = Badge("unique_stops_spun", [10, 100, 1000, 2000])
-    BEST_FRIENDS = Badge("best_friends", [1, 2, 3, 20])
-
-    TOTAL_BATTLES_WON = Badge("battles_won", [])
-    NORMAL_RAIDS_WON = Badge("normal_raids_won", [10, 100, 1000, 2000])
-    LEGENDARY_RAIDS_WON = Badge("legendary_raids_won", [10, 100, 1000, 2000])
-    FRIEND_RAIDS = Badge("raids_with_friends", [10, 100, 1000, 2000])
-    RAID_ACHIEVEMENTS = Badge("raid_achievements", [1, 50, 200, 500])
-    UNIQUE_RAIDS = Badge("unique_raid_bosses", [2, 10, 50, 150])
-    GRUNTS = Badge("grunts_defeated", [10, 100, 1000, 2000])
-    GIOVANNI = Badge("giovanni_defeated", [1, 5, 20, 50])
-    PURIFIED = Badge("purified", [5, 50, 500, 1000])
-    GYM_BATTLES_WON = Badge("gym_battles_won", [10, 100, 1000, 4000])
-    BERRIES_FED = Badge("berries_fed", [10, 100, 1000, 15000])
-    HOURS_DEFENDED = Badge("hours_defended", [10, 100, 1000, 15000])
-    TRAININGS_WON = Badge("trainings_won", [10, 100, 1000, 2000])
-    GREAT_WON = Badge("league_great_won", [5, 50, 200, 1000])
-    ULTRA_WON = Badge("league_ultra_won", [5, 50, 200, 1000])
-    MASTER_WON = Badge("league_master_won", [5, 50, 200, 1000])
-    GBL_RANK = Badge("gbl_rank", [])
-    GBL_RATING = Badge("gbl_rating", [])
-
-    BEST_BUDDIES = Badge("best_buddies", [1, 10, 100, 200])
-    MEGA_EVOS = Badge("mega_evos", [1, 50, 500, 1000])
-    COLLECTIONS = Badge("collections_done", [])
-    UNIQUE_MEGA_EVOS = Badge("unique_mega_evos", [1, 24, 36, 46])
-    STREAKS = Badge("7_day_streaks", [1, 10, 50, 100])
-    TRADE_KM = Badge("trade_km", [1000, 100000, 1000000, 10000000])
-    LURE_CAUGHT = Badge("caught_at_lure", [5, 25, 500, 2500])
-    WAYFARER = Badge("wayfarer_agreements", [50, 500, 1000, 1500])
-    REFERRED = Badge("trainers_referred", [1, 10, 20, 50])
-    PHOTOBOMBS = Badge("photobombs", [10, 50, 200, 400])
-
-    UNIQUE_UNOWN = Badge("unique_unown", [3, 10, 26, 28])
-    XL_KARPS = Badge("xl_karps", [3, 50, 300, 1000])
-    XS_RATS = Badge("xs_rats", [3, 50, 300, 1000])
-    PIKACHU = Badge("pikachu_caught", [3, 50, 300, 1000])
-    DEX_1 = Badge("dex_gen1", [5, 50, 100, 151])
-    DEX_2 = Badge("dex_gen2", [5, 30, 70, 100])
-    DEX_3 = Badge("dex_gen3", [5, 40, 90, 135])
-    DEX_4 = Badge("dex_gen4", [5, 30, 80, 107])
-    DEX_5 = Badge("dex_gen5", [5, 50, 100, 156])
-    DEX_6 = Badge("dex_gen6", [5, 25, 50, 72])
-    DEX_7 = Badge("dex_gen7", [])
-    DEX_8 = Badge("dex_gen8", [5, 25, 50, 89])
-    NORMAL = Badge("caught_normal", [10, 50, 200, 2500])
-    FIGHTING = Badge("caught_fighting", [10, 50, 200, 2500])
-    FLYING = Badge("caught_flying", [10, 50, 200, 2500])
-    POISON = Badge("caught_poison", [10, 50, 200, 2500])
-    GROUND = Badge("caught_ground", [10, 50, 200, 2500])
-    ROCK = Badge("caught_rock", [10, 50, 200, 2500])
-    BUG = Badge("caught_bug", [10, 50, 200, 2500])
-    GHOST = Badge("caught_ghost", [10, 50, 200, 2500])
-    STEEL = Badge("caught_steel", [10, 50, 200, 2500])
-    FIRE = Badge("caught_fire", [10, 50, 200, 2500])
-    WATER = Badge("caught_water", [10, 50, 200, 2500])
-    GRASS = Badge("caught_grass", [10, 50, 200, 2500])
-    ELECTRIC = Badge("caught_electric", [10, 50, 200, 2500])
-    PSYCHIC = Badge("caught_psychic", [10, 50, 200, 2500])
-    ICE = Badge("caught_ice", [10, 50, 200, 2500])
-    DRAGON = Badge("caught_dragon", [10, 50, 200, 2500])
-    DARK = Badge("caught_dark", [10, 50, 200, 2500])
-    FAIRY = Badge("caught_fairy", [10, 50, 200, 2500])

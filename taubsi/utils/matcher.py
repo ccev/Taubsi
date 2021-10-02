@@ -1,10 +1,13 @@
 # I took this from FoglyOgly/Meowth
+import re
 from enum import Enum
+from typing import List, Tuple
 
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from fuzzywuzzy import utils
-import re
+
+from taubsi.core import Gym
 
 
 def pre(string: str):
@@ -70,7 +73,8 @@ def get_match(word_list: list, word: str, score_cutoff: int = 80):
     return result
 
 
-def get_matches(word_list: list, word: str, scorer='fp_ratio', score_cutoff: int = 70, limit: int = 10):
+def match_gyms(gyms: List[Gym], word: str, scorer='fp_ratio', score_cutoff: int = 70,
+               limit: int = 10) -> List[Tuple[Gym, int]]:
     """Uses fuzzywuzzy to see if word is close to entries in word_list
 
     Returns a list of tuples with (MATCH, SCORE)
@@ -82,8 +86,16 @@ def get_matches(word_list: list, word: str, scorer='fp_ratio', score_cutoff: int
     }
     scorer = scorer_dict[scorer]
 
-    sorted_list = process.extractBests(word, word_list, processor=pre, scorer=scorer, score_cutoff=score_cutoff, limit=limit)
-    sorted_list = [(n, v) for n, v in sorted_list if v >= sorted_list[0][1]]
+    word_list = [g.name for g in gyms]
+    sorted_list = process.extractBests(word, word_list, processor=pre, scorer=scorer, score_cutoff=score_cutoff,
+                                       limit=limit)
+
+    def get_gym_by_name(n):
+        for gym in gyms:
+            if gym.name == n:
+                return gym
+        return None
+    sorted_list = [(get_gym_by_name(n), v) for n, v in sorted_list if v >= sorted_list[0][1]]
     great_matches = [x for x in sorted_list if x[1] >= 95]
     if great_matches:
         return great_matches
@@ -92,7 +104,6 @@ def get_matches(word_list: list, word: str, scorer='fp_ratio', score_cutoff: int
         return good_matches
     else:
         return sorted_list
-
 
 
 class FuzzyEnum(Enum):

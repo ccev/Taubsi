@@ -19,8 +19,7 @@ class InfoTimeButton(discord.ui.Button):
         label = self.time.strftime(bot.translate("timeformat_short"))
         self.raidinfo = raidinfo
 
-        super().__init__(style=discord.ButtonStyle.grey, label=label,
-                         custom_id=str(self.raidinfo.gym.id) + "_" + label)
+        super().__init__(style=discord.ButtonStyle.grey, label=label)
 
     async def callback(self, interaction: discord.Interaction) -> NoReturn:
         self.disabled = True

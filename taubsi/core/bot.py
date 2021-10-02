@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 import discord
 from discord.ext import commands
@@ -8,7 +8,7 @@ from config import Config
 from taubsi.core.queries import Queries
 from taubsi.core.uicons import UIconManager
 from taubsi.core.translator import Translator
-from taubsi.core.config_classes import Server
+from taubsi.core.config_classes import Server, RaidChannel
 from taubsi.core.logging import log
 from taubsi.core.cogs import Cog
 
@@ -24,6 +24,7 @@ class TaubsiBot(commands.Bot):
     servers: List[Server]
     server_ids: List[int]
     team_choose_ids: List[int]
+    raid_channel_dict: Dict[int, RaidChannel]
     trash_channel: discord.TextChannel
 
     def __init__(self):
@@ -37,14 +38,18 @@ class TaubsiBot(commands.Bot):
 
         self.server_ids = []
         self.team_choose_ids = []
+        self.raid_channel_dict = {}
         for server in self.servers:
             self.server_ids.append(server.id)
             self.team_choose_ids += server.team_choose_ids
+            for raid_channel in server.raid_channels:
+                self.raid_channel_dict[raid_channel.id] = raid_channel
 
         translator_ = Translator(self.config.LANGUAGE.value)
         self.translate = translator_.translate
         self.reload_pogodata()
 
+    def load_cogs(self):
         for cog in self.config.COGS:
             self.load_extension(cog.value)
 
@@ -55,15 +60,30 @@ class TaubsiBot(commands.Bot):
         if not self._startup:
             return
         self._startup = False
+        log.info("Logged in, setting up everything")
 
         self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
 
+        log.info("Preparing servers")
         for server in self.servers:
+            await server.load(self)
             for info_channel in server.info_channels:
                 info_channel.channel = await self.fetch_channel(info_channel.id)
 
+        log.info("Preparing cogs")
         if Cog.RAIDS in self.config.COGS:
             raidcog = self.get_cog("RaidCog")
             await raidcog.final_init()
 
+        if Cog.RAIDINFO in self.config.COGS:
+            infocog = self.get_cog("InfoCog")
+            infocog.final_init()
+
+        if Cog.MAIN_LOOPS in self.config.COGS:
+            loopcog = self.get_cog("LoopCog")
+            loopcog.final_init()
+
         log.info("Fully loaded, ready for action")
+
+
+bot = TaubsiBot()
