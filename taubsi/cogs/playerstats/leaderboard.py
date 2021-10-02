@@ -189,3 +189,7 @@ class LeaderboardView(discord.ui.View):
             button = button(self)
             self.buttons.append(button)
             self.add_item(button)
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True

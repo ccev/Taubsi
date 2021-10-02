@@ -164,3 +164,7 @@ class StatView(discord.ui.View):
                 title = bot.translate("stats_title_" + title)
                 embed.add_field(name=title, value=text, inline=False)
         return embed
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True

@@ -17,6 +17,10 @@ class AcceptView(discord.ui.View):
         await interaction.response.send_message(content=content,
                                                 ephemeral=True)
 
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+
 
 class LinkView(discord.ui.View):
     message: discord.Message
@@ -61,3 +65,7 @@ class LinkView(discord.ui.View):
         self.interacted = True
         embed = discord.Embed(description=bot.translate("link_denied"), color=3092790)
         await interaction.response.edit_message(embed=embed, view=None)
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
