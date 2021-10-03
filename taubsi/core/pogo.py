@@ -67,7 +67,8 @@ class Raid:
                                                  form=raid_data.get("form"),
                                                  costume=raid_data.get("costume"),
                                                  temp_evolution_id=raid_data.get("evolution"))
-        else:
+
+        if not raid_data.get("pokemon_id"):
             available_bosses = bot.pogodata.raids[self.level]
             if len(available_bosses) == 1:
                 self.boss = available_bosses[0]
@@ -93,7 +94,11 @@ class Raid:
                 self.name = "Mega Ei"
 
     def __eq__(self, other: Raid):
+        if other is None:
+            return False
         if self.boss:
+            if not other.boss:
+                return False
             return self.boss.id == other.boss.id and self.is_predicted == other.is_predicted
         else:
             return self.is_scanned == other.is_scanned
@@ -135,11 +140,9 @@ class Gym:
         if not data.get("end"):
             return
 
-        if data["end"] > datetime.utcnow():
-            self.raid = Raid(self._bot, data)
-        else:
-            if self.raid and self.raid.is_scanned:
-                self.raid = None
+        raid = Raid(self._bot, data)
+        if raid != self.raid:
+            self.raid = raid
 
     def get_raid(self, level: int = 0) -> Raid:
         """

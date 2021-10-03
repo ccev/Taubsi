@@ -126,11 +126,14 @@ class Server:
         self._gym_dict = {}
         for gym_data in gyms:
             gym = Gym(bot, self, gym_data)
-            self.gyms.append(gym)
-            self._gym_dict[gym.id] = gym
+            self._add_gym(gym)
         await self.update_gyms()
 
         self.guild = await bot.fetch_guild(self.id)
+
+    def _add_gym(self, gym: Gym):
+        self.gyms.append(gym)
+        self._gym_dict[gym.id] = gym
 
     async def update_gyms(self):
         query = (
@@ -146,6 +149,9 @@ class Server:
             gym = self.get_gym(data["id"])
             if gym:
                 gym.update(data)
+            else:
+                gym = Gym(self._bot, self, data)
+                self._add_gym(gym)
 
     def get_gym(self, id_: str) -> Optional[Gym]:
         return self._gym_dict.get(id_)

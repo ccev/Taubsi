@@ -9,9 +9,11 @@ if TYPE_CHECKING:
     from taubsi.core import TaubsiBot
 
 
-class AutoSetup(commands.Cog):
+class AutoSetupCog(commands.Cog):
     def __init__(self, bot):
         self.bot: TaubsiBot = bot
+
+    def final_init(self):
         self.autoupdate_loop.start()
 
     @tasks.loop(hours=1)
@@ -36,4 +38,4 @@ class AutoSetup(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(AutoSetup(bot))
+    bot.add_cog(AutoSetupCog(bot))

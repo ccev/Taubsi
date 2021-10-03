@@ -84,6 +84,10 @@ class TaubsiBot(commands.Bot):
             loopcog = self.get_cog("LoopCog")
             loopcog.final_init()
 
+        if Cog.AUTOSETUP in self.config.COGS:
+            autosetupcog = self.get_cog("AutoSetupCog")
+            autosetupcog.final_init()
+
         log.info("Fully loaded, ready for action")
 
 
