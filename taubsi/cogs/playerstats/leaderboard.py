@@ -3,7 +3,7 @@ from typing import List, Dict
 
 import discord
 
-from taubsi.corgs.playerstats.objects import Badge, Stat
+from taubsi.cogs.playerstats.objects import Badge, Stat
 from taubsi.core import bot
 
 

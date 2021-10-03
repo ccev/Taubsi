@@ -4,9 +4,8 @@ from typing import List, Dict, TYPE_CHECKING
 import arrow
 import discord
 
-from taubsi.cogs.playerstats.objects import Player, LinkAdButton, DataLevel
+from taubsi.cogs.playerstats.objects import Player, LinkAdButton, DataLevel, Badge, Stat
 from taubsi.core import bot
-from taubsi.corgs.playerstats.objects import Badge, Stat
 
 
 class _StatCategory(discord.SelectOption):
