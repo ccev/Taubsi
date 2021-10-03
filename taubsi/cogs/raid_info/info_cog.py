@@ -34,7 +34,6 @@ class InfoCog(commands.Cog):
                 try:
                     if not gym.raid:
                         continue
-                    print(gym.raid)
                     if not gym.raid.is_scanned:
                         continue
                     if gym.raid.end < arrow.utcnow():
@@ -54,7 +53,7 @@ class InfoCog(commands.Cog):
         try:
             for raidinfo in list(self.raid_infos.values()):
                 await raidinfo.update_buttons()
-                if raidinfo.raid.end < arrow.utcnow():
+                if raidinfo.gym.raid.end < arrow.utcnow():
                     await raidinfo.delete()
                     self.raid_infos.pop(raidinfo.gym.id)
         except Exception as e:

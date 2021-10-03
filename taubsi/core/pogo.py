@@ -136,25 +136,10 @@ class Gym:
             return
 
         if data["end"] > datetime.utcnow():
-            self.set_raid(data)
+            self.raid = Raid(self._bot, data)
         else:
             if self.raid and self.raid.is_scanned:
                 self.raid = None
-
-    async def set_raid(self, raid_data: Optional[dict] = None):
-        if raid_data:
-            self.raid = Raid(self._bot, raid_data)
-        else:
-            query = (
-                f"select level, pokemon_id, form, costume, start, end, move_1, move_2, evolution "
-                f"from raid "
-                f"where gym_id = '{self.id}' and end > utc_timestamp()"
-            )
-            raid = await self._bot.mad_db.execute(query)
-            if not raid:
-                return
-            raid = raid[0]
-            self.raid = Raid(self._bot, raid)
 
     def get_raid(self, level: int = 0) -> Raid:
         """

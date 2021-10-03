@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING, Tuple, Optional
 
 import arrow
 import dateparser
@@ -15,6 +15,36 @@ from taubsi.utils.matcher import match_gyms
 
 if TYPE_CHECKING:
     from taubsi.core import TaubsiBot
+
+
+def match_time(content: str, is_event: bool = False) -> Tuple[Optional[arrow.Arrow], str]:
+    possible_times = []
+    for text in content.split(" "):
+        times = re.split("[:.;,]", text)
+        if [n for n in times if not n.isdigit()]:
+            continue
+
+        hour = str(times[0])
+        minute = "00"
+        if len(times) > 1:
+            minute = str(times[1])
+        time = dateparser.parse(f"{hour}:{minute}", languages=["de"])
+        time = arrow.get(time, tz.tzlocal())
+        possible_times.append((time, text))
+
+    final_time = (None, "")
+
+    if len(possible_times) == 1:
+        final_time = possible_times[0]
+    elif len(possible_times) > 1:
+        for time, text in possible_times[::-1]:
+            if (not is_event) and (not arrow.now().date() == time.date()):
+                continue
+            if time > arrow.now():
+                final_time = (time, text)
+                break
+
+    return final_time
 
 
 class RaidCog(commands.Cog):
@@ -75,32 +105,8 @@ class RaidCog(commands.Cog):
             return
         server = server[0]
 
-        possible_times = []
-        for text in message.content.split(" "):
-            times = re.split("[:.;,]", text)
-            if [n for n in times if not n.isdigit()]:
-                continue
-
-            hour = str(times[0])
-            minute = "00"
-            if len(times) > 1:
-                minute = str(times[1])
-            time = dateparser.parse(f"{hour}:{minute}", languages=["de"])
-            time = arrow.get(time, tz.tzlocal())
-            possible_times.append((time, text))
-
-        final_time = (None, "")
+        final_time = match_time(message.content, raid_channel.is_event)
         gym_name_to_match = message.content
-
-        if len(possible_times) == 1:
-            final_time = possible_times[0]
-        elif len(possible_times) > 1:
-            for time, text in possible_times[::-1]:
-                if (not raid_channel.is_event) and (not arrow.now().date() == time.date()):
-                    continue
-                if time > arrow.now():
-                    final_time = (time, text)
-                    break
 
         raid_start = final_time[0]
         gym_name_to_match = gym_name_to_match.replace(final_time[1], "")
@@ -172,7 +178,7 @@ class RaidCog(commands.Cog):
                         await raidmessage.notify(self.bot.translate("notify_raid_starts"))
                         raidmessage.notified_5_minutes = True
 
-                if not raidmessage.raid.is_scanned or not raidmessage.raid.moves[0]:
+                if not raidmessage.raid.is_scanned or not raidmessage.raid.moves:
                     if raidmessage.raid_channel.is_event:
                         continue
                     if raidmessage.gym.raid is None:

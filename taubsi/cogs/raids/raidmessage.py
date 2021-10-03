@@ -173,6 +173,15 @@ class RaidMessage:
         self.static_warnings = set()
 
     @classmethod
+    async def from_slash(cls, gym: Gym, start_time: arrow.Arrow, interaction: discord.Interaction) -> RaidMessage:
+        self = cls(gym, start_time, interaction.channel_id)
+        self.author_id = interaction.user.id
+        self.init_message = None
+        self.view = self._get_view()
+        await self.send_message(interaction)
+        return self
+
+    @classmethod
     async def from_raidinfo(cls,
                             gym: Gym, start_time: arrow.Arrow,
                             interaction: discord.Interaction, channel_id: int) -> RaidMessage:
@@ -430,7 +439,7 @@ class RaidMessage:
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if self.raid.is_scanned:
-            if self.raid.moves[0]:
+            if self.raid.moves:
                 self.text += bot.translate("Moves") + ": " \
                              + " | ".join(["**" + m.name + "**" for m in self.raid.moves]) + "\n"
 
@@ -514,12 +523,17 @@ class RaidMessage:
         log.info(f"Editing message {self.message.id}")
         await self.message.edit(embed=self.embed, view=self.view)
 
-    async def send_message(self) -> NoReturn:
+    async def send_message(self, interaction: discord.Interaction = None) -> NoReturn:
         channel = await bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
 
-        self.message = await channel.send(embed=self.embed, view=self.view)
+        if interaction:
+            await interaction.response.send_message(embed=self.embed, view=self.view)
+            message = await channel.history(limit=1).flatten()
+            self.message = message[0]
+        else:
+            self.message = await channel.send(embed=self.embed, view=self.view)
         self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)
 
     async def end_raid(self) -> NoReturn:

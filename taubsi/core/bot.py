@@ -29,7 +29,8 @@ class TaubsiBot(commands.Bot):
 
     def __init__(self):
         intents = discord.Intents(members=True, guild_messages=True, reactions=True, guilds=True)
-        super().__init__(command_prefix="!", case_insensitive=True, intents=intents)
+        super().__init__(command_prefix="!", case_insensitive=True, intents=intents,
+                         update_application_commands_at_startup=True)
         self.config = Config()
         self.mad_db = Queries(self.config, self.loop, self.config.MAD_DB_NAME)
         self.taubsi_db = Queries(self.config, self.loop, self.config.TAUBSI_DB_NAME)

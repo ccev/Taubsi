@@ -78,6 +78,6 @@ I'm not going into detail for setup. Basically you're going to make a new DB and
 
 Now you're going to make a venv (important!) and install the requirements in it.
 
-Now install discord.py 2.0 in it using `/path/to/venv/pip3 install git+https://github.com/Rapptz/discord.py.git`
+Now install discord.py 2.0 in it using `/path/to/venv/pip3 install git+https://github.com/jay3332/discord.py.git`
 
 Now run start_taubsi.py and it should be fine.

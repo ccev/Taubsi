@@ -39,17 +39,17 @@ class RaidInfoView(discord.ui.View):
     def __init__(self, raidinfo: RaidInfo):
         super().__init__(timeout=None)
 
-        seconds_left = raidinfo.raid.end.int_timestamp - arrow.utcnow().int_timestamp
+        seconds_left = raidinfo.gym.raid.end.int_timestamp - arrow.utcnow().int_timestamp
         if floor(seconds_left / 60) < 9:
             return
 
-        if raidinfo.raid.start < arrow.utcnow():
+        if raidinfo.gym.raid.start < arrow.utcnow():
             self.suggested_times = [arrow.utcnow().shift(minutes=5)]
         else:
-            self.suggested_times = [raidinfo.raid.start]
-        for time in arrow.Arrow.range("minute", raidinfo.raid.start, raidinfo.raid.end):
+            self.suggested_times = [raidinfo.gym.raid.start]
+        for time in arrow.Arrow.range("minute", raidinfo.gym.raid.start, raidinfo.gym.raid.end):
             if time.minute % 10 == 0 and \
-                    self.suggested_times[-1].shift(minutes=5) < time < raidinfo.raid.end.shift(minutes=-6):
+                    self.suggested_times[-1].shift(minutes=5) < time < raidinfo.gym.raid.end.shift(minutes=-6):
                 self.suggested_times.append(time)
 
         for time in self.suggested_times:

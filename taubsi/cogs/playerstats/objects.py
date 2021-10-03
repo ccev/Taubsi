@@ -33,6 +33,43 @@ class Player:
         self.ign = ign
         self.user = user
 
+    @classmethod
+    async def from_context(cls, member: discord.Member):
+        ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {member.id}",
+                                          as_dict=False)
+        if not ign or not ign[0] or not ign[0][0]:
+            raise UserNotLinked
+        ign = ign[0][0]
+
+        player_ = cls(ign, member)
+        await player_.get_stats()
+        return player_
+
+    @classmethod
+    async def from_command(cls, player, ctx: commands.Context):
+        if isinstance(player, discord.Member):
+            ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}",
+                                              as_dict=False)
+            if not ign or not ign[0] or not ign[0][0]:
+                if player.id == ctx.author.id:
+                    raise SelfNotLinked
+                raise UserNotLinked
+            ign = ign[0][0]
+        else:
+            if any(not c.isalnum() for c in player):
+                raise PlayerNotLinked
+            result = await bot.taubsi_db.execute(f"SELECT user_id, ingame_name FROM users "
+                                                 f"WHERE ingame_name = '{player}'", as_dict=False)
+            if not result:
+                raise PlayerNotLinked
+            user_id = result[0][0]
+            ign = result[0][1]
+            player = await ctx.guild.fetch_member(int(user_id))
+
+        player_ = cls(ign, player)
+        await player_.get_stats()
+        return player_
+
     async def get_stats(self):
         fetch_stats = ",".join([s.value for s in Stat.__dict__.values() if isinstance(s, Badge)])
         result = await bot.mad_db.execute(
@@ -59,31 +96,6 @@ class Player:
             f"XP: {self.stats['xp']}\n"
             f"Gedrehte Stops: {self.stats['stops_spun']}"
         )
-
-    @classmethod
-    async def from_command(cls, player, ctx: commands.Context):
-        if isinstance(player, discord.Member):
-            ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}",
-                                              as_dict=False)
-            if not ign or not ign[0] or not ign[0][0]:
-                if player.id == ctx.author.id:
-                    raise SelfNotLinked
-                raise UserNotLinked
-            ign = ign[0][0]
-        else:
-            if any(not c.isalnum() for c in player):
-                raise PlayerNotLinked
-            result = await bot.taubsi_db.execute(f"SELECT user_id, ingame_name FROM users "
-                                                 f"WHERE ingame_name = '{player}'", as_dict=False)
-            if not result:
-                raise PlayerNotLinked
-            user_id = result[0][0]
-            ign = result[0][1]
-            player = await ctx.guild.fetch_member(int(user_id))
-
-        player_ = cls(ign, player)
-        await player_.get_stats()
-        return player_
 
 
 class LinkAdButton(discord.ui.Button):

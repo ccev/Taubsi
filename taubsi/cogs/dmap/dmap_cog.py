@@ -32,6 +32,7 @@ class DMapCog(commands.Cog):
         await ctx.message.delete()
         message = await ctx.send('Klicke auf "Map anzeigen" um eine interaktive Map zu öffnen')
         await message.edit(view=PermaMap(message.id))
+        await ctx.reply(f"Please put this message ID in your config: `{message.id}`.\n", deleter_after=30)
 
 
 def setup(bot):
