@@ -25,7 +25,7 @@ class PlayerstatsCommands:
             return
 
     @staticmethod
-    async def link(name: str, user: discord.User, send: Callable, channel: Optional[discord.TextChannel] = None):
+    async def link(name: str, user: discord.User, send: Callable, interaction: Optional[discord.Interaction] = None):
         ingame = await bot.mad_db.execute(f"select name, team, level from cev_trainer "
                                           f"where name = %s;", args=name, as_dict=False)
         if len(ingame) == 0:
@@ -40,10 +40,7 @@ class PlayerstatsCommands:
         if message:
             view.message = message
         else:
-            async for message in channel.history(limit=5):
-                if message.author.id == bot.user.id:
-                    view.message = message
-                    return
+            view.message = await interaction.original_message()
 
     @staticmethod
     async def unlink(user_id: int, send: Callable):
@@ -93,7 +90,8 @@ class LinkCommand(ApplicationCommand, name="link"):
     name: str = option(description="Dein Trainername", required=True)
 
     async def callback(self, interaction: discord.Interaction):
-        await PlayerstatsCommands.link(self.name, interaction.user, interaction.response.send_message, channel=interaction.channel)
+        await PlayerstatsCommands.link(self.name, interaction.user, interaction.response.send_message,
+                                       interaction=interaction)
 
 
 class UnlinkCommand(ApplicationCommand, name="unlink"):

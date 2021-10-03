@@ -530,8 +530,7 @@ class RaidMessage:
 
         if interaction:
             await interaction.response.send_message(embed=self.embed, view=self.view)
-            message = await channel.history(limit=1).flatten()
-            self.message = message[0]
+            self.message = await interaction.original_message()
         else:
             self.message = await channel.send(embed=self.embed, view=self.view)
         self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)
