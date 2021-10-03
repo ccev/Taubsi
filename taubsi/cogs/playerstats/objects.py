@@ -34,10 +34,12 @@ class Player:
         self.user = user
 
     @classmethod
-    async def from_context(cls, member: discord.Member):
+    async def from_app(cls, member: discord.Member, user_id: int):
         ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {member.id}",
                                           as_dict=False)
         if not ign or not ign[0] or not ign[0][0]:
+            if member.id == user_id:
+                raise SelfNotLinked
             raise UserNotLinked
         ign = ign[0][0]
 

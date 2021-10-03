@@ -39,7 +39,7 @@ class LinkView(discord.ui.View):
         self.interacted = True
         try:
             user = TaubsiUser()
-            await user.from_command(self.author)
+            await user.from_member(self.author)
             user.team, user.level = Team(self.ingame[0][1]), self.ingame[0][2]
             await user.update()
         except:

@@ -32,7 +32,7 @@ class TaubsiUser:
         self.friendcode = friendcode
         self.name = name
     
-    async def from_command(self, member):
+    async def from_member(self, member):
         result = await bot.taubsi_db.execute(
             f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};",
             as_dict=False)
