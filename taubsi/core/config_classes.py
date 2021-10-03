@@ -172,3 +172,9 @@ class BaseConfig:
     DB_PORT: int = 3306
     DB_USER: str
     DB_PASS: str
+
+    NUMBER_EMOJIS: Dict[int, str]
+    CONTROL_EMOJIS: Dict[str, str]
+    TEAM_EMOJIS: Dict[int, str]
+    TEAM_COLORS: Dict[int, int]
+    BADGE_LEVELS: Dict[int, str]

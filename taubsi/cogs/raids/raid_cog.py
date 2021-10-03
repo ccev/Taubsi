@@ -9,6 +9,7 @@ from discord.ext import tasks, commands
 
 from taubsi.cogs.raids.choicemessage import ChoiceMessage
 from taubsi.cogs.raids.raidmessage import RaidMessage
+from taubsi.cogs.raids.errors import TaubsiError, InvalidTime
 from taubsi.core import log
 from taubsi.utils.errors import command_error
 from taubsi.utils.matcher import match_gyms
@@ -70,6 +71,12 @@ class RaidCog(commands.Cog):
 
         self.raid_loop.start()
 
+    async def cog_command_error(self, ctx, error):
+        if not isinstance(error, TaubsiError):
+            log.exception(error)
+            return
+        await command_error(ctx.send, error.__doc__, False)
+
     async def create_raid(self, raidmessage: RaidMessage):
         for other_message in self.raidmessages.values():
             if other_message.gym.id == raidmessage.gym.id:
@@ -115,7 +122,7 @@ class RaidCog(commands.Cog):
 
         if raid_start is None:
             if matched_gyms[0][1] > 80:
-                await command_error(self.bot, message, "invalid_time")
+                raise InvalidTime
             return
         
         if len(matched_gyms) > 1:

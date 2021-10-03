@@ -1,11 +1,11 @@
-from typing import Callable, Optional
+from typing import Callable
 
 import discord
-from discord.application_commands import ApplicationCommand, option, UserCommand
+from discord.application_commands import ApplicationCommand, option
 
-from taubsi.core import bot, Team
 from taubsi.cogs.setup.errors import *
 from taubsi.cogs.setup.objects import TaubsiUser
+from taubsi.core import bot, Team
 
 
 class SetupCommands:

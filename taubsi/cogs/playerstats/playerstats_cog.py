@@ -24,7 +24,7 @@ class PlayerStats(commands.Cog):
         if not isinstance(error, TaubsiError):
             log.exception(error)
             return
-        await command_error(self.bot, ctx.message, error.__doc__, False)
+        await command_error(ctx.send, error.__doc__, False)
 
     @commands.command()
     @commands.check(is_guild)

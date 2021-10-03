@@ -1,10 +1,12 @@
 import discord
 from discord.application_commands import ApplicationCommand, option
 
-from taubsi.core import bot, Server
-from taubsi.utils.matcher import match_gyms
+from taubsi.cogs.raids.errors import WrongChannel, InvalidTime, WrongGymName
 from taubsi.cogs.raids.raid_cog import match_time
 from taubsi.cogs.raids.raidmessage import RaidMessage
+from taubsi.core import bot, Server
+from taubsi.utils.errors import TaubsiError
+from taubsi.utils.matcher import match_gyms
 
 
 class RaidCommand(ApplicationCommand, name="raid"):
@@ -24,7 +26,7 @@ class RaidCommand(ApplicationCommand, name="raid"):
                 server = possible_server
                 break
         if not server:
-            raise
+            raise TaubsiError
         return server
 
     @arena.autocomplete
@@ -35,12 +37,13 @@ class RaidCommand(ApplicationCommand, name="raid"):
             yield gym.name
 
     async def callback(self, interaction: discord.Interaction):
+        if interaction.channel_id not in bot.raid_channel_dict.keys():
+            raise WrongChannel
         time = match_time(self.zeit)
         time = time[0]
 
         if not time:
-            await interaction.response.send_message("Dem konnte ich keine Zeit entnehmen", ephemeral=True)
-            return
+            raise InvalidTime
 
         server = self._get_server(interaction.guild_id)
         gym = None
@@ -49,9 +52,7 @@ class RaidCommand(ApplicationCommand, name="raid"):
                 gym = possible_gym
 
         if not gym:
-            await interaction.response.send_message("Sorry, du musst einen richtigen Arenanamen angeben",
-                                                    ephemeral=True)
-            return
+            raise WrongGymName
 
         raidmessage = await RaidMessage.from_slash(gym, time, interaction)
         await self.create_raid(raidmessage)
