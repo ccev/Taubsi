@@ -16,10 +16,20 @@ class PermaMap(discord.ui.View):
         button.callback = self.start_map
         self.add_item(button)
 
+        help = discord.ui.Button(label="Hilfe",
+                                 style=discord.ButtonStyle.grey,
+                                 custom_id=f"pmh{message_id}")
+        help.callback = self.send_help
+        self.add_item(help)
+
     @staticmethod
     async def start_map(interaction: discord.Interaction):
-        dmap = Map(interaction.user.id)
-        await dmap.send(interaction)
+        dmap = Map(interaction)
+        await dmap.send()
+
+    @staticmethod
+    async def send_help(interaction: discord.Interaction):
+        await interaction.response.send_message("Hier könnte Hilfe stehen", ephemeral=True)
 
 
 class DMapCog(commands.Cog):

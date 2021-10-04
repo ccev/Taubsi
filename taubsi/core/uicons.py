@@ -40,9 +40,9 @@ class UIconCategory(Enum):
 
 
 class IconSet(Enum):
-    POGO = IconSetManager("Pogo", "https://raw.githubusercontent.com/WatWowMap/wwm-uicons/main/")
     POGO_OUTLINE = IconSetManager("Pogo (Outline)", "https://raw.githubusercontent.com/whitewillem/PogoAssets/"
                                                     "main/uicons-outline/")
+    POGO = IconSetManager("Pogo", "https://raw.githubusercontent.com/WatWowMap/wwm-uicons/main/")
 
 
 class UIconManager:
@@ -74,7 +74,7 @@ class UIconManager:
             return self.egg(raid, iconset)
 
     def gym(self, gym: Gym, iconset: Optional[IconSet] = None) -> str:
-        return self.get(UIconCategory.GYM, iconset, [("", gym.team)])
+        return self.get(UIconCategory.GYM, iconset, [("", gym.team.value)])
 
     @staticmethod
     def get(category: UIconCategory,

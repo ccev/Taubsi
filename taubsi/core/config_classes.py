@@ -157,6 +157,28 @@ class Server:
         return self._gym_dict.get(id_)
 
 
+class Area:
+    name: str
+    lat: float
+    lon: float
+    zoom: float
+
+    def __init__(self, name: str, lat: float, lon: float, zoom: float):
+        self.name = name
+        self.lat = lat
+        self.lon = lon
+        self.zoom = zoom
+
+
+class Style:
+    name: str
+    id: str
+
+    def __init__(self, id_: str, name: str):
+        self.id = id_
+        self.name = name
+
+
 class BaseConfig:
     TRASH_CHANNEL_ID: int
     LANGUAGE: Language = Language.ENGLISH
@@ -172,6 +194,10 @@ class BaseConfig:
     DB_PORT: int = 3306
     DB_USER: str
     DB_PASS: str
+
+    DMAP_STYLES: List[Style]
+    DMAP_MARKER_LIMIT: int
+    DMAP_AREAS: List[Area]
 
     NUMBER_EMOJIS: Dict[int, str]
     CONTROL_EMOJIS: Dict[str, str]

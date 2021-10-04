@@ -1,67 +1,88 @@
 from __future__ import annotations
 from typing import Optional, List
 import aiohttp
+import arrow
 import discord
 import math
 from time import time
 
-from map.buttons import (EmptyButton, MultiplierButton, UpButton, LeftButton, DownButton,
-                         RightButton, ZoomInButton, ZoomOutButton, SettingsButton, FilterButton)
-from map.categories import CategorySelect
-from map.map_objects import MapObject
-from map.config import Area
-from map.areaselect import AreaSelect
-from config import MAP_SCALE, MAP_HEIGHT, MAP_WIDTH, TILESERVER, AREAS, STYLES, MARKER_LIMIT
+from taubsi.cogs.dmap.buttons import (EmptyButton, MultiplierButton, UpButton, LeftButton, DownButton,
+                                      RightButton, ZoomInButton, ZoomOutButton, SettingsButton)
+from taubsi.cogs.dmap.areaselect import AreaSelect
+from taubsi.cogs.dmap.levelselect import LevelSelect
+from taubsi.core import bot, Gym
+from taubsi.core.config_classes import Area, Style
+from taubsi.core.uicons import IconSet
 
 
 class Map(discord.ui.View):
     zoom: float
     lat: float
     lon: float
-    style: str = STYLES[0][1]
-    style_name: str = STYLES[0][0]
+    style: Style = bot.config.DMAP_STYLES[0]
     multiplier: float = 1
     marker_multiplier: float = 1
+    levels: List[int]
+
     author_id: int
-    url: str = TILESERVER + "staticmap"
-    message: discord.Message
+    url: str = bot.config.TILESERVER_URL + "staticmap"
     embed: discord.Embed
     start: float
 
-    width: int = MAP_WIDTH
-    height: int = MAP_HEIGHT
-    scale: int = MAP_SCALE
-    category: CategorySelect
-    map_objects: List[MapObject]
+    width: int = 700
+    height: int = 400
+    scale: int = 1
     hit_limit: bool = False
 
-    def __init__(self, author_id: int, loop):
+    iconset: IconSet = IconSet.POGO_OUTLINE
+    interaction: discord.Interaction
+    gyms: List[Gym]
+    display_gyms: List[Gym]
+
+    def __init__(self, interaction: discord.Interaction):
         super().__init__(timeout=None)
         self.start = time()
-        init_area = AREAS[0]
+        init_area = bot.config.DMAP_AREAS[0]
         self.zoom = init_area.zoom
         self.lat = init_area.lat
         self.lon = init_area.lon
-        self.author_id = author_id
+        self.author_id = interaction.user.id
+        self.display_gyms = []
+        self.interaction = interaction
+        self.levels = [5]
+
+        server = [s for s in bot.servers if s.id == interaction.guild_id]
+        if not server:
+            raise
+        server = server[0]
+        self.gyms = server.gyms
 
         self.embed = discord.Embed()
-        self.map_objects = []
-        self.category = CategorySelect(self)
-
-        self.loop = loop
 
         for item in [
-            self.category,
+            LevelSelect(self),
             AreaSelect(self),
             EmptyButton(0), UpButton(self), EmptyButton(1), ZoomInButton(self),
             LeftButton(self), DownButton(self), RightButton(self), ZoomOutButton(self),
-            SettingsButton(self), FilterButton(self), MultiplierButton(self)
+            SettingsButton(self), MultiplierButton(self)
         ]:
             self.add_item(item)
 
+    @staticmethod
+    def _get_marker(gym: Gym, url: str, size: int, y_offset: int = 0, x_offset: int = 0) -> dict:
+        return {
+            "url": url,
+            "latitude": gym.lat,
+            "longitude": gym.lon,
+            "width": size,
+            "height": size,
+            "x_offset": x_offset,
+            "y_offset": y_offset
+        }
+
     def get_data(self):
         data = {
-            "style": self.style,
+            "style": self.style.id,
             "latitude": self.lat,
             "longitude": self.lon,
             "zoom": self.zoom,
@@ -70,15 +91,31 @@ class Map(discord.ui.View):
             "format": "png",
             "scale": self.scale
         }
-        if len(self.map_objects) >= MARKER_LIMIT:
-            self.hit_limit = True
-        if self.map_objects:
+        if self.display_gyms:
             markers = []
-            for map_object in self.map_objects:
-                if len(markers) >= MARKER_LIMIT:
+            for gym in self.display_gyms:
+                if len(markers) >= bot.config.DMAP_MARKER_LIMIT:
                     self.hit_limit = True
                     break
-                markers += map_object.get_markers()
+
+                gym_size = self.get_marker_size(26)
+                markers.append(self._get_marker(gym=gym,
+                                                url=bot.uicons.gym(gym, iconset=self.iconset),
+                                                size=gym_size,
+                                                y_offset=gym_size // -2))
+
+                boss_size = self.get_marker_size(20)
+                if gym.raid.boss:
+                    boss_marker = self._get_marker(gym=gym,
+                                                   url=bot.uicons.pokemon(gym.raid.boss, iconset=self.iconset),
+                                                   size=boss_size)
+                else:
+                    boss_marker = self._get_marker(gym=gym,
+                                                   url=bot.uicons.egg(gym.raid, iconset=self.iconset),
+                                                   size=boss_size)
+                boss_marker["y_offset"] = - self.get_marker_size(19)
+                boss_marker["x_offset"] = - self.get_marker_size(5)
+                markers.append(boss_marker)
             data.update({
                 "markers": markers
             })
@@ -87,39 +124,34 @@ class Map(discord.ui.View):
     def start_load(self):
         self.start = time()
 
-        self.embed.set_footer(icon_url="https://cdn.discordapp.com/attachments/"
-                                       "523253670700122144/881302405826887760/785.gif",
-                              text="Loading...")
-        self.loop.create_task(self.edit())
-
     def is_author(self, check_id: int):
         return check_id == self.author_id
 
     def point_to_lat(self, wanted_points):
         # copied from https://help.openstreetmap.org/questions/75611/transform-xy-pixel-values-into-lat-and-long
-        C = (256 / (2 * math.pi)) * 2 ** self.zoom
+        c = (256 / (2 * math.pi)) * 2 ** self.zoom
 
-        xcenter = C * (math.radians(self.lon) + math.pi)
-        ycenter = C * (math.pi - math.log(math.tan((math.pi / 4) + math.radians(self.lat) / 2)))
+        xcenter = c * (math.radians(self.lon) + math.pi)
+        ycenter = c * (math.pi - math.log(math.tan((math.pi / 4) + math.radians(self.lat) / 2)))
 
         xpoint = xcenter - (self.width / 2 - wanted_points[0])
         ypoint = ycenter - (self.height / 2 - wanted_points[1])
 
-        C = (256 / (2 * math.pi)) * 2 ** self.zoom
-        M = (xpoint / C) - math.pi
-        N = -(ypoint / C) + math.pi
+        c = (256 / (2 * math.pi)) * 2 ** self.zoom
+        m = (xpoint / c) - math.pi
+        n = -(ypoint / c) + math.pi
 
-        fin_lon = math.degrees(M)
-        fin_lat = math.degrees((math.atan(math.e ** N) - (math.pi / 4)) * 2)
+        fin_lon = math.degrees(m)
+        fin_lat = math.degrees((math.atan(math.e ** n) - (math.pi / 4)) * 2)
 
         return fin_lat, fin_lon
 
-    def get_bbox(self):
+    def get_bounds(self):
         lat1, lon1 = self.point_to_lat(wanted_points=(0, 0))
         lat2, lon2 = self.point_to_lat(wanted_points=(self.width, self.height))
         lats = [lat1, lat2]
         lons = [lon1, lon2]
-        return [min(lats), min(lons), max(lats), max(lons)]
+        return min(lats), max(lats), min(lons), max(lons)
 
     def get_resolution(self) -> float:
         resolution = 156543.03 * math.cos(math.radians(self.lat)) / (math.pow(2, self.zoom))
@@ -169,29 +201,29 @@ class Map(discord.ui.View):
                     self.embed.set_image(url=self.url + "/pregenerated/" + pregen_id)
                     footer = f"This took {round(time() - self.start, 3)}s"
                     if self.hit_limit:
-                        footer += f"\nYou hit the marker limit of {MARKER_LIMIT}." \
+                        footer += f"\nYou hit the marker limit of {bot.config.DMAP_MARKER_LIMIT}." \
                                   f" Try zooming in or decrease categories and filters"
                     self.embed.set_footer(text=footer)
 
-    async def edit(self):
-        await self.message.edit(embed=self.embed, view=self)
+    def set_gyms(self):
+        bbox = self.get_bounds()
+        self.display_gyms = []
 
-    async def send(self, ctx):
+        if self.levels:
+            for gym in self.gyms:
+                if gym.raid.end > arrow.utcnow() and gym.raid.level in self.levels and \
+                        bbox[0] <= gym.lat <= bbox[1] and bbox[2] <= gym.lon <= bbox[3]:
+                    self.display_gyms.append(gym)
+
+    async def edit(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(embed=self.embed, view=self)
+
+    async def send(self):
+        self.set_gyms()
         await self.set_map()
-        self.message = await ctx.send(embed=self.embed, view=self)
+        await self.interaction.response.send_message(embed=self.embed, view=self, ephemeral=True)
 
-    async def update(self):
-        self.map_objects = []
-        values = list(map(int, self.category.values))
-        ids = []
-        for selected_index in sorted(values, reverse=True):
-            category = self.category.categories[int(selected_index)]
-
-            bbox = self.get_bbox()
-            new_objects, ids = await category.get_map_objects(bbox, ids)
-            self.map_objects += new_objects
-
-        self.map_objects = sorted(self.map_objects, key=lambda o: o.lat, reverse=True)
-
+    async def update(self, interaction: discord.Interaction):
+        self.set_gyms()
         await self.set_map()
-        await self.edit()
+        await self.edit(interaction)
