@@ -7,7 +7,7 @@ import arrow
 import discord
 
 from taubsi.cogs.raids.raidmessage import GMAPS_LINK, AMAPS_LINK, RaidMessage
-from taubsi.core import bot, Gym
+from taubsi.core import bot, Gym, Raid
 
 if TYPE_CHECKING:
     from taubsi.core import InfoChannel
@@ -58,6 +58,7 @@ class RaidInfoView(discord.ui.View):
 
 class RaidInfo:
     gym: Gym
+    raid: Raid
     info_channel: InfoChannel
 
     embed: discord.Embed
@@ -68,6 +69,7 @@ class RaidInfo:
 
     def __init__(self, gym: Gym, info_channel: InfoChannel):
         self.gym = gym
+        self.raid = gym.raid.copy()
         self.info_channel = info_channel
         raid_cog = bot.get_cog("RaidCog")
         self.create_raid = raid_cog.create_raid

@@ -88,6 +88,12 @@ class TaubsiBot(commands.Bot):
             autosetupcog = self.get_cog("AutoSetupCog")
             autosetupcog.final_init()
 
+        if Cog.DMAP in bot.config.COGS:
+            from taubsi.cogs.dmap.dmap_cog import PermaMap
+            for server in bot.config.SERVERS:
+                for dmap_message in server.dmap_messages:
+                    bot.add_view(PermaMap(dmap_message.id), message_id=dmap_message.id)
+
         log.info("Fully loaded, ready for action")
 
 

@@ -46,6 +46,9 @@ class InfoCog(commands.Cog):
                     if raidinfo is None:
                         raidinfo = await RaidInfo.make(gym, info_channel)
                         self.raid_infos[gym.id] = raidinfo
+                    else:
+                        if raidinfo.raid != gym.raid:
+                            await raidinfo.edit_message(embed=True)
                 except Exception as e:
                     log.error("Exception in RaidInfo loop")
                     log.exception(e)
