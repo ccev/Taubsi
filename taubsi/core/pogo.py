@@ -89,9 +89,9 @@ class Raid:
             self.cp25 = calculate_cp(25, stats, [15, 15, 15])
         else:
             if self.level != 6:
-                self.name = f"Level {self.level} Ei"
+                self.name = bot.translate("level_egg").format(str(self.level))
             else:
-                self.name = "Mega Ei"
+                self.name = bot.translate("mega_egg")
 
     def __eq__(self, other: Raid):
         if other is None:
@@ -209,7 +209,7 @@ class Gym:
         with BytesIO() as stream:
             final_img.save(stream, "PNG")
             stream.seek(0)
-            image_msg = await self._bot.trash_channel.send(file=discord.File(stream, filename="raid-icon.png"))
+            image_msg = await self._bot.trash_channel.send(file=discord.File(stream, filename=f"{self.name}.png"))
             final_link = image_msg.attachments[0].url
 
         gymstream.close()

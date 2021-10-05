@@ -73,7 +73,7 @@ class Server:
     guild: discord.Guild
     _bot: TaubsiBot
     _raw_fences: list
-    _gym_dict: Dict[str, Gym]
+    gym_dict: Dict[str, Gym]
     _sql_fence: Optional[str] = None
 
     def __init__(self,
@@ -123,7 +123,7 @@ class Server:
         gyms = await bot.mad_db.execute(query)
 
         self.gyms = []
-        self._gym_dict = {}
+        self.gym_dict = {}
         for gym_data in gyms:
             gym = Gym(bot, self, gym_data)
             self._add_gym(gym)
@@ -133,7 +133,7 @@ class Server:
 
     def _add_gym(self, gym: Gym):
         self.gyms.append(gym)
-        self._gym_dict[gym.id] = gym
+        self.gym_dict[gym.id] = gym
 
     async def update_gyms(self):
         query = (
@@ -154,7 +154,7 @@ class Server:
                 self._add_gym(gym)
 
     def get_gym(self, id_: str) -> Optional[Gym]:
-        return self._gym_dict.get(id_)
+        return self.gym_dict.get(id_)
 
 
 class Area:

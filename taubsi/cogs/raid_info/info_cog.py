@@ -16,7 +16,7 @@ class InfoCog(commands.Cog):
         self.raid_infos: Dict[str, RaidInfo] = {}
         self.info_channels: List[InfoChannel] = []
 
-    def final_init(self):
+    async def final_init(self):
         for server in self.bot.servers:
             now = arrow.utcnow()
             server.gyms = list(sorted(server.gyms, key=lambda g: g.raid.end if g.raid else now))

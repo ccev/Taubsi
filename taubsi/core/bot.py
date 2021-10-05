@@ -26,6 +26,7 @@ class TaubsiBot(commands.Bot):
     team_choose_ids: List[int]
     raid_channel_dict: Dict[int, RaidChannel]
     trash_channel: discord.TextChannel
+    cog_dict: dict
 
     def __init__(self):
         intents = discord.Intents(members=True, guild_messages=True, reactions=True, guilds=True)
@@ -50,10 +51,6 @@ class TaubsiBot(commands.Bot):
         self.translate = translator_.translate
         self.reload_pogodata()
 
-    def load_cogs(self):
-        for cog in self.config.COGS:
-            self.load_extension(cog.value)
-
     def reload_pogodata(self):
         self.pogodata = PogoData(self.config.LANGUAGE.value)
 
@@ -72,21 +69,11 @@ class TaubsiBot(commands.Bot):
                 info_channel.channel = await self.fetch_channel(info_channel.id)
 
         log.info("Preparing cogs")
-        if Cog.RAIDS in self.config.COGS:
-            raidcog = self.get_cog("RaidCog")
-            await raidcog.final_init()
-
-        if Cog.RAIDINFO in self.config.COGS:
-            infocog = self.get_cog("InfoCog")
-            infocog.final_init()
-
-        if Cog.MAIN_LOOPS in self.config.COGS:
-            loopcog = self.get_cog("LoopCog")
-            loopcog.final_init()
-
-        if Cog.AUTOSETUP in self.config.COGS:
-            autosetupcog = self.get_cog("AutoSetupCog")
-            autosetupcog.final_init()
+        for cog_enum in [Cog.RAIDS, Cog.RAIDINFO, Cog.MAIN_LOOPS, Cog.AUTOSETUP]:
+            if cog_enum not in self.config.COGS:
+                continue
+            cog = self.cog_dict[cog_enum]
+            await cog.final_init()
 
         if Cog.DMAP in bot.config.COGS:
             from taubsi.cogs.dmap.dmap_cog import PermaMap

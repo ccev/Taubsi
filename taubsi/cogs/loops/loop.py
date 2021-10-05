@@ -15,7 +15,7 @@ class LoopCog(commands.Cog):
         self.bot: TaubsiBot = bot
         self._last_pogodata_update = arrow.utcnow()
 
-    def final_init(self):
+    async def final_init(self):
         self.pogodata_loop.start()
         self.gym_loop.start()
 

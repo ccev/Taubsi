@@ -1,5 +1,5 @@
 import discord
-from discord.application_commands import ApplicationCommand, option
+from discord.application_commands import ApplicationCommand, option, ApplicationCommandOptionChoice
 
 from taubsi.cogs.raids.errors import WrongChannel, InvalidTime, WrongGymName
 from taubsi.cogs.raids.raid_cog import match_time
@@ -9,10 +9,11 @@ from taubsi.utils.errors import TaubsiError
 from taubsi.utils.matcher import match_gyms
 
 
-class RaidCommand(ApplicationCommand, name="raid"):
-    """Setze einen Raid an"""
-    arena = option(description="Die Arena", required=True)
-    zeit: str = option(description="Wann der Raid gespielt werden soll", required=True)
+class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("command_raid_desc")):
+    arena = option(name=bot.translate("command_raid_gym"),
+                   description=bot.translate("command_raid_gym_desc"), required=True)
+    zeit = option(name=bot.translate("command_raid_time"),
+                       description=bot.translate("command_raid_time_desc"), required=True)
 
     def __init__(self):
         raid_cog = bot.get_cog("RaidCog")
@@ -34,7 +35,11 @@ class RaidCommand(ApplicationCommand, name="raid"):
         server = self._get_server(interaction.guild_id)
         matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0)
         for gym, _ in matched_gyms:
-            yield gym.name
+            yield ApplicationCommandOptionChoice(name=gym.name, value=gym.id)
+
+    @zeit.autocomplete
+    async def time_autocomplete(self, interaction: discord.Interaction):
+        yield self.arena
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.channel_id not in bot.raid_channel_dict.keys():
@@ -46,10 +51,7 @@ class RaidCommand(ApplicationCommand, name="raid"):
             raise InvalidTime
 
         server = self._get_server(interaction.guild_id)
-        gym = None
-        for possible_gym in server.gyms:
-            if possible_gym.name == self.arena:
-                gym = possible_gym
+        gym = server.gym_dict.get(self.arena)
 
         if not gym:
             raise WrongGymName

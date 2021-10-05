@@ -13,7 +13,7 @@ class AutoSetupCog(commands.Cog):
     def __init__(self, bot):
         self.bot: TaubsiBot = bot
 
-    def final_init(self):
+    async def final_init(self):
         self.autoupdate_loop.start()
 
     @tasks.loop(hours=1)

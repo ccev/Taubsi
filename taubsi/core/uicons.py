@@ -4,10 +4,7 @@ from enum import Enum
 import random
 
 import requests
-import arrow
 from pogodata.pokemon import Pokemon
-
-from taubsi.core.pogo import Raid
 
 if TYPE_CHECKING:
     from taubsi.core.pogo import Gym, Raid

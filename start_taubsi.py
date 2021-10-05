@@ -6,7 +6,33 @@ from taubsi.cogs.playerstats.playerstats_commands import (StatContext, StatsComm
 from taubsi.cogs.setup.setup_commands import (NameCommand, LevelCommand, LevelUpCommand, TeamCommand)
 from taubsi.utils.errors import app_command_error
 
-bot.load_cogs()
+from taubsi.cogs.raids.raid_cog import RaidCog
+from taubsi.cogs.setup.setup_cog import Setup
+from taubsi.cogs.loops.loop import LoopCog
+from taubsi.cogs.raid_info.info_cog import InfoCog
+from taubsi.cogs.dmap.dmap_cog import DMapCog
+from taubsi.cogs.auto_setup.auto_setup_cog import AutoSetupCog
+from taubsi.cogs.playerstats.playerstats_cog import PlayerStats
+from taubsi.cogs.articlepreview.preview_cog import PreviewCog
+
+
+bot.cog_dict = {
+    Cog.RAIDS: RaidCog,
+    Cog.SETUP: Setup,
+    Cog.MAIN_LOOPS: LoopCog,
+    Cog.RAIDINFO: InfoCog,
+    Cog.DMAP: DMapCog,
+    Cog.AUTOSETUP: AutoSetupCog,
+    Cog.PLAYERSTATS: PlayerStats,
+    Cog.ARTICLEPREVIEW: PreviewCog
+}
+
+for cog_enum, cog_class in bot.cog_dict.items():
+    if cog_enum not in bot.config.COGS:
+        continue
+    cog = cog_class(bot)
+    bot.add_cog(cog)
+    bot.cog_dict[cog_enum] = cog
 
 app_commands = {
     Cog.RAIDS: [RaidCommand],

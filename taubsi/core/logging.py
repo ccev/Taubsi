@@ -1,3 +1,4 @@
+import sys
 import logging
 import argparse
 
@@ -11,5 +12,6 @@ if args.debug:
 else:
     log_level = logging.INFO
 
-logging.basicConfig(format="[%(asctime)s] [%(name)s] [%(levelname)-1.1s]  %(message)s", level=log_level, datefmt="%H:%M:%S")
+logging.basicConfig(format="[%(asctime)s] [%(name)s] [%(levelname)-1.1s]  %(message)s", level=log_level,
+                    datefmt="%H:%M:%S", stream=sys.stdout)
 log = logging.getLogger("Taubsi")
