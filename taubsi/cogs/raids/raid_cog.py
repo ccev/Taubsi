@@ -190,16 +190,19 @@ class RaidCog(commands.Cog):
                         continue
                     if raidmessage.gym.raid is None:
                         continue
-                    if raidmessage.raid != raidmessage.gym.raid:
-                        log.info(f"Raid Boss at {raidmessage.message.id} changed. Updating")
-                        if not raidmessage.raid.boss and raidmessage.gym.raid.boss:
-                            await raidmessage.notify(self.bot.translate("notify_hatched").format(
-                                raidmessage.gym.raid.boss.name))
-                        
-                        raidmessage.raid = raidmessage.gym.raid.copy()
-                        await raidmessage.make_base_embed()
-                        await raidmessage.set_image()
-                        await raidmessage.db_insert()
+                    if raidmessage.gym.raid.end < arrow.utcnow():
+                        continue
+                    if raidmessage.raid == raidmessage.gym.raid:
+                        continue
+                    log.info(f"Raid Boss at {raidmessage.message.id} changed. Updating")
+                    if not raidmessage.raid.boss and raidmessage.gym.raid.boss:
+                        await raidmessage.notify(self.bot.translate("notify_hatched").format(
+                            raidmessage.gym.raid.boss.name))
+
+                    raidmessage.raid = raidmessage.gym.raid.copy()
+                    await raidmessage.make_base_embed()
+                    await raidmessage.set_image()
+                    await raidmessage.db_insert()
             except Exception as e:
                 log.error("Error while Raid looping")
                 log.exception(e)

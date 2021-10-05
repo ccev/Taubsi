@@ -148,7 +148,7 @@ class Gym:
         """
         Returns current raid or makes one up
         """
-        if not self.raid or (level and self.raid.level != level):
+        if self.raid.end < arrow.utcnow() or not self.raid or (level and self.raid.level != level):
             return Raid(self._bot, {"level": level})
         else:
             return self.raid.copy()

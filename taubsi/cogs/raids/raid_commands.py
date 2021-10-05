@@ -12,7 +12,7 @@ from taubsi.utils.matcher import match_gyms
 class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("command_raid_desc")):
     arena = option(name=bot.translate("command_raid_gym"),
                    description=bot.translate("command_raid_gym_desc"), required=True)
-    zeit = option(name=bot.translate("command_raid_time"),
+    zeit: str = option(name=bot.translate("command_raid_time"),
                        description=bot.translate("command_raid_time_desc"), required=True)
 
     def __init__(self):
@@ -37,9 +37,7 @@ class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("co
         for gym, _ in matched_gyms:
             yield ApplicationCommandOptionChoice(name=gym.name, value=gym.id)
 
-    @zeit.autocomplete
-    async def time_autocomplete(self, interaction: discord.Interaction):
-        yield self.arena
+    # possible TODO: time autocomplete based on active raids
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.channel_id not in bot.raid_channel_dict.keys():
