@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from taubsi.utils.checks import is_admin
-from taubsi.cogs.dmap.map import Map
+from taubsi.cogs.dmap.mapmenu import MapMenu
 
 
 class PermaMap(discord.ui.View):
@@ -24,7 +24,7 @@ class PermaMap(discord.ui.View):
 
     @staticmethod
     async def start_map(interaction: discord.Interaction):
-        dmap = Map(interaction)
+        dmap = MapMenu(interaction)
         await dmap.send()
 
     @staticmethod
@@ -39,10 +39,10 @@ class DMapCog(commands.Cog):
     @commands.command(slash_command=False)
     @commands.check(is_admin)
     async def permamap(self, ctx: commands.Context):
-        await ctx.message.delete()
         message = await ctx.send('Klicke auf "Map anzeigen" um eine interaktive Map zu öffnen')
         await message.edit(view=PermaMap(message.id))
-        await ctx.reply(f"Please put this message ID in your config: `{message.id}`.\n", deleter_after=30)
+        await ctx.reply(f"Please put this message ID in your config: `{message.id}`", delete_after=30)
+        await ctx.message.delete()
 
 
 def setup(bot):

@@ -1,4 +1,5 @@
 import discord
+from taubsi.cogs.dmap.mapmenu import MapMenu
 
 
 class PermaMap(discord.ui.View):
@@ -12,5 +13,5 @@ class PermaMap(discord.ui.View):
 
     @staticmethod
     async def start_map(interaction: discord.Interaction):
-        dmap = Map(interaction)
+        dmap = MapMenu(interaction)
         await dmap.send()
