@@ -54,14 +54,13 @@ class SettingsPage(MapPage):
         ]
 
     def add_to_embed(self):
-        self.map_menu.extra_embed = discord.Embed(
-            title="Settings",
-            description=(
-                f"Map Style: **{self.map_menu.user_settings.style.name}**\n"
-                f"Icons: **{self.map_menu.user_settings.iconset.value.name}**\n"
-                f"Icon size: **{round(self.map_menu.user_settings.marker_multiplier, 1)}x**"
-            )
-        )
+        style = bot.translate("dmap_style").format(self.map_menu.user_settings.style.name)
+        icons = bot.translate("dmap_icons").format(self.map_menu.user_settings.iconset.value.name)
+        icon_size = bot.translate("dmap_icon_size").format(round(self.map_menu.user_settings.marker_multiplier, 1))
+
+        embed = discord.Embed(title=bot.translate("Settings"),
+                              description=style + "\n" + icons + "\n" + icon_size)
+        self.map_menu.extra_embed = embed
 
 
 class StartRaidPage(MapPage):
@@ -94,10 +93,10 @@ class StartRaidPage(MapPage):
     def add_to_embed(self):
         text = ""
         if self.gym:
-            text += f"Arena: {self.gym.name}\n"
+            text += bot.translate("dmap_gym_").format(self.gym.name) + "\n"
         if self.start:
-            text += f"Start: {self.start.strftime(bot.translate('timeformat_short'))}"
+            text += bot.translate("dmap_start_").format(self.start.strftime(bot.translate('timeformat_short')))
         self.map_menu.extra_embed = discord.Embed(
-            title="Start Raid",
+            title=bot.translate("dmap_start_raid"),
             description=text
         )

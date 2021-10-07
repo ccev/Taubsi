@@ -19,9 +19,9 @@ class InfoCog(commands.Cog):
     async def final_init(self):
         for server in self.bot.servers:
             now = arrow.utcnow()
-            server.gyms = list(sorted(server.gyms, key=lambda g: g.raid.end if g.raid else now))
+            gyms = list(sorted(server.gyms, key=lambda g: g.raid.end if g.raid else now))
             for info_channel in server.info_channels:
-                info_channel.set_gyms(server.gyms)
+                info_channel.set_gyms(gyms)
                 self.info_channels.append(info_channel)
 
         if self.info_channels:
@@ -67,7 +67,3 @@ class InfoCog(commands.Cog):
     async def info_purge(self):
         for info_channel in self.info_channels:
             await info_channel.channel.purge(limit=1000)
-
-
-def setup(bot):
-    bot.add_cog(InfoCog(bot))

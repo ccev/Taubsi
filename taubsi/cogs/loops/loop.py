@@ -29,7 +29,3 @@ class LoopCog(commands.Cog):
     async def gym_loop(self):
         for server in self.bot.servers:
             await server.update_gyms()
-
-
-def setup(bot):
-    bot.add_cog(LoopCog(bot))

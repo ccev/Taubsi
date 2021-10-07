@@ -30,7 +30,7 @@ class Size:
 
     @classmethod
     def vertical(cls):
-        return cls("Vertikal", 400, 700)
+        return cls("Vertical", 400, 700)
 
 
 class SizePreset(Enum):

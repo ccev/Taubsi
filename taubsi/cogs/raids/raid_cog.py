@@ -207,7 +207,3 @@ class RaidCog(commands.Cog):
             except Exception as e:
                 log.error("Error while Raid looping")
                 log.exception(e)
-
-
-def setup(bot):
-    bot.add_cog(RaidCog(bot))

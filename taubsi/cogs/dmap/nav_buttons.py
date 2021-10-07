@@ -12,7 +12,7 @@ DEFAULT_ROW = 2
 
 class BackToNavButton(discord.ui.Button):
     def __init__(self, dmap: MapMenu, style: discord.ButtonStyle = discord.ButtonStyle.blurple):
-        super().__init__(style=style, label="Back", row=4)
+        super().__init__(style=style, label=bot.translate("dmap_back"), row=4)
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):
@@ -36,7 +36,8 @@ class EmptyButton(discord.ui.Button):
 class MultiplierButton(discord.ui.Button):
     def __init__(self, dmap: MapMenu):
         self.multipliers = [1, 0.5, 3, 2]
-        super().__init__(style=discord.ButtonStyle.grey, label="Speed: " + str(self.multipliers[0]) + "x",
+        super().__init__(style=discord.ButtonStyle.grey,
+                         label=bot.translate("dmap_speed").format(self.multipliers[0]),
                          custom_id="multiplier", row=DEFAULT_ROW + 2)
         self.dmap = dmap
 
@@ -50,7 +51,7 @@ class MultiplierButton(discord.ui.Button):
 
 class StartRaidButton(discord.ui.Button):
     def __init__(self, dmap: MapMenu):
-        super().__init__(style=discord.ButtonStyle.green, label="Raid ansetzen", row=DEFAULT_ROW + 2)
+        super().__init__(style=discord.ButtonStyle.green, label=bot.translate("dmap_start_raid"), row=DEFAULT_ROW + 2)
         self.dmap = dmap
 
     async def callback(self, interction: discord.Interaction):

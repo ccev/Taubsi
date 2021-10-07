@@ -10,12 +10,13 @@ if TYPE_CHECKING:
 
 class AreaSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
-        super().__init__(placeholder="Jump to an area", min_values=0, max_values=1, row=1)
+        super().__init__(placeholder=bot.translate("dmap_jump_to_an_area"),
+                         min_values=0, max_values=1, row=1)
 
         self.dmap = dmap
         for i, area in enumerate(bot.config.DMAP_AREAS):
             self.options.append(discord.SelectOption(
-                label=area.name, description=f"Jump to {area.name}", value=str(i)
+                label=area.name, value=str(i)
             ))
 
     async def callback(self, interaction: discord.Interaction):

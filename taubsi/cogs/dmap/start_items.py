@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class RaidSelect(discord.ui.Select):
     def __init__(self, page: StartRaidPage):
-        super().__init__(placeholder="Wähle einen Raid",
+        super().__init__(placeholder=bot.translate("dmap_select_raid"),
                          min_values=1,
                          max_values=1)
         self.page = page
@@ -58,7 +58,7 @@ class RaidSelect(discord.ui.Select):
 
 class TimeSelect(discord.ui.Select):
     def __init__(self, page: StartRaidPage):
-        super().__init__(placeholder="Wähle eine Startzeit",
+        super().__init__(placeholder=bot.translate("dmap_select_time"),
                          min_values=1,
                          max_values=1,
                          row=1,
@@ -110,7 +110,7 @@ class TimeSelect(discord.ui.Select):
 class StartButton(discord.ui.Button):
     def __init__(self, page: StartRaidPage):
         super().__init__(style=discord.ButtonStyle.blurple,
-                         label="Starten",
+                         label=bot.translate("dmap_start"),
                          row=4,
                          disabled=True)
         self.page = page

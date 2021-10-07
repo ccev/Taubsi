@@ -35,7 +35,3 @@ class AutoSetupCog(commands.Cog):
 
             await user.update()
             log.info(f"Auto-updating {name} {user_id} (L{level}) (T{team})")
-
-
-def setup(bot):
-    bot.add_cog(AutoSetupCog(bot))

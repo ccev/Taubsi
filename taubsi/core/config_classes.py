@@ -118,7 +118,8 @@ class Server:
             f"select name, gym.gym_id as id, url, latitude, longitude "
             f"from gymdetails "
             f"left join gym on gym.gym_id = gymdetails.gym_id "
-            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude))"
+            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude)) "
+            f"order by name asc"
         )
         gyms = await bot.mad_db.execute(query)
 

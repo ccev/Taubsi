@@ -134,7 +134,3 @@ class PreviewCog(commands.Cog):
         else:
             view = ArticleView(message, embed, text)
             await view.send()
-
-
-def setup(bot):
-    bot.add_cog(PreviewCog(bot))

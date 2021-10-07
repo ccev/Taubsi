@@ -86,7 +86,3 @@ class Setup(commands.Cog):
     @commands.check(is_guild)
     async def team(self, ctx, team_name):
         await self.setup_commands.team(team_name, ctx.author, ctx.send)
-
-
-def setup(bot):
-    bot.add_cog(Setup(bot))

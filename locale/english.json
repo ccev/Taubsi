@@ -10,8 +10,10 @@
     "Scheduled_by": "Scheduled by {}",
     "Start": "Start",
     "Total": "Total",
+    "level_": "Level {}",
     "level_egg": "Level {} Egg",
     "mega_egg": "Mega Egg",
+    "Help": "Help",
     "context_stats_desc": "Show this player's stats",
     "command_stats_desc": "Show a linked player's stats",
     "command_stats_trainer_desc": "Leave empty to view your own stats",
@@ -63,6 +65,7 @@
     "error_missing_name": "❌ You have to give your trainer name! `!link [trainer name]`",
     "error_wrong_channel": "❌ Please use this command in a raid channel",
     "error_wrong_gym_name": "❌ You have to select a correct gym name",
+
     "Page": "Page {}/{}",
     "days": "days",
     "hours": "hours",

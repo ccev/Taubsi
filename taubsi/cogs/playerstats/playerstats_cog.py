@@ -56,7 +56,3 @@ class PlayerStats(commands.Cog):
         view = StatView(player, ctx.author.id)
 
         await PlayerstatsCommands.stats(player, view, ctx.send)
-
-
-def setup(bot):
-    bot.add_cog(PlayerStats(bot))

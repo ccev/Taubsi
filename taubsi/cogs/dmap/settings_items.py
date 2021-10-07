@@ -11,12 +11,12 @@ if TYPE_CHECKING:
 
 class StyleSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
-        super().__init__(placeholder="Choose a map style",
+        super().__init__(placeholder=bot.translate("dmap_select_style"),
                          min_values=1,
                          max_values=1,
                          row=0)
         for i, style in enumerate(bot.config.DMAP_STYLES):
-            label = f"Map Style: {style.name}"
+            label = bot.translate("dmap_style_option").format(style.name)
             self.options.append(discord.SelectOption(label=label, value=style.id, default=i == 0))
         self.dmap = dmap
 
@@ -56,13 +56,12 @@ class SizeSelect(discord.ui.Select):
 
 class IconSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
-        super().__init__(placeholder="Choose an iconset",
+        super().__init__(placeholder=bot.translate("dmap_select_iconset"),
                          min_values=1,
                          max_values=1,
                          row=2)
-        self.custom_id += "s"
         for i, iconset in enumerate(IconSet):
-            label = f"Icons: {iconset.value.name}"
+            label = bot.translate("dmap_iconset_option").format(iconset.value.name)
             self.options.append(discord.SelectOption(label=label, value=iconset.name, default=i == 0))
         self.dmap = dmap
 
@@ -90,7 +89,7 @@ class IconSizeButton(discord.ui.Button):
 
 
 class IncIconSizeButton(IconSizeButton):
-    label = "Größere Icons"
+    label = bot.translate("dmap_bigger_icons")
     dec_button: DecIconSizeButton
 
     async def callback(self, interaction: discord.Interaction):
@@ -102,12 +101,12 @@ class IncIconSizeButton(IconSizeButton):
 
 
 class DecIconSizeButton(IconSizeButton):
-    label = "Kleinere Icons"
+    label = bot.translate("dmap_smaller_icons")
     inc_button: IncIconSizeButton
 
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.marker_multiplier -= 0.1
         self.inc_button.disabled = False
-        if self.min_size <= self.dmap.user_settings.marker_multiplier:
+        if self.min_size >= self.dmap.user_settings.marker_multiplier:
             self.disabled = True
         await self.dmap.update(interaction)

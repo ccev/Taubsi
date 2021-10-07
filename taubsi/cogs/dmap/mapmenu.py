@@ -173,7 +173,7 @@ class MapMenu(discord.ui.View):
 
     async def set_map(self, attempt: int = 0):
         if attempt >= 3:
-            self.embed.set_footer(text="Sorry, there was an error loading the map")
+            self.embed.set_footer(text=bot.translate("dmap_error"))
             return
         self.hit_limit = False
         async with aiohttp.ClientSession() as session:
@@ -188,8 +188,7 @@ class MapMenu(discord.ui.View):
                     self.embed.set_image(url=self.url + "/pregenerated/" + pregen_id)
                     footer = ""
                     if self.hit_limit:
-                        footer = f"\nYou hit the marker limit of {bot.config.DMAP_MARKER_LIMIT}." \
-                                 f" Try zooming in or decrease categories and filters"
+                        footer = "\n" + bot.translate("dmap_marker_limit")
                     self.embed.set_footer(text=footer)
 
     def set_gyms(self):
