@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class StyleSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
         super().__init__(placeholder="Choose a map style",
-                         min_values=0,
+                         min_values=1,
                          max_values=1,
                          row=0)
         for i, style in enumerate(bot.config.DMAP_STYLES):
@@ -35,7 +35,7 @@ class StyleSelect(discord.ui.Select):
 class SizeSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
         super().__init__(placeholder="Choose a map size",
-                         min_values=0,
+                         min_values=1,
                          max_values=1,
                          row=1)
         for size in SizePreset:
@@ -57,7 +57,7 @@ class SizeSelect(discord.ui.Select):
 class IconSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
         super().__init__(placeholder="Choose an iconset",
-                         min_values=0,
+                         min_values=1,
                          max_values=1,
                          row=2)
         self.custom_id += "s"
@@ -77,7 +77,7 @@ class IconSelect(discord.ui.Select):
 class IconSizeButton(discord.ui.Button):
     label: str
     style = discord.ButtonStyle.grey
-    row = 3
+    row = 4
     min_size = 0.5
     max_size = 2
     dmap: MapMenu

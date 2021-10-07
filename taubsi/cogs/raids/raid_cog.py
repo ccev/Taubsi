@@ -160,7 +160,8 @@ class RaidCog(commands.Cog):
         raidmessage: RaidMessage = self.raidmessages.get(message.id)
         if not raidmessage:
             return
-        log.info("Gracefully deleting Raid at", raidmessage.gym.name, raidmessage.start_time, raidmessage.message.id)
+        log.info(f"Gracefully deleting Raid at {raidmessage.gym.name}"
+                 f"{raidmessage.start_time} {raidmessage.message.id}")
         try:
             await raidmessage.init_message.delete()
         except Exception:

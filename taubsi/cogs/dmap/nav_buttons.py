@@ -11,8 +11,8 @@ DEFAULT_ROW = 2
 
 
 class BackToNavButton(discord.ui.Button):
-    def __init__(self, dmap: MapMenu):
-        super().__init__(style=discord.ButtonStyle.blurple, label="Back", row=4)
+    def __init__(self, dmap: MapMenu, style: discord.ButtonStyle = discord.ButtonStyle.blurple):
+        super().__init__(style=style, label="Back", row=4)
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):
@@ -60,7 +60,7 @@ class StartRaidButton(discord.ui.Button):
 
 class SettingsButton(discord.ui.Button):
     def __init__(self, dmap: MapMenu):
-        super().__init__(style=discord.ButtonStyle.grey, label="Settings", row=DEFAULT_ROW + 2)
+        super().__init__(style=discord.ButtonStyle.grey, emoji=bot.config.DMAP_EMOJIS["settings"], row=DEFAULT_ROW + 2)
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):

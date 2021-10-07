@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import aiohttp
 import arrow
@@ -24,6 +24,7 @@ class MapMenu(discord.ui.View):
     interaction: discord.Interaction
     gyms: List[Gym]
     display_gyms: List[Gym]
+    post_to: Optional[Dict[int, List[int]]] = None
 
     map_nav_page: MapNavPage
     settings_page: SettingsPage
@@ -43,6 +44,12 @@ class MapMenu(discord.ui.View):
         server = server[0]
         self.gyms = server.gyms
         self.embed = discord.Embed()
+
+        for server in bot.servers:
+            for dmap_message in server.dmap_messages:
+                if dmap_message.id == interaction.message.id:
+                    self.post_to = dmap_message.post_to
+                    break
 
         self.map_nav_page = MapNavPage(self)
         self.settings_page = SettingsPage(self)
@@ -82,7 +89,8 @@ class MapMenu(discord.ui.View):
         if self.display_gyms:
             # i hate this logic
             markers = []
-            for gym in self.display_gyms:
+            gyms = sorted(self.display_gyms, key=lambda g: (g.lat, g.lon), reverse=True)
+            for gym in gyms:
                 if len(markers) >= bot.config.DMAP_MARKER_LIMIT:
                     self.hit_limit = True
                     break
@@ -193,6 +201,8 @@ class MapMenu(discord.ui.View):
                 if gym.raid.end > arrow.utcnow() and gym.raid.level in self.user_settings.levels and \
                         bbox[0] <= gym.lat <= bbox[1] and bbox[2] <= gym.lon <= bbox[3]:
                     self.display_gyms.append(gym)
+
+        self.start_raid_page.raid_select.set_gyms(self.display_gyms)
 
     async def edit(self, interaction: discord.Interaction):
         self.current_page.add_to_embed()

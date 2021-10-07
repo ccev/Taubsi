@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 import discord
+import arrow
 
 from taubsi.cogs.dmap.nav_buttons import (EmptyButton, MultiplierButton, UpButton, LeftButton, DownButton,
                                           RightButton, ZoomInButton, ZoomOutButton, SettingsButton, BackToNavButton,
@@ -8,6 +9,8 @@ from taubsi.cogs.dmap.nav_buttons import (EmptyButton, MultiplierButton, UpButto
 from taubsi.cogs.dmap.areaselect import AreaSelect
 from taubsi.cogs.dmap.levelselect import LevelSelect
 from taubsi.cogs.dmap.settings_items import StyleSelect, IconSelect, IncIconSizeButton, DecIconSizeButton
+from taubsi.cogs.dmap.start_items import RaidSelect, TimeSelect, StartButton
+from taubsi.core import Gym, bot
 
 if TYPE_CHECKING:
     from taubsi.cogs.dmap.mapmenu import MapMenu
@@ -62,4 +65,39 @@ class SettingsPage(MapPage):
 
 
 class StartRaidPage(MapPage):
-    pass
+    gym: Optional[Gym] = None
+    start: Optional[arrow.Arrow] = None
+
+    def __init__(self, dmap: MapMenu):
+        super().__init__(map_menu=dmap)
+        self.start_button = StartButton(self)
+        self.time_select = TimeSelect(self)
+        self.raid_select = RaidSelect(self)
+        self.items = [
+            self.raid_select,
+            self.time_select,
+            self.start_button, BackToNavButton(dmap, discord.ButtonStyle.grey)
+        ]
+
+    async def set_raid(self, gym: Gym, interaction: discord.Interaction):
+        self.start_button.disabled = True
+        self.start = None
+        self.time_select.set_times(gym)
+        self.gym = gym
+        await self.map_menu.edit(interaction)
+
+    async def set_time(self, time: arrow.Arrow, interaction: discord.Interaction):
+        self.start_button.disabled = False
+        self.start = time
+        await self.map_menu.edit(interaction)
+
+    def add_to_embed(self):
+        text = ""
+        if self.gym:
+            text += f"Arena: {self.gym.name}\n"
+        if self.start:
+            text += f"Start: {self.start.strftime(bot.translate('timeformat_short'))}"
+        self.map_menu.extra_embed = discord.Embed(
+            title="Start Raid",
+            description=text
+        )
