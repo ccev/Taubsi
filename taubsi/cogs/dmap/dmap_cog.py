@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from taubsi.utils.checks import is_admin
 from taubsi.cogs.dmap.mapmenu import MapMenu
-from taubsi.core.bot import bot
+from taubsi.core.bot import bot, log
 
 
 class PermaMap(discord.ui.View):
@@ -25,6 +25,7 @@ class PermaMap(discord.ui.View):
 
     @staticmethod
     async def start_map(interaction: discord.Interaction):
+        log.info(f"User {interaction.user} started a dmap")
         dmap = MapMenu(interaction)
         await dmap.send()
 

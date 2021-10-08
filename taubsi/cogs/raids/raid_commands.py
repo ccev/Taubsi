@@ -4,7 +4,7 @@ from discord.application_commands import ApplicationCommand, option, Application
 from taubsi.cogs.raids.errors import WrongChannel, InvalidTime, WrongGymName
 from taubsi.cogs.raids.raid_cog import match_time
 from taubsi.cogs.raids.raidmessage import RaidMessage
-from taubsi.core import bot, Server
+from taubsi.core import bot, Server, log
 from taubsi.utils.errors import TaubsiError
 from taubsi.utils.matcher import match_gyms
 
@@ -32,6 +32,7 @@ class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("co
 
     @arena.autocomplete
     async def gym_autocomplete(self, interaction: discord.Interaction):
+        log.info(f"User {interaction.user} is choosing a gym in the /raid command")
         server = self._get_server(interaction.guild_id)
         matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0, limit=25)
         for gym, _ in matched_gyms:
