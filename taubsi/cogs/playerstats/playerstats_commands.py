@@ -89,6 +89,6 @@ class UnlinkCommand(ApplicationCommand, name="unlink", description=bot.translate
         await PlayerstatsCommands.unlink(interaction.user.id, interaction.response.send_message)
 
 
-class LeaderboardCommand(ApplicationCommand, name="leaderboard", description = bot.translate("command_lb_desc")):
+class LeaderboardCommand(ApplicationCommand, name="leaderboard", description=bot.translate("command_lb_desc")):
     async def callback(self, interaction: discord.Interaction):
         await PlayerstatsCommands.leaderboard(interaction.user.id, interaction.response.send_message)

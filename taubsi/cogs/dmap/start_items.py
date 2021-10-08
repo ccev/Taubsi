@@ -44,7 +44,7 @@ class RaidSelect(discord.ui.Select):
                 default = self.page.gym and self.page.gym.id == gym.id
                 self.add_option(label=gym.name,
                                 value=gym.id,
-                                description=f"{gym.raid.name} {start} – {end}",
+                                description=f"{gym.raid.name}: {start} – {end}",
                                 default=default)
 
     async def callback(self, interaction: discord.Interaction):

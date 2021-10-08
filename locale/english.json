@@ -20,7 +20,7 @@
     "command_link_desc": "Link yourself with a Pokémon GO account",
     "command_link_name_desc": "Your trainer name",
     "command_unlink_desc": "Unlink your Pokémon GO account",
-    "command_leaderboard_desc": "Show a leaderboard of all linked players",
+    "command_lb_desc": "Show a leaderboard of all linked players",
     "command_raid_desc": "Start a Raid",
     "command_raid_gym": "gym",
     "command_raid_gym_desc": "The Gym",

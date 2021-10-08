@@ -21,7 +21,7 @@ class PermaMap(discord.ui.View):
                                         style=discord.ButtonStyle.grey,
                                         custom_id=f"pmh{message_id}")
         help_button.callback = self.send_help
-        self.add_item(help_button)
+        # self.add_item(help_button)  # TODO Help
 
     @staticmethod
     async def start_map(interaction: discord.Interaction):
@@ -30,16 +30,52 @@ class PermaMap(discord.ui.View):
 
     @staticmethod
     async def send_help(interaction: discord.Interaction):
-        # TODO help
         embed = discord.Embed(
             title="Hilfe bei der Raid Map",
             description=(
-                "Die Raid Map ist eine komplett interaktive, funktionsfähige Map in Discord, die Raids anzeigen kann.\n"
+                "Die Raid Map ist eine komplett interaktive Map in Discord. Mit ihr kannst du aktive Raids "
+                "sehen und sie auch gleich ansetzen. Es gibt insgesamt drei Menüs.\n\n"
+                "Durch Limitation von Discord kann es manchmal zu Fehlern kommen. Normalerweise hilft es dann, "
+                "die Filter anzupassen und reinzuzoomen. Ansonsten unter der Nachricht auf \"Nachricht verwerden\""
+                "klicken und die Map neu öffnen"
             )
         )
         embed.add_field(
+            inline=False,
             name="Hauptmenü",
-            value="Im Hauptmenü der Ma"
+            value=(
+                "Hier kannst du über verschiedene Steuerungen mit der Map interagieren.\n\n"
+                "**Raid Level Filter**: Standardmäßig werden Level 5 Raids angezeigt, du kannst dir aber auch alle "
+                "anderen Raids anzeigen lassen\n"
+                "**Standort Auswahl**: Falls du schnell in deine Nachbarschaft kommen möchtest, kannst du "
+                "über diese Auswahl schnell zu ausgewählten Standorten springen\n"
+                "**Navigation**: Über die Pfeiltasten kannst du dich über die Map bewegen, mit den +/- Buttons "
+                "kannst du rein- und rauszoomen\n"
+                "**Raid ansetzen**: Bringt dich in das Raid Ansetzen Menü\n"
+                "**Einstellungen**: Bringt dich in das Einstellungen Menü\n"
+                "**Speed**: Du kannst einenn Multiplikator für die Navigation wählen, damit du die Map schneller "
+                "bewegen kannst"
+            )
+        )
+        embed.add_field(
+            inline=False,
+            name="Einstellungen",
+            value=(
+                "In den Einstellungen kannst du vor allem einstellen, wie die Map aussieht.\n\n"
+                "**Map Style**: Der Map Style gibt an, wie die reine Karte aussehen soll\n"
+                "**Icons**: Du kannst auswählen, welche Icons genutzt werden sollen\n"
+                "**Icongröße**: Damit du die Raids besser erkennen kannst, kanns du die Größe der "
+                "Icons auch anpassen"
+            )
+        )
+        embed.add_field(
+            inline=False,
+            name="Raid ansetzen",
+            value=(
+                "Du kannst direkt in der Map einen Raid ansetzen. Dabei kannst du nur aus Arenen wählen, "
+                "die gerade angezeigt werden. Als Startzeit musst du eine Vorgegebene wählen. Falls du den Raid "
+                "zu einer anderen Zeit spielen möchtest, musst du ihn manuell über einen Befehl ansetzen."
+            )
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
