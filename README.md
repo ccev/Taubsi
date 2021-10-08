@@ -12,13 +12,13 @@ Because of this, I don't like to take suggestions or help with any issues you ha
 
 ## Features
 
-There are 3 main cogs in this bot: Raid, RaidInfo, Setup.
+There are 4 main features in this bot: Raid, RaidInfo, Setup, Dmap.
 
 ### Raids
 
 - You're defining raid channels in which raids can be scheduled. Each raid channel is tied to a Raid level.
 - In a raid channel, anyone can write. Talking should be disallowed, but I do allow very quick & short arranging (though this is happening very rarely)
-- Raid channels should be locked to only players with set team roles. And no one should be able to add reactions in them
+- Raid channels should only be visble to players with a set team role. And no one should be able to add reactions in them
 - fuzzywuzzy matching is used to match the written text to a gym name. If Taubsi is certain that your message is referencing a gym, a raid dialog starts
 - The message must also contain a start time. It supports a few formats, but most commonly `13:00`, `13`, `13.00` are used. (these examples will all result in the same time)
 - If your text matched multiple gyms, an additional message will be sent, asking you to select the gym you meant
@@ -74,10 +74,12 @@ There's also a team command that should be used more rarely. `!team [team]`. Thi
 
 # Setup
 
-I'm not going into detail for setup. Basically you're going to make a new DB and use the sql commands in the sql/ folde on it. Then you're going to copy the config/ folder and fill in config.json, servers.json, geofence.json (poracle/my tools format) and emotes.py (needs some custom emojis)
+I'm not going into detail for setup. Basically you're going to make a new DB and use the sql commands in the sql/ folde on it. 
+
+Then you're going to copy config.example.py to config.py and geofence.example.json to geofence.json and fill out both files. Custom emojis for the config can be found in the emojis/ directory
 
 Now you're going to make a venv (important!) and install the requirements in it.
 
-Now install discord.py 2.0 in it using `/path/to/venv/pip3 install git+https://github.com/Rapptz/discord.py.git`
+Now install discord.py 2.0 in it using `/path/to/venv/pip3 install git+https://github.com/jay3332/discord.py.git`
 
 Now run start_taubsi.py and it should be fine.

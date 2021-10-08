@@ -1,9 +1,5 @@
-from taubsi.utils.enums import Team
-from taubsi.utils.logging import logging
-from taubsi.taubsi_objects import tb
-from config.emotes import *
-
-log = logging.getLogger("Raids")
+from taubsi.core.pogo import Team
+from taubsi.core import log, bot
 
 
 class RaidMember:
@@ -23,7 +19,7 @@ class RaidMember:
                 self.team = team
                 break
 
-        if tb.translate("notify_role_name") in roles:
+        if bot.translate("notify_role_name") in roles:
             self.is_subscriber = True
         else:
             self.is_subscriber = False
@@ -48,9 +44,9 @@ class RaidMember:
     def make_text(self):
         text = self.member.display_name + f" ({self.amount})"
         if self.is_late:
-            text = CONTROL_EMOJIS["late"] + " " + text
+            text = bot.config.CONTROL_EMOJIS["late"] + " " + text
         if self.is_remote:
-            text = CONTROL_EMOJIS["remote"] + " " + text
+            text = bot.config.CONTROL_EMOJIS["remote"] + " " + text
         return text + "\n"
 
     async def db_insert(self):
@@ -61,4 +57,4 @@ class RaidMember:
             "is_late": self.is_late,
             "is_remote": self.is_remote
         }
-        await tb.intern_queries.insert("raidmembers", keyvals)
+        await bot.taubsi_db.insert("raidmembers", keyvals)

@@ -1,35 +1,51 @@
-from taubsi.taubsi_objects import tb
-from taubsi.utils.logging import log
-from taubsi.taubsi_objects.servers import load_servers
+from taubsi.core import bot
+from taubsi.core.config_classes import Cog
+from taubsi.cogs.raids.raid_commands import RaidCommand
+from taubsi.cogs.playerstats.playerstats_commands import (StatContext, StatsCommand, LinkCommand,
+                                                          UnlinkCommand, LeaderboardCommand)
+from taubsi.cogs.setup.setup_commands import (NameCommand, LevelCommand, LevelUpCommand, TeamCommand)
+from taubsi.utils.errors import app_command_error
 
-extensions = [
-    "taubsi.cogs.raids.raid_cog",
-    "taubsi.cogs.setup.setup_cog",
-    "taubsi.cogs.loop",
-    "taubsi.cogs.raids.info_cog"
-]
-startup = True
+from taubsi.cogs.raids.raid_cog import RaidCog
+from taubsi.cogs.setup.setup_cog import Setup
+from taubsi.cogs.loops.loop import LoopCog
+from taubsi.cogs.raid_info.info_cog import InfoCog
+from taubsi.cogs.dmap.dmap_cog import DMapCog
+from taubsi.cogs.auto_setup.auto_setup_cog import AutoSetupCog
+from taubsi.cogs.playerstats.playerstats_cog import PlayerStats
+from taubsi.cogs.articlepreview.preview_cog import PreviewCog
 
 
-@tb.bot.event
-async def on_ready():
-    global startup
+bot.cog_dict = {
+    Cog.RAIDS: RaidCog,
+    Cog.SETUP: Setup,
+    Cog.MAIN_LOOPS: LoopCog,
+    Cog.RAIDINFO: InfoCog,
+    Cog.DMAP: DMapCog,
+    Cog.AUTOSETUP: AutoSetupCog,
+    Cog.PLAYERSTATS: PlayerStats,
+    Cog.ARTICLEPREVIEW: PreviewCog
+}
 
-    if not startup:
-        return
-    await load_servers()
-    tb.trash_channel = await tb.bot.fetch_channel(tb.config["trash_channel"])
+for cog_enum, cog_class in bot.cog_dict.items():
+    if cog_enum not in bot.config.COGS:
+        continue
+    cog = cog_class(bot)
+    bot.add_cog(cog)
+    bot.cog_dict[cog_enum] = cog
 
-    for extension in extensions:
-        tb.bot.load_extension(extension)
-    if tb.config.get("secret", False):
-        tb.bot.load_extension("taubsi.cogs.setup.auto_setup_cog")
-        tb.bot.load_extension("taubsi.cogs.playerstats.playerstats_cog")
-        tb.bot.load_extension("taubsi.cogs.articlepreview.preview_cog")
-    raidcog = tb.bot.get_cog("RaidCog")
-    await raidcog.final_init()
-    
-    log.info("Fully loaded, ready for action")
-    startup = False
+app_commands = {
+    Cog.RAIDS: [RaidCommand],
+    Cog.PLAYERSTATS: [StatContext, StatsCommand, LinkCommand, UnlinkCommand, LeaderboardCommand],
+    Cog.SETUP: [NameCommand, LevelCommand, LevelUpCommand, TeamCommand]
+}
 
-tb.bot.run(tb.config["bot_token"])
+for server in bot.servers:
+    for cog, commands in app_commands.items():
+        if cog not in bot.config.COGS:
+            continue
+        for command in commands:
+            command.command_error = app_command_error
+            bot.add_application_command(command=command, guild_id=server.id)
+
+bot.run(bot.config.BOT_TOKEN)

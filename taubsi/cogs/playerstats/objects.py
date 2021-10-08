@@ -6,10 +6,8 @@ import arrow
 import discord
 from discord.ext import commands
 
-from taubsi.taubsi_objects import tb
 from taubsi.cogs.playerstats.errors import *
-from taubsi.utils.enums import Team
-from config.emotes import BADGE_LEVELS
+from taubsi.core import bot, Team
 
 
 class DataLevel(Enum):
@@ -34,13 +32,51 @@ class Player:
         self.ign = ign
         self.user = user
 
+    @classmethod
+    async def from_app(cls, member: discord.Member, user_id: int):
+        ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {member.id}",
+                                          as_dict=False)
+        if not ign or not ign[0] or not ign[0][0]:
+            if member.id == user_id:
+                raise SelfNotLinked
+            raise UserNotLinked
+        ign = ign[0][0]
+
+        player_ = cls(ign, member)
+        await player_.get_stats()
+        return player_
+
+    @classmethod
+    async def from_command(cls, player, ctx: commands.Context):
+        if isinstance(player, discord.Member):
+            ign = await bot.taubsi_db.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}",
+                                              as_dict=False)
+            if not ign or not ign[0] or not ign[0][0]:
+                if player.id == ctx.author.id:
+                    raise SelfNotLinked
+                raise UserNotLinked
+            ign = ign[0][0]
+        else:
+            if any(not c.isalnum() for c in player):
+                raise PlayerNotLinked
+            result = await bot.taubsi_db.execute(f"SELECT user_id, ingame_name FROM users "
+                                                 f"WHERE ingame_name = '{player}'", as_dict=False)
+            if not result:
+                raise PlayerNotLinked
+            user_id = result[0][0]
+            ign = result[0][1]
+            player = await ctx.guild.fetch_member(int(user_id))
+
+        player_ = cls(ign, player)
+        await player_.get_stats()
+        return player_
+
     async def get_stats(self):
         fetch_stats = ",".join([s.value for s in Stat.__dict__.values() if isinstance(s, Badge)])
-        result = await tb.queries.execute(
+        result = await bot.mad_db.execute(
             "SELECT team, level, last_seen, {} "
             "FROM cev_trainer "
-            "WHERE name = '{}'".format(fetch_stats, self.ign),
-            as_dict=True
+            "WHERE name = '{}'".format(fetch_stats, self.ign)
         )
         self.stats = result[0]
 
@@ -62,39 +98,15 @@ class Player:
             f"Gedrehte Stops: {self.stats['stops_spun']}"
         )
 
-    @classmethod
-    async def from_command(cls, player, ctx: commands.Context):
-        if isinstance(player, discord.Member):
-            ign = await tb.intern_queries.execute(f"SELECT ingame_name FROM users WHERE user_id = {player.id}")
-            if not ign or not ign[0] or not ign[0][0]:
-                if player.id == ctx.author.id:
-                    raise SelfNotLinked
-                raise UserNotLinked
-            ign = ign[0][0]
-        else:
-            if any(not c.isalnum() for c in player):
-                raise PlayerNotLinked
-            result = await tb.intern_queries.execute(f"SELECT user_id, ingame_name FROM users "
-                                                     f"WHERE ingame_name = '{player}'")
-            if not result:
-                raise PlayerNotLinked
-            user_id = result[0][0]
-            ign = result[0][1]
-            player = await ctx.guild.fetch_member(int(user_id))
-
-        player_ = cls(ign, player)
-        await player_.get_stats()
-        return player_
-
 
 class LinkAdButton(discord.ui.Button):
     def __init__(self, row: int = 0):
         super().__init__(style=discord.ButtonStyle.blurple,
-                         label=tb.translate("link_ad_label"),
+                         label=bot.translate("link_ad_label"),
                          row=row)
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(ephemeral=True, content=tb.translate("link_ad_text"))
+        await interaction.response.send_message(ephemeral=True, content=bot.translate("link_ad_text"))
 
 
 class Badge:
@@ -113,7 +125,7 @@ class Badge:
 
     def get_tier_prefix(self, number: int) -> str:
         level = sum([1 for t in self.targets if t <= number])
-        emoji = BADGE_LEVELS[level]
+        emoji = bot.config.BADGE_LEVELS[level]
         return emoji
 
 

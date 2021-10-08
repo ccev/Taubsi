@@ -4,6 +4,8 @@ config/
 secret.txt
 .idea
 venv
+config.py
+geofence.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

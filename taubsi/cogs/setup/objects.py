@@ -1,10 +1,9 @@
-from typing import Optional
 import re
-from taubsi.taubsi_objects import tb
-from taubsi.utils.enums import Team
-from taubsi.utils.logging import logging
+from typing import Optional
 
-log = logging.getLogger("Setup")
+import discord
+
+from taubsi.core import log, Team, bot
 
 
 def name_level_from_nick(nick):
@@ -33,9 +32,10 @@ class TaubsiUser:
         self.friendcode = friendcode
         self.name = name
     
-    async def from_command(self, member):
-        result = await tb.intern_queries.execute(
-            f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};")
+    async def from_member(self, member):
+        result = await bot.taubsi_db.execute(
+            f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};",
+            as_dict=False)
         self.user_id = member.id
         if not result:
             nick = member.display_name
@@ -61,11 +61,12 @@ class TaubsiUser:
         return level + self.name
     
     async def update(self):
-        for guild in tb.guilds:
+        for server in bot.servers:
+            guild = server.guild
             try:
                 try:
                     member = await guild.fetch_member(self.user_id)
-                except:
+                except discord.DiscordException:
                     member = None
                 
                 if member is None:
@@ -102,4 +103,4 @@ class TaubsiUser:
         if len(self.name) > 0:
             keyvals["name"] = self.name
         
-        await tb.intern_queries.insert("users", keyvals)
+        await bot.taubsi_db.insert("users", keyvals)

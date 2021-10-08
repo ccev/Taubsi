@@ -1,13 +1,16 @@
 import aiohttp
 from math import floor
 
+
 def reverse_get(dict_, value):
     return list(dict_.keys())[list(dict_.values()).index(value)]
+
 
 async def asyncget(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             return await resp.read()
+
 
 def calculate_cp(level, basestats, iv):
     multipliers = {

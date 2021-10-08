@@ -4,9 +4,8 @@ from typing import List, Dict, TYPE_CHECKING
 import arrow
 import discord
 
-from taubsi.taubsi_objects import tb
-from config.emotes import TEAM_COLORS
-from taubsi.cogs.playerstats.objects import Player, Stat, Badge, LinkAdButton, DataLevel
+from taubsi.cogs.playerstats.objects import Player, LinkAdButton, DataLevel, Badge, Stat
+from taubsi.core import bot
 
 
 class _StatCategory(discord.SelectOption):
@@ -17,8 +16,8 @@ class _StatCategory(discord.SelectOption):
     def __init__(self):
         self.id = self.name
         lang_key = "stats_category_" + self.name
-        self.name = tb.translate(lang_key)
-        desc = tb.translate(lang_key + "_desc")
+        self.name = bot.translate(lang_key)
+        desc = bot.translate(lang_key + "_desc")
 
         super().__init__(label=self.name, value=self.id, description=desc)
 
@@ -72,7 +71,7 @@ class StatSelect(discord.ui.Select):
         self.stat_view = view
         self.categories: Dict[str, _StatCategory] = {}
 
-        super().__init__(custom_id="stats_select", placeholder=tb.translate("stats_placeholder"),
+        super().__init__(custom_id="stats_select", placeholder=bot.translate("stats_placeholder"),
                          min_values=0, max_values=1)
 
         for category in [StatCategoryGeneral, StatCategoryBattles, StatCategoryCollection,
@@ -112,19 +111,19 @@ class StatView(discord.ui.View):
         stat_value = self.player.stats.get(stat_id)
         if not stat_value:
             return ""
-        stat_name = tb.translate("stats_" + stat_id)
+        stat_name = bot.translate("stats_" + stat_id)
         if badge_levels:
             stat_emoji = stat_enum.get_tier_prefix(stat_value)
             stat_suffix = stat_enum.next_target(stat_value)
         else:
             stat_emoji = ""
             stat_suffix = ""
-        return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", tb.translate("dot"))
+        return f"{stat_emoji}{stat_name}: **{stat_value:,}**{stat_suffix}\n".replace(",", bot.translate("dot"))
 
     def _base_embed(self):
         embed = discord.Embed()
-        embed.title = tb.translate("stats_title").format(self.player.ign)
-        embed.colour = TEAM_COLORS[self.player.team.value]
+        embed.title = bot.translate("stats_title").format(self.player.ign)
+        embed.colour = bot.config.TEAM_COLORS[self.player.team.value]
         embed.set_thumbnail(url=f"https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons/team/"
                                 f"{self.player.team.value}.png")
 
@@ -132,9 +131,9 @@ class StatView(discord.ui.View):
         seconds, days = time_diff.seconds, time_diff.days
         hours, minutes = int(seconds // 3600), int(seconds % 3600 // 60)
 
-        days_str = tb.translate("days")
-        hours_str = tb.translate("hours")
-        minutes_str = tb.translate("minutes")
+        days_str = bot.translate("days")
+        hours_str = bot.translate("hours")
+        minutes_str = bot.translate("minutes")
 
         if days:
             last_updated = f"{days} {days_str}, {hours} {hours_str}"
@@ -142,7 +141,7 @@ class StatView(discord.ui.View):
             last_updated = f"{hours} {hours_str}, {minutes} {minutes_str}"
         else:
             last_updated = f"{minutes} {minutes_str}"
-        embed.set_footer(text=tb.translate("stats_last_seen").format(last_updated))
+        embed.set_footer(text=bot.translate("stats_last_seen").format(last_updated))
         return embed
 
     def get_gym_embed(self):
@@ -162,6 +161,10 @@ class StatView(discord.ui.View):
             if title is None:
                 embed.description = text
             else:
-                title = tb.translate("stats_title_" + title)
+                title = bot.translate("stats_title_" + title)
                 embed.add_field(name=title, value=text, inline=False)
         return embed
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True

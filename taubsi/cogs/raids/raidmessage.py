@@ -7,19 +7,14 @@ import discord
 import arrow
 
 from taubsi.utils.utils import asyncget, reverse_get
-from taubsi.utils.enums import Team
-from taubsi.utils.logging import logging
-from taubsi.taubsi_objects import tb
-from config.emotes import *
 from taubsi.cogs.raids.raidmember import RaidMember
-from taubsi.cogs.raids.pogo import Gym, BaseRaid, ScannedRaid
+from taubsi.core import bot, Gym, Raid, Team, log
 
 if TYPE_CHECKING:
     from datetime import datetime
+    from taubsi.core import RaidChannel
 
-log = logging.getLogger("Raids")
-
-timeformat = tb.translate("timeformat_short")
+timeformat = bot.translate("timeformat_short")
 
 TOTAL_LIMIT = 20
 REMOTE_LIMIT = 10
@@ -137,11 +132,12 @@ class RaidmessageView(discord.ui.View):
 
 
 class RaidMessage:
-    text: str
+    text: str = ""
     embed: discord.Embed
     start_time: arrow.Arrow
-    raid: Union[BaseRaid, ScannedRaid]
+    raid: Raid
 
+    raid_channel: RaidChannel
     channel_id: int
     message: discord.Message
     init_message: Optional[discord.Message]
@@ -149,7 +145,7 @@ class RaidMessage:
 
     role: discord.Role
     view: RaidmessageView
-    footer_prefix: str
+    footer_prefix: str = ""
     warnings: Set[str]
     static_warnings: Set[str]
 
@@ -166,10 +162,10 @@ class RaidMessage:
         self.start_time = start
         self.channel_id = channel_id
 
-        self.channel_settings = tb.raid_channels[self.channel_id]
+        self.raid_channel = bot.raid_channel_dict.get(self.channel_id)
 
-        self.text = ""
-        self.footer_prefix = ""
+        self.raid = gym.get_raid(self.raid_channel.level)
+
         self.members = []
         self.remotes = []
         self.lates = []
@@ -177,14 +173,22 @@ class RaidMessage:
         self.static_warnings = set()
 
     @classmethod
+    async def from_slash(cls, gym: Gym, start_time: arrow.Arrow, interaction: discord.Interaction) -> RaidMessage:
+        self = cls(gym, start_time, interaction.channel_id)
+        self.author_id = interaction.user.id
+        self.init_message = None
+        self.view = self._get_view()
+        await self.send_message(interaction)
+        return self
+
+    @classmethod
     async def from_raidinfo(cls,
-                            gym: Gym, raid: BaseRaid, start_time: arrow.Arrow,
+                            gym: Gym, start_time: arrow.Arrow,
                             interaction: discord.Interaction, channel_id: int) -> RaidMessage:
         self = cls(gym, start_time, channel_id)
 
         self.author_id = interaction.user.id
-        self.footer_prefix = tb.translate("Scheduled_by").format(interaction.user.display_name) + "\n"
-        self.raid = raid
+        self.footer_prefix = bot.translate("Scheduled_by").format(interaction.user.display_name) + "\n"
         self.init_message = None
         self.view = self._get_view()
 
@@ -195,7 +199,6 @@ class RaidMessage:
     async def from_command(cls, gym: Gym, start_time: arrow.Arrow, init_message: discord.Message) -> RaidMessage:
         self = cls(gym, start_time, init_message.channel.id)
 
-        self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
         self.init_message = init_message
         self.author_id = self.init_message.author.id
         self.view = self._get_view()
@@ -207,15 +210,21 @@ class RaidMessage:
     async def from_db(cls, channel_id: int, message_id: int, init_message_id: int, start_time: datetime,
                       gym_id: int, role_id: int) -> RaidMessage:
         start = arrow.get(start_time).to("local")
-        channel: discord.TextChannel = await tb.bot.fetch_channel(channel_id)
+        channel: discord.TextChannel = await bot.fetch_channel(channel_id)
         message = await channel.fetch_message(message_id)
-        gym = [g for g in tb.gyms[message.guild.id] if g.id == gym_id][0]
+        server = [s for s in bot.servers if message.guild.id == s.id]
+        if not server:
+            raise
+        server = server[0]
+        gym = [g for g in server.gyms if g.id == gym_id]
+        if not gym:
+            raise
+        gym = gym[0]
 
         self = cls(gym, start, channel_id)
 
         self.message = message
         self.role = self.message.guild.get_role(role_id)
-        self.raid = await self.gym.get_active_raid(self.channel_settings["level"])
 
         try:
             self.init_message = await channel.fetch_message(init_message_id)
@@ -224,21 +233,21 @@ class RaidMessage:
             self.init_message = None
             self.author_id = None
 
-        raidmember_db = await tb.intern_queries.execute(
+        raidmember_db = await bot.taubsi_db.execute(
             f"select user_id, amount, is_late, is_remote from raidmembers where message_id = {self.message.id}")
         for entry in raidmember_db:
-            if entry[2]:
-                self.lates.append(entry[0])
-            if entry[3]:
-                self.remotes.append(entry[0])
-            raidmember = RaidMember(self, entry[0], entry[1])
+            if entry["is_late"]:
+                self.lates.append(entry["user_id"])
+            if entry["is_remote"]:
+                self.remotes.append(entry["user_id"])
+            raidmember = RaidMember(self, entry["user_id"], entry["amount"])
             self.members.append(raidmember)
 
         self.embed = self.message.embeds[0]
+        self.view = self._get_view()
         await self.make_member_fields()
         await self.make_base_embed()
         self.make_warnings()
-        self.view = self._get_view()
         await self.edit_message()
 
         return self
@@ -270,8 +279,8 @@ class RaidMessage:
             member = RaidMember(self, payload.user_id, 1)
             self.members.append(member)
 
-        if emote in CONTROL_EMOJIS.values():
-            control = reverse_get(CONTROL_EMOJIS, emote)
+        if emote in bot.config.CONTROL_EMOJIS.values():
+            control = reverse_get(bot.config.CONTROL_EMOJIS, emote)
 
             if control == "remove":
                 if payload.user_id == self.author_id:
@@ -284,8 +293,8 @@ class RaidMessage:
             elif control == "remote":
                 self.remotes.append(payload.user_id)
 
-        elif emote in NUMBER_EMOJIS.values():
-            amount = reverse_get(NUMBER_EMOJIS, emote)
+        elif emote in bot.config.NUMBER_EMOJIS.values():
+            amount = reverse_get(bot.config.NUMBER_EMOJIS, emote)
             notification = f"▶️ {member.member.display_name} ({amount})"
             to_notify = True
 
@@ -307,17 +316,18 @@ class RaidMessage:
         # code duplication :thumbsdown:
         amount = None
         emote = str(payload.emoji)
-        if emote in CONTROL_EMOJIS.values():
-            control = reverse_get(CONTROL_EMOJIS, emote)
+        if emote in bot.config.CONTROL_EMOJIS.values():
+            control = reverse_get(bot.config.CONTROL_EMOJIS, emote)
 
             if control == "late":
                 self.lates.remove(payload.user_id)
                 if member.amount > 0:
-                    await self.notify(tb.translate("notify_on_time").format(member.member.display_name), member.member)
+                    await self.notify(bot.translate("notify_on_time").format(
+                        member.member.display_name), member.member)
             elif control == "remote":
                 self.remotes.remove(payload.user_id)
 
-        elif emote in NUMBER_EMOJIS.values():
+        elif emote in bot.config.NUMBER_EMOJIS.values():
             if member.amount > 0:
                 await self.notify(f"❌ {member.member.display_name} ({member.amount})", member.member)
                 amount = 0
@@ -380,7 +390,7 @@ class RaidMessage:
                 with open(path, "w+") as f:
                     f.write(json.dumps(pb_data))
 
-            if isinstance(self.raid, BaseRaid) or not self.raid.moves[0]:
+            if not self.raid.is_scanned or not self.raid.moves[0]:
                 estimator = pb_data["?"]
             else:
                 estimator = pb_data["+".join([m.template for m in self.raid.moves])]
@@ -406,10 +416,9 @@ class RaidMessage:
             if self.total_amount == 0:
                 difficulty = 0
 
+            return ""
             self.embed.color = DIFFICULTY_COLORS[difficulty]
-
             return DIFFICULTY_NAMES[difficulty] + "\n\n"
-
 
         except Exception as e:
             log.exception(e)
@@ -426,33 +435,33 @@ class RaidMessage:
         # difficulty = await self.get_difficulty()
 
         # Description based on what info is available
-        self.text = f"{tb.translate('Start')}: **{self.formatted_start}** <t:{self.start_time.int_timestamp}:R>\n\n"
+        self.text = f"{bot.translate('Start')}: **{self.formatted_start}** <t:{self.start_time.int_timestamp}:R>\n\n"
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
-        if isinstance(self.raid, ScannedRaid):
-            if self.raid.moves[0]:
-                self.text += tb.translate("Moves") + ": " \
+        if self.raid.is_scanned:
+            if self.raid.moves:
+                self.text += bot.translate("Moves") + ": " \
                              + " | ".join(["**" + m.name + "**" for m in self.raid.moves]) + "\n"
 
             format_start = self.raid.start.to('local').strftime(timeformat)
             format_end = self.raid.end.to('local').strftime(timeformat)
-            self.text += tb.translate("Raidzeit") + f": **{format_start}** – **{format_end}**\n"
+            self.text += bot.translate("Raidzeit") + f": **{format_start}** – **{format_end}**\n"
         self.make_warnings()
 
     async def set_image(self) -> NoReturn:
-        url = await self.raid.get_image()
+        url = await self.gym.get_raid_image(self.raid)
         self.embed.set_thumbnail(url=url)
         await self.edit_message()
 
     def make_footer(self, amount: int = 0) -> NoReturn:
-        self.embed.set_footer(text=f"{self.footer_prefix}{tb.translate('Total')}: {amount}")
+        self.embed.set_footer(text=f"{self.footer_prefix}{bot.translate('Total')}: {amount}")
 
     async def make_member_fields(self) -> NoReturn:
         self.embed.clear_fields()
         for team in Team:
             if team.value == 0:
                 continue
-            emoji = TEAM_EMOJIS[team.value]
+            emoji = bot.config.TEAM_EMOJIS[team.value]
 
             index = 0
             for field in self.embed.fields:
@@ -479,14 +488,14 @@ class RaidMessage:
         remote_cap = (total_remote > REMOTE_LIMIT - 2)
         total_cap = (self.total_amount > TOTAL_LIMIT - 2)
         if remote_cap and total_cap:
-            self.warnings.add(tb.translate("warn_too_many_both").format(TOTAL_LIMIT, REMOTE_LIMIT))
+            self.warnings.add(bot.translate("warn_too_many_both").format(TOTAL_LIMIT, REMOTE_LIMIT))
         elif remote_cap:
-            self.warnings.add(tb.translate("warn_too_many_remote").format(REMOTE_LIMIT))
+            self.warnings.add(bot.translate("warn_too_many_remote").format(REMOTE_LIMIT))
         elif total_cap:
-            self.warnings.add(tb.translate("warn_too_many_total").format(TOTAL_LIMIT))
+            self.warnings.add(bot.translate("warn_too_many_total").format(TOTAL_LIMIT))
 
         if [m for m in self.members if m.is_late]:
-            self.warnings.add(tb.translate("warn_is_late"))
+            self.warnings.add(bot.translate("warn_is_late"))
 
         self.make_warnings()
         await self.edit_message()
@@ -504,22 +513,26 @@ class RaidMessage:
         if self.raid.boss:
             keyvals["mon_id"] = self.raid.boss.id
             keyvals["mon_form"] = self.raid.boss.form
-        if isinstance(self.raid, ScannedRaid):
+        if self.raid.is_scanned:
             keyvals["raid_start"] = self.raid.start.naive
             keyvals["raid_end"] = self.raid.end.naive
 
-        await tb.intern_queries.insert("raids", keyvals)
+        await bot.taubsi_db.insert("raids", keyvals)
 
     async def edit_message(self) -> NoReturn:
         log.info(f"Editing message {self.message.id}")
         await self.message.edit(embed=self.embed, view=self.view)
 
-    async def send_message(self) -> NoReturn:
-        channel = await tb.bot.fetch_channel(self.channel_id)
+    async def send_message(self, interaction: discord.Interaction = None) -> NoReturn:
+        channel = await bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
         self.make_footer()
 
-        self.message = await channel.send(embed=self.embed, view=self.view)
+        if interaction:
+            await interaction.response.send_message(embed=self.embed, view=self.view)
+            self.message = await interaction.original_message()
+        else:
+            self.message = await channel.send(embed=self.embed, view=self.view)
         self.role = await channel.guild.create_role(name=f"{self.gym.name} ({self.formatted_start})", mentionable=True)
 
     async def end_raid(self) -> NoReturn:

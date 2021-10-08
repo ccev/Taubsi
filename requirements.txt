@@ -5,3 +5,5 @@ fuzzywuzzy==0.18.0
 Pillow==8.2.0
 pogodata>=0.5.13
 python-Levenshtein==0.12.2
+requests~=2.26.0
+git+https://github.com/jay3332/discord.py.git#egg=discord.py
