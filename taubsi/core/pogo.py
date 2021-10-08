@@ -101,7 +101,7 @@ class Raid:
                 return False
             return self.boss.id == other.boss.id and self.is_predicted == other.is_predicted
         else:
-            return self.is_scanned == other.is_scanned
+            return not bool(other.boss)
 
     def copy(self) -> Raid:
         return deepcopy(self)

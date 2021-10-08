@@ -48,6 +48,7 @@ class InfoCog(commands.Cog):
                         self.raid_infos[gym.id] = raidinfo
                     else:
                         if raidinfo.raid != gym.raid:
+                            raidinfo.raid = gym.raid.copy()
                             await raidinfo.edit_message(embed=True)
                 except Exception as e:
                     log.error("Exception in RaidInfo loop")
