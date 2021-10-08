@@ -14,9 +14,15 @@ class Config(BaseConfig):
     DB_USER = ""
     DB_PASS = ""
 
-    # only touch this if you know what you're doing
-    COGS = Cog.default()
-    FRIEND_CODE = ""
+    # Dmap section
+    TILESERVER_URL = "https://tiles.map.com/"
+    DMAP_MARKER_LIMIT = 200
+    DMAP_STYLES = [
+        Style("osm-bright", "Standard")
+    ]
+    DMAP_AREAS = [
+        Area("Main", 50.134, 13.123, 13)  # name, lat, lon, zoom
+    ]
 
     SERVERS = [
         Server(name="Server name", id_=12329038108391, geofence="fence name",
@@ -35,20 +41,24 @@ class Config(BaseConfig):
                )
     ]
 
+    # only touch this if you know what you're doing
+    COGS = Cog.default()
+    FRIEND_CODE = ""
+
     NUMBER_EMOJIS = {
         1: "1️⃣", 2: "2️⃣", 3: "3️⃣", 4: "4️⃣", 5: "5️⃣", 6: "6️⃣", 7: "7️⃣", 8: "8️⃣", 9: "9️⃣",
     }
 
     CONTROL_EMOJIS = {
         "late": "🕐",
-        "remote": "<:fernraid:1234567899323215>",
+        "remote": "<:remote:1234567899323215>",
         "remove": "❌"
     }
 
     TEAM_EMOJIS = {
-        1: "<:team_blau:1234567899323212>",
-        2: "<:team_rot:1234567899323213>",
-        3: "<:team_gelb:1234567899323214>"
+        1: "<:mystic:1234567899323212>",
+        2: "<:valor:1234567899323213>",
+        3: "<:instinct:1234567899323214>"
     }
 
     TEAM_COLORS = {
@@ -59,9 +69,20 @@ class Config(BaseConfig):
     }
 
     BADGE_LEVELS = {
-        0: "<:bl:123>",
+        0: "<:blank:123>",
         1: "<:bronze:123>",
         2: "<:silver:123>",
         3: "<:gold:123>",
         4: "<:platinum:123>"
+    }
+
+    DMAP_EMOJIS = {
+        "settings": "<:settings:12134352452342>",
+        "blank": BADGE_LEVELS[0],
+        "up": "<:up:123>",
+        "down": "<:down:123>",
+        "left": "<:left:123>",
+        "right": "<:right:880876867522027530>",
+        "out": "<:minus:880883007685275719>",
+        "in": "<:plus:880883007727226930>"
     }

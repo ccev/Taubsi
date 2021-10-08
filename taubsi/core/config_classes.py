@@ -205,3 +205,4 @@ class BaseConfig:
     TEAM_EMOJIS: Dict[int, str]
     TEAM_COLORS: Dict[int, int]
     BADGE_LEVELS: Dict[int, str]
+    DMAP_EMOJIS: Dict[str, str]
