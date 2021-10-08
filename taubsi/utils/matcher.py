@@ -79,6 +79,8 @@ def match_gyms(gyms: List[Gym], word: str, scorer='fp_ratio', score_cutoff: int 
 
     Returns a list of tuples with (MATCH, SCORE)
     """
+    if not word:
+        return [(g, 0) for g in gyms]
 
     scorer_dict = {
         'ratio': fuzz.ratio,
