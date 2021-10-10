@@ -23,3 +23,4 @@ class AreaSelect(discord.ui.Select):
         value = int(self.values[0])
         self.dmap.user_settings.jump_to_area(bot.config.DMAP_AREAS[value])
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()

@@ -27,3 +27,4 @@ class LevelSelect(discord.ui.Select):
         levels = list(map(int, self.values))
         self.dmap.user_settings.levels = levels
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()

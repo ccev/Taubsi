@@ -30,9 +30,16 @@ class MapMenu(discord.ui.View):
     settings_page: SettingsPage
     start_raid_page: StartRaidPage
 
-    def __init__(self, interaction: discord.Interaction):
-        super().__init__(timeout=None)
-        self.user_settings = UserSettings.default()
+    @classmethod
+    async def start(cls, interaction: discord.Interaction):
+        self = cls(timeout=None)
+
+        query = "select * from dmap where user_id = %s"
+        result = await bot.taubsi_db.execute(query, args=interaction.user.id)
+        if result:
+            self.user_settings = UserSettings.from_db(result[0])
+        else:
+            self.user_settings = UserSettings.default(interaction.user.id)
 
         self.author_id = interaction.user.id
         self.display_gyms = []
@@ -55,6 +62,8 @@ class MapMenu(discord.ui.View):
         self.settings_page = SettingsPage(self)
         self.start_raid_page = StartRaidPage(self)
         self.set_page(self.map_nav_page)
+
+        await self.send()
 
     def set_page(self, page: MapPage):
         self.current_page = page

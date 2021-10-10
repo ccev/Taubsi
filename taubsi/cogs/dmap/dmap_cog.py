@@ -26,8 +26,7 @@ class PermaMap(discord.ui.View):
     @staticmethod
     async def start_map(interaction: discord.Interaction):
         log.info(f"User {interaction.user} started a dmap")
-        dmap = MapMenu(interaction)
-        await dmap.send()
+        dmap = await MapMenu.start(interaction)
 
     @staticmethod
     async def send_help(interaction: discord.Interaction):

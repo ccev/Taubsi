@@ -15,21 +15,20 @@ class StyleSelect(discord.ui.Select):
                          min_values=1,
                          max_values=1,
                          row=0)
+
+        self.dmap = dmap
         for i, style in enumerate(bot.config.DMAP_STYLES):
             label = bot.translate("dmap_style_option").format(style.name)
-            self.options.append(discord.SelectOption(label=label, value=style.id, default=i == 0))
-        self.dmap = dmap
+            self.options.append(discord.SelectOption(label=label, value=style.id,
+                                                     default=style.id == self.dmap.user_settings.style.id))
 
     async def callback(self, interaction: discord.Interaction):
         value = self.values[0]
         for option in self.options:
-            if option.value == value:
-                option.default = True
-                self.dmap.style_name = option.label
-            else:
-                option.default = False
+            option.default = option.value == value
         self.dmap.user_settings.style = [s for s in bot.config.DMAP_STYLES if s.id == value][0]
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class SizeSelect(discord.ui.Select):
@@ -52,6 +51,7 @@ class SizeSelect(discord.ui.Select):
         for option in self.options:
             option.default = option.value == new_size.name
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class IconSelect(discord.ui.Select):
@@ -62,7 +62,8 @@ class IconSelect(discord.ui.Select):
                          row=2)
         for i, iconset in enumerate(IconSet):
             label = bot.translate("dmap_iconset_option").format(iconset.value.name)
-            self.options.append(discord.SelectOption(label=label, value=iconset.name, default=i == 0))
+            self.options.append(discord.SelectOption(label=label, value=iconset.name,
+                                                     default=iconset == dmap.user_settings.iconset))
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):
@@ -71,6 +72,7 @@ class IconSelect(discord.ui.Select):
         for option in self.options:
             option.default = option.value == iconset_name
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class IconSizeButton(discord.ui.Button):
@@ -86,27 +88,37 @@ class IconSizeButton(discord.ui.Button):
         super().__init__(label=self.label,
                          style=self.style,
                          row=self.row)
+        self.set_disabled()
+
+    def set_disabled(self):
+        pass
 
 
 class IncIconSizeButton(IconSizeButton):
     label = bot.translate("dmap_bigger_icons")
     dec_button: DecIconSizeButton
 
+    def set_disabled(self):
+        self.disabled = self.dmap.user_settings.marker_multiplier >= self.max_size
+
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.marker_multiplier += 0.1
         self.dec_button.disabled = False
-        if self.dmap.user_settings.marker_multiplier >= self.max_size:
-            self.disabled = True
+        self.set_disabled()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class DecIconSizeButton(IconSizeButton):
     label = bot.translate("dmap_smaller_icons")
     inc_button: IncIconSizeButton
 
+    def set_disabled(self):
+        self.disabled = self.min_size > self.dmap.user_settings.marker_multiplier
+
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.marker_multiplier -= 0.1
         self.inc_button.disabled = False
-        if self.min_size >= self.dmap.user_settings.marker_multiplier:
-            self.disabled = True
+        self.set_disabled()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()

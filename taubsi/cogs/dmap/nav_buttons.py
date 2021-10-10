@@ -35,18 +35,30 @@ class EmptyButton(discord.ui.Button):
 
 class MultiplierButton(discord.ui.Button):
     def __init__(self, dmap: MapMenu):
-        self.multipliers = [1, 0.5, 3, 2]
-        super().__init__(style=discord.ButtonStyle.grey,
-                         label=bot.translate("dmap_speed").format(self.multipliers[0]),
-                         custom_id="multiplier", row=DEFAULT_ROW + 2)
+        self.multipliers = [0.5, 1, 2, 3]
+        for multiplier in self.multipliers.copy():
+            new_multi = self.multipliers.pop(0)
+            self.multipliers.append(new_multi)
+            if multiplier == dmap.user_settings.move_multiplier:
+                break
         self.dmap = dmap
+        super().__init__(style=discord.ButtonStyle.grey,
+                         label=self.get_label(),
+                         row=DEFAULT_ROW + 2)
+
+    def get_label(self):
+        multi = self.dmap.user_settings.move_multiplier
+        if multi != 0.5:
+            multi = int(multi)
+        return bot.translate("dmap_speed").format(multi)
 
     async def callback(self, interaction: discord.Interaction):
-        multiplier = self.multipliers.pop()
-        self.multipliers.insert(0, multiplier)
-        self.dmap.multiplier = multiplier
-        self.label = "Speed: " + str(multiplier) + "x"
+        multiplier = self.multipliers.pop(0)
+        self.multipliers.append(multiplier)
+        self.dmap.user_settings.move_multiplier = multiplier
+        self.label = self.get_label()
         await self.dmap.edit(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class StartRaidButton(discord.ui.Button):
@@ -76,6 +88,7 @@ class UpButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.lat += self.dmap.get_lat_offset()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class LeftButton(BaseMapControlButton):
@@ -85,6 +98,7 @@ class LeftButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.lon -= self.dmap.get_lon_offset()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class DownButton(BaseMapControlButton):
@@ -94,6 +108,7 @@ class DownButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.lat -= self.dmap.get_lat_offset()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class RightButton(BaseMapControlButton):
@@ -103,6 +118,7 @@ class RightButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.lon += self.dmap.get_lon_offset()
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class ZoomInButton(BaseMapControlButton):
@@ -112,6 +128,7 @@ class ZoomInButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.zoom += 0.25 * self.dmap.user_settings.move_multiplier
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
 
 
 class ZoomOutButton(BaseMapControlButton):
@@ -121,3 +138,4 @@ class ZoomOutButton(BaseMapControlButton):
     async def callback(self, interaction: discord.Interaction):
         self.dmap.user_settings.zoom -= 0.25 * self.dmap.user_settings.move_multiplier
         await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
