@@ -75,6 +75,7 @@
     "dmap_error": "Sorry, there was an error loading the map",
     "dmap_marker_limit": "The raid limit has been hit. Zoom in more or select less levels",
     "dmap_speed": "Speed: {}",
+    "dmap_reset_settings": "Reset settings",
     "error_invalid_time": "❌ I couldn't find a valid time",
     "error_raid_past": "❌ You can't schedule a raid in the past",
     "error_max_lvl": "❌ The max level is 50",

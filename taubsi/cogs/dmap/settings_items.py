@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import discord
 from taubsi.core import bot
 from taubsi.core.uicons import IconSet
-from taubsi.cogs.dmap.usersettings import SizePreset
+from taubsi.cogs.dmap.usersettings import SizePreset, UserSettings
 
 if TYPE_CHECKING:
     from taubsi.cogs.dmap.mapmenu import MapMenu
@@ -120,5 +120,18 @@ class DecIconSizeButton(IconSizeButton):
         self.dmap.user_settings.marker_multiplier -= 0.1
         self.inc_button.disabled = False
         self.set_disabled()
+        await self.dmap.update(interaction)
+        await self.dmap.user_settings.update_db()
+
+
+class ResetButton(discord.ui.Button):
+    def __init__(self, dmap: MapMenu):
+        self.dmap = dmap
+        super().__init__(style=discord.ButtonStyle.red,
+                         label=bot.translate("dmap_reset_settings"),
+                         row=4)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.dmap.user_settings = UserSettings.default(interaction.user.id)
         await self.dmap.update(interaction)
         await self.dmap.user_settings.update_db()

@@ -8,7 +8,7 @@ from taubsi.cogs.dmap.nav_buttons import (EmptyButton, MultiplierButton, UpButto
                                           StartRaidButton)
 from taubsi.cogs.dmap.areaselect import AreaSelect
 from taubsi.cogs.dmap.levelselect import LevelSelect
-from taubsi.cogs.dmap.settings_items import StyleSelect, IconSelect, IncIconSizeButton, DecIconSizeButton
+from taubsi.cogs.dmap.settings_items import StyleSelect, IconSelect, IncIconSizeButton, DecIconSizeButton, ResetButton
 from taubsi.cogs.dmap.start_items import RaidSelect, TimeSelect, StartButton
 from taubsi.core import Gym, bot
 
@@ -49,8 +49,7 @@ class SettingsPage(MapPage):
         self.items = [
             StyleSelect(map_menu),
             IconSelect(map_menu),
-            dec_button, inc_button,
-            BackToNavButton(map_menu)
+            dec_button, inc_button, ResetButton(map_menu), BackToNavButton(map_menu)
         ]
 
     def add_to_embed(self):
