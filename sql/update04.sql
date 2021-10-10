@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS `dmap` (
   `user_id` bigint(20) NOT NULL,
-  `zoom` int(10),
+  `zoom` float,
   `lat` float,
   `lon` float,
   `style` varchar(64),
