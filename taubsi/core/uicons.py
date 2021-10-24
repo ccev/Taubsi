@@ -83,7 +83,8 @@ class UIconManager:
             args = []
         fin_args = []
         for identifier, id_ in args:
-            fin_args.append(f"{identifier}{id_}")
+            if id_ != 0:
+                fin_args.append(f"{identifier}{id_}")
 
         combinations = []
         for i in range(1, len(fin_args) + 1):
@@ -96,7 +97,6 @@ class UIconManager:
                 combinations.insert(i + 2, new_combination)
                 i += 2
         combinations.append(["0"])
-
         for combination in combinations:
             name = "_".join(combination) + ".png"
             if name in iconset.value.index.get(category.value, []):
