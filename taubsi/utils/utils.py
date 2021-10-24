@@ -6,9 +6,13 @@ def reverse_get(dict_, value):
     return list(dict_.keys())[list(dict_.values()).index(value)]
 
 
-async def asyncget(url):
+async def asyncget(url, as_json=False, as_text=False):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
+            if as_json:
+                return resp.json()
+            if as_text:
+                return resp.text()
             return await resp.read()
 
 
