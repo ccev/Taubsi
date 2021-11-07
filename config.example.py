@@ -42,7 +42,7 @@ class Config(BaseConfig):
     ]
 
     # only touch this if you know what you're doing
-    COGS = Cog.default()
+    COGS = Cog.basic()
     FRIEND_CODE = ""
 
     NUMBER_EMOJIS = {
