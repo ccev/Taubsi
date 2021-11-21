@@ -393,7 +393,7 @@ class RaidMessage:
             if not self.raid.is_scanned or not self.raid.moves[0]:
                 estimator = pb_data["?"]
             else:
-                estimator = pb_data["+".join([m.template for m in self.raid.moves])]
+                estimator = pb_data["+".join([m.proto_id for m in self.raid.moves])]
 
             estimator = estimator["estimator"]
 
@@ -512,7 +512,7 @@ class RaidMessage:
         }
         if self.raid.boss:
             keyvals["mon_id"] = self.raid.boss.id
-            keyvals["mon_form"] = self.raid.boss.form
+            keyvals["mon_form"] = self.raid.boss.form_id
         if self.raid.is_scanned:
             keyvals["raid_start"] = self.raid.start.naive
             keyvals["raid_end"] = self.raid.end.naive

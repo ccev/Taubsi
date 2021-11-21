@@ -51,12 +51,15 @@ class Pokemon:
     base_stats: BaseStats
     mon_name: str
     form_name: str
+    proto_id: str
 
     def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0):
         self.id = id_
         self.form_id = form
         self.costume_id = costume
         self.mega_id = mega
+
+        self.proto_id = pogodata.mon_mapping.get(self.id, "UNOWN")
 
         self.base_stats = pogodata.base_stats.get(f"{self.id}:{self.form_id}:0")
         if not self.base_stats:
@@ -74,7 +77,7 @@ class Pokemon:
             pogodata=pogodata,
             form=data.get("form", 0),
             costume=data.get("costume", 0),
-            mega=data.get("temp_evolution_id", 0)
+            mega=data.get("evolution").get("temp_evolution_id", 0)
         )
 
     @classmethod
@@ -94,6 +97,9 @@ class Pokemon:
 
     def __str__(self):
         return self.name
+
+    def __bool__(self):
+        return bool(self.id)
 
     @property
     def name(self):

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 import re
 
 import requests
@@ -14,15 +14,24 @@ REMOTE_LOCALE_URL = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/ma
 
 
 class PogoData:
-    base_stats: Dict[str, BaseStats] = {}
-    mons: Dict[str, str] = {}
-    forms: Dict[int, str] = {}
-    moves: Dict[int, str] = {}
+    base_stats: Dict[str, BaseStats]
+    mons: Dict[str, str]
+    forms: Dict[int, str]
+    moves: Dict[int, str]
+    mon_mapping: Dict[int, str]
+    move_mapping: Dict[int, str]
 
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict]):
+        self.base_stats = {}
+        self.mons = {}
+        self.forms = {}
+        self.moves = {}
+        self.mon_mapping = {}
+
         mon_mapping = self._enum_to_dict(raw_protos, "HoloPokemonId")
         form_mapping = self._enum_to_dict(raw_protos, "Form")
         mega_mapping = self._enum_to_dict(raw_protos, "HoloTemporaryEvolutionId")
+        self.move_mapping = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -59,6 +68,8 @@ class PogoData:
                     continue
                 mon = settings.get("pokemonId")
                 mon_id = mon_mapping.get(mon, 0)
+                self.mon_mapping[mon] = mon_id
+
                 form = settings.get("form")
                 form_id = form_mapping.get(form, 0)
                 base_stats = BaseStats(list(stats.values()))
@@ -90,7 +101,7 @@ class PogoData:
         return cls(language, raw_protos, raw_gamemaster)
 
     @staticmethod
-    def _enum_to_dict(protos: str, enum: str) -> Dict[str, int]:
+    def _enum_to_dict(protos: str, enum: str, reverse: bool = False) -> Union[Dict[str, int], Dict[int, str]]:
         proto = re.findall(f"enum {enum} " + r"{[^}]*}", protos, re.IGNORECASE)
 
         final = {}
@@ -99,7 +110,10 @@ class PogoData:
                 continue
             k: str = entry.split(" =")[0].strip()
             v: int = int(entry.split("= ")[1].split(";")[0].strip())
-            final[k] = v
+            if reverse:
+                final[v] = k
+            else:
+                final[k] = v
 
         return final
 

@@ -2,7 +2,7 @@ from typing import List, Dict
 
 import discord
 from discord.ext import commands
-from pogodata import PogoData
+from taubsi.pogodata import PogoData
 
 from config import Config
 from taubsi.core.queries import Queries
@@ -49,10 +49,10 @@ class TaubsiBot(commands.Bot):
 
         translator_ = Translator(self.config.LANGUAGE.value)
         self.translate = translator_.translate
-        self.reload_pogodata()
+        self.pogodata = PogoData.make_sync(self.config.LANGUAGE.value)
 
-    def reload_pogodata(self):
-        self.pogodata = PogoData(self.config.LANGUAGE.value)
+    async def reload_pogodata(self):
+        self.pogodata = await PogoData.make_async(self.config.LANGUAGE.value)
 
     async def on_ready(self):
         if not self._startup:

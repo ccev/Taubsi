@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import itertools
-from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
-from enum import Enum
 import random
+from enum import Enum
+from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
 
 import requests
-from pogodata.pokemon import Pokemon
+
+from taubsi.pogodata import Pokemon
 
 if TYPE_CHECKING:
     from taubsi.core.pogo import Gym, Raid
@@ -48,9 +49,9 @@ class UIconManager:
     def pokemon(self, pokemon: Pokemon, shiny: bool = False, iconset: Optional[IconSet] = None) -> str:
         args = [
             ("", pokemon.id),
-            ("e", pokemon.temp_evolution_id),
-            ("f", pokemon.form),
-            ("c", pokemon.costume)
+            ("e", pokemon.mega_id),
+            ("f", pokemon.form_id),
+            ("c", pokemon.costume_id)
         ]
         if shiny:
             args.append(("s", ""))
