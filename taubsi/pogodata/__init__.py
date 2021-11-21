@@ -4,6 +4,7 @@ import re
 import requests
 
 from taubsi.pogodata.pokemon import Pokemon, BaseStats
+from taubsi.pogodata.move import Move
 from taubsi.utils.utils import asyncget
 
 GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
@@ -103,4 +104,15 @@ class PogoData:
         return final
 
     def get_pokemon(self, data: Dict[str, Any]):
+        """
+        data = {
+            "pokemon_id": int,
+            "form": int,
+            "costume": int,
+            "temp_evolution_id": int
+        }
+        """
         return Pokemon.from_db(data, self)
+
+    def get_move(self, move_id: int):
+        return Move(move_id, self)

@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import itertools
 from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
 from enum import Enum
 import random
@@ -86,15 +88,10 @@ class UIconManager:
             fin_args.append(f"{identifier}{id_}")
 
         combinations = []
-        for i in range(1, len(fin_args) + 1):
-            combinations.insert(0, fin_args[:i])
-        i = 0
-        for combination in combinations.copy():
-            if len(combination) > 2:
-                new_combination = combination.copy()
-                del new_combination[-2]
-                combinations.insert(i + 2, new_combination)
-                i += 2
+        for i in range(len(fin_args) + 1, 0, -1):
+            for subset in itertools.combinations(fin_args, i):
+                if subset[0] == fin_args[0]:
+                    combinations.append(list(subset))
         combinations.append(["0"])
 
         for combination in combinations:
