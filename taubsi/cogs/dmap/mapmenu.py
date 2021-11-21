@@ -217,7 +217,8 @@ class MapMenu(discord.ui.View):
         embeds = [self.embed]
         if self.extra_embed:
             embeds.append(self.extra_embed)
-        await interaction.response.edit_message(embeds=embeds, view=self)
+        followup = interaction.followup
+        await followup.edit_message(embeds=embeds, view=self)
 
     async def send(self):
         self.set_gyms()

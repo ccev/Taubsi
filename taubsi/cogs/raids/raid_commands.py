@@ -34,7 +34,11 @@ class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("co
     async def gym_autocomplete(self, interaction: discord.Interaction):
         log.info(f"User {interaction.user} is choosing a gym in the /raid command")
         server = self._get_server(interaction.guild_id)
-        matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0, limit=25)
+        if not interaction.value:
+            matched_gyms = server.gyms[:10]
+        else:
+            matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0, limit=25)
+
         for gym, _ in matched_gyms:
             yield ApplicationCommandOptionChoice(name=gym.name, value=gym.id)
 
