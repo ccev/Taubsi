@@ -9,10 +9,10 @@ import arrow
 import discord
 from PIL import Image, ImageDraw
 from pogodata.objects import Move
-from pogodata.pokemon import Pokemon
 
 from taubsi.utils.utils import asyncget, calculate_cp
 from taubsi.core.logging import log
+from taubsi.pogodata import Pokemon
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
@@ -60,13 +60,10 @@ class Raid:
             self.start = arrow.get(raid_data.get("start"))
             self.end = arrow.get(raid_data.get("end"))
             if raid_data.get("pokemon_id"):
-                move1 = bot.pogodata.get_move(id=raid_data.get("move_1"))
-                move2 = bot.pogodata.get_move(id=raid_data.get("move_2"))
+                move1 = bot.pogodata.get_move(raid_data.get("move_1"))
+                move2 = bot.pogodata.get_move(raid_data.get("move_2"))
                 self.moves = [move1, move2]
-                self.boss = bot.pogodata.get_mon(id=raid_data.get("pokemon_id"),
-                                                 form=raid_data.get("form"),
-                                                 costume=raid_data.get("costume"),
-                                                 temp_evolution_id=raid_data.get("evolution"))
+                self.boss = bot.pogodata.get_pokemon(raid_data)
 
         if not raid_data.get("pokemon_id"):
             available_bosses = bot.pogodata.raids[self.level]
@@ -77,16 +74,13 @@ class Raid:
         if self.boss:
             self.name = self.boss.name
 
-            self.pokebattler_name = self.boss.base_template
-            if self.boss.temp_evolution_id > 0:
+            self.pokebattler_name = self.boss.proto_id
+            if self.boss.mega_id > 0:
                 self.pokebattler_name += "_MEGA"
 
-            if self.boss.temp_evolution_id > 0:
-                stats = bot.pogodata.get_mon(template=self.boss.base_template).stats
-            else:
-                stats = self.boss.stats
-            self.cp20 = calculate_cp(20, stats, [15, 15, 15])
-            self.cp25 = calculate_cp(25, stats, [15, 15, 15])
+            ivs = [15, 15, 15]
+            self.cp20 = self.boss.cp(20, ivs)
+            self.cp25 = self.boss.cp(25, ivs)
         else:
             if self.level != 6:
                 self.name = bot.translate("level_egg").format(str(self.level))

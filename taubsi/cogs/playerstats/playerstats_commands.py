@@ -44,8 +44,8 @@ class PlayerstatsCommands:
     @staticmethod
     async def unlink(user_id: int, send: Callable):
         embed = discord.Embed(description=bot.translate("unlink"), color=3092790)
-        await bot.taubsi_db.execute(f"update users set ingame_name = NULL where user_id = {user_id}",
-                                    commit=True)
+        await bot.taubsi_db.execute(f"update users set ingame_name = NULL where user_id = %s",
+                                    args=user_id, commit=True)
         await send(embed=embed)
 
     @staticmethod

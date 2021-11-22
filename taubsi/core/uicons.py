@@ -1,10 +1,13 @@
 from __future__ import annotations
-from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
-from enum import Enum
+
+import itertools
 import random
+from enum import Enum
+from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
 
 import requests
-from pogodata.pokemon import Pokemon
+
+from taubsi.pogodata import Pokemon
 
 if TYPE_CHECKING:
     from taubsi.core.pogo import Gym, Raid
@@ -46,9 +49,9 @@ class UIconManager:
     def pokemon(self, pokemon: Pokemon, shiny: bool = False, iconset: Optional[IconSet] = None) -> str:
         args = [
             ("", pokemon.id),
-            ("e", pokemon.temp_evolution_id),
-            ("f", pokemon.form),
-            ("c", pokemon.costume)
+            ("e", pokemon.mega_id),
+            ("f", pokemon.form_id),
+            ("c", pokemon.costume_id)
         ]
         if shiny:
             args.append(("s", ""))
@@ -87,15 +90,10 @@ class UIconManager:
                 fin_args.append(f"{identifier}{id_}")
 
         combinations = []
-        for i in range(1, len(fin_args) + 1):
-            combinations.insert(0, fin_args[:i])
-        i = 0
-        for combination in combinations.copy():
-            if len(combination) > 2:
-                new_combination = combination.copy()
-                del new_combination[-2]
-                combinations.insert(i + 2, new_combination)
-                i += 2
+        for i in range(len(fin_args) + 1, 0, -1):
+            for subset in itertools.combinations(fin_args, i):
+                if subset[0] == fin_args[0]:
+                    combinations.append(list(subset))
         combinations.append(["0"])
         for combination in combinations:
             name = "_".join(combination) + ".png"

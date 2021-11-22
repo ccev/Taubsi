@@ -22,7 +22,7 @@ class LoopCog(commands.Cog):
     @tasks.loop(hours=6)
     async def pogodata_loop(self):
         if arrow.utcnow() > self._last_pogodata_update.shift(hours=3):
-            self.bot.reload_pogodata()
+            await self.bot.reload_pogodata()
             log.info("Reloaded PogoData")
 
     @tasks.loop(seconds=10)

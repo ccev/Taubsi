@@ -33,9 +33,10 @@ class TaubsiUser:
         self.name = name
     
     async def from_member(self, member):
+        self.friendcode = None
         result = await bot.taubsi_db.execute(
-            f"select level, ifnull(team_id, 0), level, friendcode, name from users where user_id = {member.id};",
-            as_dict=False)
+            f"select level, ifnull(team_id, 0), friendcode, name from users where user_id = %s;",
+            args=member.id, as_dict=False)
         self.user_id = member.id
         if not result:
             nick = member.display_name
@@ -47,8 +48,8 @@ class TaubsiUser:
                         self.team = team
                         break
         
-        if result:
-            self.level, team_id, self.level, self.friendcode, self.name = result[0]
+        else:
+            self.level, team_id, self.friendcode, self.name = result[0]
             if team_id is None:
                 team_id = 0
             self.team = Team(team_id)
