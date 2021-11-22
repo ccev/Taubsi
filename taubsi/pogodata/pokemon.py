@@ -22,7 +22,7 @@ class BaseStats:
     def __init__(self, data: List[int]):
         if len(data) != 3:
             self.data = (0, 0, 0)
-        self.attack, self.defense, self.stamina = data
+        self.stamina, self.attack, self.defense = data
 
     def __repr__(self):
         return f"<BaseStats {self.__str__()}>"
