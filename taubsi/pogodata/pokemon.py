@@ -77,7 +77,17 @@ class Pokemon:
             pogodata=pogodata,
             form=data.get("form", 0),
             costume=data.get("costume", 0),
-            mega=data.get("evolution").get("temp_evolution_id", 0)
+            mega=data.get("evolution", data.get("temp_evolution_id", 0))
+        )
+
+    @classmethod
+    def from_pogoinfo(cls, data: Dict[str, Any], pogodata: PogoData):
+        return cls(
+            id_=data.get("id", 0),
+            pogodata=pogodata,
+            form=data.get("form", 0),
+            costume=data.get("costume", 0),
+            mega=data.get("temp_evolution_id", 0)
         )
 
     @classmethod

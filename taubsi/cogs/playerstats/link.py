@@ -1,7 +1,7 @@
 import discord
 
 from taubsi.cogs.setup.objects import TaubsiUser
-from taubsi.core import bot, Team
+from taubsi.core import bot, Team, log
 
 
 class AcceptView(discord.ui.View):
@@ -42,8 +42,8 @@ class LinkView(discord.ui.View):
             await user.from_member(self.author)
             user.team, user.level = Team(self.ingame[0][1]), self.ingame[0][2]
             await user.update()
-        except:
-            pass
+        except Exception as e:
+            log.exception(e)
 
         name = self.ingame[0][0]
         keyvals = {

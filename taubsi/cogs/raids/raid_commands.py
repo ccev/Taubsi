@@ -35,7 +35,7 @@ class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("co
         log.info(f"User {interaction.user} is choosing a gym in the /raid command")
         server = self._get_server(interaction.guild_id)
         if not interaction.value:
-            matched_gyms = server.gyms[:10]
+            matched_gyms = [(g, 0) for g in server.gyms[:10]]
         else:
             matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0, limit=25)
 

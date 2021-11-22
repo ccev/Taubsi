@@ -11,6 +11,7 @@ GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/mast
 PROTO_URL = "https://raw.githubusercontent.com/Furtif/POGOProtos/master/base/vbase.proto"
 LOCALE_URL = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Texts/Latest%20APK/{}.txt"
 REMOTE_LOCALE_URL = "https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Texts/Latest%20Remote/{}.txt"
+RAIDS_URL = "https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/raids.json"
 
 
 class PogoData:
@@ -20,13 +21,15 @@ class PogoData:
     moves: Dict[int, str]
     mon_mapping: Dict[int, str]
     move_mapping: Dict[int, str]
+    raids: Dict[int, List[Pokemon]]
 
-    def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict]):
+    def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
         self.base_stats = {}
         self.mons = {}
         self.forms = {}
         self.moves = {}
         self.mon_mapping = {}
+        self.raids = {}
 
         mon_mapping = self._enum_to_dict(raw_protos, "HoloPokemonId")
         form_mapping = self._enum_to_dict(raw_protos, "Form")
@@ -88,17 +91,22 @@ class PogoData:
                     mega_id = mega_mapping.get(mega, 0)
                     self.base_stats[f"{identifier}:{mega_id}"] = base_stats
 
+        for level, raids in raids.items():
+            self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
+
     @classmethod
     def make_sync(cls, language: str):
         raw_protos = requests.get(PROTO_URL).text
         raw_gamemaster = requests.get(GAMEMASTER_URL).json()
-        return cls(language, raw_protos, raw_gamemaster)
+        raids = requests.get(RAIDS_URL).json()
+        return cls(language, raw_protos, raw_gamemaster, raids)
 
     @classmethod
     async def make_async(cls, language: str):
         raw_protos = await asyncget(PROTO_URL, as_text=True)
         raw_gamemaster = await asyncget(GAMEMASTER_URL, as_json=True)
-        return cls(language, raw_protos, raw_gamemaster)
+        raids = await asyncget(RAIDS_URL, as_json=True)
+        return cls(language, raw_protos, raw_gamemaster, raids)
 
     @staticmethod
     def _enum_to_dict(protos: str, enum: str, reverse: bool = False) -> Union[Dict[str, int], Dict[int, str]]:
