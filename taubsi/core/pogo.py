@@ -66,7 +66,7 @@ class Raid:
                 self.boss = bot.pogodata.get_pokemon(raid_data)
 
         if not raid_data.get("pokemon_id"):
-            available_bosses = bot.pogodata.raids[self.level]
+            available_bosses = bot.pogodata.raids.get(self.level, [])
             if len(available_bosses) == 1:
                 self.boss = available_bosses[0]
                 self.is_predicted = True
