@@ -2,17 +2,26 @@
 
 ## Quick disclaimer
 
-This is a raid bot i designed specifically to suit the needs of my community. Initially I put it on GitHub to streamline my personal workflow, however people were interested in the project and I decided to implement some things to make it work more universally.
+This is a raid bot i specifically designed to suit the needs of my community. Initially I put it on GitHub to streamline my personal workflow, however people were interested in the project and I decided to implement some things to make it work more universally.
 
-Because of this, I don't like to take suggestions or help with any issues you have. Regardless, feel free to do the following:
-
-- Open an issue on GitHub if you have a good suggestion
-- DM me if you desperately need help
-- If you think you encountered a bug, DM me about it first, then open an issue
+Because of this, I don't enjoy taking suggestions or helping with any issues you have. Regardless, feel free to open issues or DM me on Discord and I can take a look. Maybe I like the idea or you found a bug I over-looked 🙂
 
 ## Features
 
-There are 4 main features in this bot: Raid, RaidInfo, Setup, Dmap.
+- Raids
+  - Easy Raid organization using simple messages anyone can create
+  - Raid Infos (1 Raid = 1 message)
+  - Interactive raid map in Discord
+- Setup
+  - Allows player's to set their team, level and name
+- Linking & stats (if you have the data)
+  - Automatic team and level sync
+  - Leaderboards
+  - Player stats
+- Internal and light-weight PogoData module parses Protos, translations, GM and pogoinfo raids
+- UIcon support
+- Raid organization works fine when scans are down
+- Supports English & German 
 
 ### Raids
 
