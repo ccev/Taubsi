@@ -8,8 +8,8 @@ from copy import deepcopy
 import arrow
 import discord
 from PIL import Image, ImageDraw
-from pogodata.objects import Move
 
+from taubsi.pogodata import Move
 from taubsi.utils.utils import asyncget, calculate_cp
 from taubsi.core.logging import log
 from taubsi.pogodata import Pokemon

@@ -59,8 +59,8 @@ class UIconManager:
 
     def egg(self, raid: Raid, iconset: Optional[IconSet] = None) -> str:
         args = [("", raid.level)]
-        if raid.has_hatched:
-            args.append(("h", ""))
+        # if raid.has_hatched:
+        #     args.append(("h", ""))
         return self.get(UIconCategory.RAID_EGG, iconset, args)
 
     def raid(self, raid: Raid, shiny_chance: int = 0, iconset: Optional[IconSet] = None) -> str:

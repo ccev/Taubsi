@@ -113,6 +113,10 @@ class Pokemon:
 
     @property
     def name(self):
+        # Niantic kinda messed up Kyurem form names
+        if self.id == 646:
+            return self.form_name
+
         if not self.form_name:
             return self.mon_name
         else:
