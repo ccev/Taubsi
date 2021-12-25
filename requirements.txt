@@ -6,3 +6,4 @@ Pillow==8.2.0
 python-Levenshtein==0.12.2
 requests~=2.26.0
 git+https://github.com/jay3332/discord.py.git#egg=discord.py
+sqlalchemy[asyncio]
