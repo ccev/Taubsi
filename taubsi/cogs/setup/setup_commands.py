@@ -80,7 +80,8 @@ class NameCommand(ApplicationCommand, name="name", description=bot.translate("co
 
 
 class LevelCommand(ApplicationCommand, name="level", description=bot.translate("command_level_desc")):
-    level: int = option(description=bot.translate("command_level_level_desc"), required=True)
+    level: int = option(description=bot.translate("command_level_level_desc"), required=True,
+                        min_value=1, max_value=SetupCommands.max_level)
 
     async def callback(self, interaction: discord.Interaction):
         await SetupCommands().level(self.level, interaction.user, interaction.response.send_message)
