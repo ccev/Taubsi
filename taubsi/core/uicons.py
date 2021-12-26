@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
 import requests
 
 from taubsi.pogodata import Pokemon
+from taubsi.utils.utils import asyncget
 
 if TYPE_CHECKING:
     from taubsi.core.pogo import Gym, Raid
@@ -24,13 +25,19 @@ class IconSetManager:
 
         result = requests.get(url + "index.json")
         self.index = result.json()
+        self.reload_index()
 
+    def reload_index(self):
         for key, value in self.index.copy().items():
             if not isinstance(value, dict):
                 continue
             for sub_key, sub_value in value.items():
                 self.index[f"{key}/{sub_key}"] = sub_value
             self.index.pop(key)
+
+    async def reload(self):
+        self.index = await asyncget(self.url + "Index.json", as_json=True)
+        self.reload_index()
 
 
 class UIconCategory(Enum):

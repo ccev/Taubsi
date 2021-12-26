@@ -10,9 +10,9 @@ async def asyncget(url, as_json=False, as_text=False):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if as_json:
-                return resp.json()
+                return await resp.json()
             if as_text:
-                return resp.text()
+                return await resp.text()
             return await resp.read()
 
 
