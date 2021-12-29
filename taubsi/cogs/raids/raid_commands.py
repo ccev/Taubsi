@@ -6,7 +6,6 @@ from taubsi.cogs.raids.raid_cog import match_time
 from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.core import bot, Server, log
 from taubsi.utils.errors import TaubsiError
-from taubsi.utils.matcher import match_gyms
 
 
 class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("command_raid_desc")):
@@ -37,7 +36,7 @@ class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("co
         if not interaction.value:
             matched_gyms = [(g, 0) for g in server.gyms[:10]]
         else:
-            matched_gyms = match_gyms(server.gyms, interaction.value, score_cutoff=0, limit=25)
+            matched_gyms = server.match_gyms(interaction.value, limit=25)
 
         for gym, _ in matched_gyms:
             yield ApplicationCommandOptionChoice(name=gym.name, value=gym.id)

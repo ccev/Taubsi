@@ -1,7 +1,7 @@
 aiomysql==0.0.22
 arrow==1.1.0
 dateparser==1.0.0
-fuzzywuzzy==0.18.0
+thefuzz[speedup]
 Pillow==8.2.0
 python-Levenshtein==0.12.2
 requests~=2.26.0

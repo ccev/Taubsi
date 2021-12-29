@@ -4,6 +4,8 @@ from io import BytesIO
 from enum import Enum
 from datetime import datetime
 from copy import deepcopy
+import string
+import random
 
 import arrow
 import discord
@@ -108,6 +110,7 @@ class Raid:
 
 
 class Gym:
+    ANONYMIZE = False
     raid: Optional[Raid] = None
     id: str
     name: str = ""
@@ -124,12 +127,34 @@ class Gym:
         self.id = data.get("id")
         self.update(data)
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
     def update(self, data: Dict[str, Any] = None):
         self.name = data.get("name", self.name)
         self.img = data.get("url", self.img)
         self.lat = data.get("latitude", self.lat)
         self.lon = data.get("longitude", self.lon)
         self.team = Team(data.get("team", self.team.value))
+
+        if self.ANONYMIZE:
+            images = [
+                "hTi7Ke05iWKztGliRm8gDETLxxA78oC1uuyO4EKfX_ifew3dqSb0PUH4qASyKmHxtdXiwBlRKcZwEYTP5vUHHQiQrg",
+                "rnvpFPW_XtAMbQGnu1QpKcj6Zf8NOpsvxp_e0L1OkyL5ZaFBuldXEL8rcd1CQ9qLAVNXt9oKnXelcy8fWjzKUK82dkg",
+                "9eAK5n7GPJO726iFZp1HYdxPWvA5v__kFzohu2Q3zUB85IdoYj5FFwELoY7BhCxMLq7MF4-1OplpDJY7B8kODiH_AA",
+                "5dwivXDFCOMCDQyMFpAU_p8bqLZODwVyoue1mx2L-JXLlKjSdFyCymxxtk7MDAQjeJ2zinVrTxEdiWXVkpxpvftJho0",
+                "qmgitgrJ-Y01yOJqyzX6NC1bGBSk0VExoRuS-ny0T_KSkAMhXzsBVMBnovzHLY0twgbZTWVHJEsMyGs0aubCHqC-4_U",
+                "Au3ot4tok-2VeRKVna4xO63CTyIZt0sRJdJrCKWNMPeUQtPaz6L8sTMWQ3Ce9XIxBKm7txiR8tDYp2BiApl9RipUZz8",
+                "K_r4uLWXVlJyobkI0vqqWU_tG09gemyCqngWEru2OlW_Re-4oYi3gBtznAnI-0FjeOcwWlEsGsxrdzBAZ25ZWGkf8hsj",
+                "4nvIiJgz8pxOzpXckYoOLXo8Y8s21ZFOTf54Eftgfe4exklayC3FMmGIXKoJ0zSitdN7J4hsaSrZQrrE1bC4o9l1IYQ",
+                "ecPFbuSVHQoX4lBxyjo8-Q2cydGYxL8udx_akjekdPPsb7LkAFdBmcDK7lLxEcWp0q-gdRXdgsDeFQmFVOLw3x6_wMjn",
+                "65WAErK4r9T2KaQuyK8NnyMAc1gh3nc4aBZQwtPTT4iG0OBc7cl7gXkmwRQdGJK4wiIC6wxwk74CIBZWA6vITJGQ3Sg"
+            ]
+            self.name = "".join(random.choice(string.ascii_uppercase + " .-") for _ in range(len(self.name))).title()
+            self.img = "https://lh3.googleusercontent.com/" + random.choice(images)
 
         if not data.get("end"):
             return

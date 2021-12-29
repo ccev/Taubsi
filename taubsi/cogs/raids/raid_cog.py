@@ -12,7 +12,6 @@ from taubsi.cogs.raids.raidmessage import RaidMessage
 from taubsi.cogs.raids.errors import TaubsiError, InvalidTime
 from taubsi.core import log
 from taubsi.utils.errors import command_error
-from taubsi.utils.matcher import match_gyms
 
 if TYPE_CHECKING:
     from taubsi.core import TaubsiBot
@@ -118,7 +117,7 @@ class RaidCog(commands.Cog):
         raid_start = final_time[0]
         gym_name_to_match = gym_name_to_match.replace(final_time[1], "")
 
-        matched_gyms = match_gyms(server.gyms, gym_name_to_match, score_cutoff=0)
+        matched_gyms = server.match_gyms(gym_name_to_match)
 
         if raid_start is None:
             if matched_gyms[0][1] > 80:

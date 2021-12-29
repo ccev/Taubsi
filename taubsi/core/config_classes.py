@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING, Tuple
 import json
 from enum import Enum
 
 import discord
+from thefuzz import process, fuzz, utils
 
 from taubsi.core.logging import log
 from taubsi.core.pogo import Gym
@@ -59,6 +60,48 @@ class DMapMessage:
             self.post_to = post_to
         else:
             self.post_to = {}
+
+
+class _MatcherMethods:
+    @staticmethod
+    def fp_ratio(s1, s2, force_ascii=True, full_process=True):
+        """
+        Return a measure of the sequences' similarity between 0 and 100, using fuzz.ratio and fuzz.partial_ratio.
+        """
+
+        if full_process:
+            p1 = utils.full_process(s1, force_ascii=force_ascii)
+            p2 = utils.full_process(s2, force_ascii=force_ascii)
+        else:
+            p1 = s1
+            p2 = s2
+
+        if not utils.validate_string(p1):
+            return 0
+        if not utils.validate_string(p2):
+            return 0
+
+        # should we look at partials?
+        try_partial = True
+        partial_scale = .9
+
+        base = fuzz.ratio(p1, p2)
+        len_ratio = float(max(len(p1), len(p2))-1) / min(len(p1), len(p2))
+
+        # if strings are similar length, don't use partials
+        if len_ratio < 1.3:
+            try_partial = False
+
+        if try_partial:
+            partial = fuzz.partial_ratio(p1, p2) * partial_scale
+            return utils.intr(max(base, partial))
+        else:
+            return utils.intr(base)
+
+    @staticmethod
+    def processor(s, **kwargs):
+        p = utils.full_process(str(s), **kwargs)
+        return p
 
 
 class Server:
@@ -156,6 +199,20 @@ class Server:
 
     def get_gym(self, id_: str) -> Optional[Gym]:
         return self.gym_dict.get(id_)
+
+    def match_gyms(self, word: str, limit: int = 10) -> List[Tuple[Gym, int]]:
+        matches = process.extractBests(word, choices=self.gyms, scorer=_MatcherMethods.fp_ratio, limit=limit,
+                                       score_cutoff=0, processor=_MatcherMethods.processor)
+
+        best_matches = [m for m in matches if m[1] >= 95]
+        if best_matches:
+            return best_matches
+
+        good_matches = [m for m in matches if m[1] >= 90]
+        if good_matches:
+            return good_matches
+
+        return matches
 
 
 class Area:
