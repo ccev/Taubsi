@@ -21,6 +21,7 @@ class PogoData:
     moves: Dict[int, str]
     move_id_to_proto: Dict[int, str]
     raids: Dict[int, List[Pokemon]]
+    shadow_translation: str
 
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
         self.base_stats = {}
@@ -63,6 +64,8 @@ class PogoData:
                     self.mons[f"{mon_id}:0:{mega_id}"] = v
                 elif k.startswith("move_name_"):
                     self.moves[int(k[10:])] = v
+                elif k == "filter_key_shadow":
+                    self.shadow_translation = v.title()
 
         result = []
         for entry in raw_gamemaster:

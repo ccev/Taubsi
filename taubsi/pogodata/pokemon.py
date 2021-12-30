@@ -54,12 +54,16 @@ class Pokemon:
     form_name: str
     proto_id: str
     proto_form: str
+    is_shadow: bool
 
-    def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0):
+    def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0,
+                 is_shadow: bool = False):
+        self.__shadow_translation = pogodata.shadow_translation
         self.id = id_
         self.form_id = form
         self.costume_id = costume
         self.mega_id = mega
+        self.is_shadow = is_shadow
 
         self.proto_id = pogodata.mon_id_to_proto.get(self.id, "UNOWN")
 
@@ -113,6 +117,7 @@ class Pokemon:
     def from_pokebattler(cls, name: str, pogodata: PogoData):
         mega_id = 0
         form_id = 0
+        is_shadow = False
         if "_MEGA" in name:
             if name.endswith("Y"):
                 mega_id = 3
@@ -122,8 +127,10 @@ class Pokemon:
                 mega_id = 1
             name = name.split("_MEGA")[0]
         elif name.endswith("_FORM"):
+            if "SHADOW" in name:
+                is_shadow = True
             name = name.replace("_FORM", "")
-            form_id = pogodata.form_id_to_proto.get(name, 0)
+            form_id = pogodata.form_proto_to_id.get(name, 0)
             name = name.split("_")[0]
 
             if form_id == 0:
@@ -138,7 +145,8 @@ class Pokemon:
             pogodata=pogodata,
             form=form_id,
             costume=0,
-            mega=mega_id
+            mega=mega_id,
+            is_shadow=is_shadow
         )
 
     def __repr__(self):
@@ -152,14 +160,19 @@ class Pokemon:
 
     @property
     def name(self):
+        name = ""
+
+        if self.is_shadow:
+            name += self.__shadow_translation + " "
+
         # Niantic kinda messed up Kyurem form names
         if self.id == 646 and self.form_id == 146:
-            return self.mon_name
+            return name + self.mon_name
 
         if not self.form_name:
-            return self.mon_name
+            return name + self.mon_name
         else:
-            return self.form_name + " " + self.mon_name
+            return name + self.form_name + " " + self.mon_name
 
     def cp(self, level: int, iv: List[int]) -> int:
         multiplier = MULTIPLIERS.get(level, 0.5)

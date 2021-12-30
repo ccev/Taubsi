@@ -25,7 +25,6 @@ class PokeBattler:
     async def get(self, pokemon: Pokemon, level: int) -> RaidPayload:
         if level == 6:
             level = "MEGA"
-        print(pokemon.__dict__)
 
         pokebattler_name = pokemon.proto_id
         if pokemon.mega_id > 0:
@@ -34,7 +33,7 @@ class PokeBattler:
             pokebattler_name = pokemon.proto_form + "_FORM"
 
         cached = self._cache.get(pokebattler_name)
-        if cached and cached._time < Arrow.utcnow().shift(days=-1):
+        if cached and cached._time > Arrow.utcnow().shift(days=-1):
             log.info(f"Serving cached pokebattler result for {pokebattler_name}")
             return cached
 
@@ -42,4 +41,7 @@ class PokeBattler:
         log.info(f"Querying pokebattler for {pokebattler_name}")
         log.info(url)
         result = await asyncget(url, as_json=True)
-        return RaidPayload(**result)
+        raid_payload = RaidPayload(**result)
+
+        self._cache[pokebattler_name] = raid_payload
+        return raid_payload

@@ -14,6 +14,7 @@
     "level_egg": "Level {} Ei",
     "mega_egg": "Mega Ei",
     "Help": "Hilfe",
+    "shadow": "Crypto",
     "context_stats_desc": "Zeigt die Stats von diesem Spieler",
     "command_stats_desc": "Zeigt die Stats von einem gelinkten Spieler",
     "command_stats_trainer_desc": "Leer lassen, um deine eigenen Stats zu zeigen",
