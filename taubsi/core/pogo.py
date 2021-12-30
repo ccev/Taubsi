@@ -14,11 +14,12 @@ from PIL import Image, ImageDraw
 from taubsi.pogodata import Move
 from taubsi.utils.utils import asyncget, calculate_cp
 from taubsi.core.logging import log
-from taubsi.pogodata import Pokemon
+from taubsi.pogodata import Pokemon, Move
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
     from taubsi.core.config_classes import Server
+    from taubsi.pogodata import PogoData
 
 
 class Team(Enum):
@@ -26,6 +27,37 @@ class Team(Enum):
     MYSTIC = 1
     VALOR = 2
     INSTINCT = 3
+
+
+class Moveset:
+    quick: Optional[Move]
+    charge: Optional[Move]
+
+    def __init__(self, move_1: Optional[Move] = None, move_2: Optional[Move] = None):
+        self.move_1 = move_1
+        self.move_2 = move_2
+
+    @classmethod
+    def from_pokebattler(cls, pogodata: PogoData, **kwargs):
+        """
+        move_1: str
+        move_2: str
+        """
+
+        for k, v in kwargs:
+            move_id = pogodata.move_proto_to_id.get(v, 0)
+            kwargs[k] = Move(move_id, pogodata)
+        return cls(**kwargs)
+
+    def __bool__(self):
+        return self.quick or self.charge
+
+    def __getitem__(self, item):
+        if item == 0:
+            return self.move_1
+        elif item == 1:
+            return self.move_2
+        raise IndexError
 
 
 class Raid:

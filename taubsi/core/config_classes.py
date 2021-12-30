@@ -100,8 +100,7 @@ class _MatcherMethods:
 
     @staticmethod
     def processor(s, **kwargs):
-        p = utils.full_process(str(s), **kwargs)
-        return p
+        return utils.full_process(str(s), **kwargs)
 
 
 class Server:

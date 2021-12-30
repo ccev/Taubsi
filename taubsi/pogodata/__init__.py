@@ -19,8 +19,7 @@ class PogoData:
     mons: Dict[str, str]
     forms: Dict[int, str]
     moves: Dict[int, str]
-    mon_mapping: Dict[int, str]
-    move_mapping: Dict[int, str]
+    move_id_to_proto: Dict[int, str]
     raids: Dict[int, List[Pokemon]]
 
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
@@ -28,13 +27,18 @@ class PogoData:
         self.mons = {}
         self.forms = {}
         self.moves = {}
-        self.mon_mapping = {}
+        self.mon_proto_to_id = {}
+        self.form_proto_to_id = {}
+        self.form_id_to_proto = {}
         self.raids = {}
 
-        mon_mapping = self._enum_to_dict(raw_protos, "HoloPokemonId")
-        form_mapping = self._enum_to_dict(raw_protos, "Form")
+        self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
+        self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
+        self.form_id_to_proto = self._enum_to_dict(raw_protos, "Form", reverse=True)
+        self.form_proto_to_id = self._enum_to_dict(raw_protos, "Form")
         mega_mapping = self._enum_to_dict(raw_protos, "HoloTemporaryEvolutionId")
-        self.move_mapping = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
+        self.move_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonMove")
+        self.move_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -46,7 +50,7 @@ class PogoData:
                 v: str = values[i].strip("\r")
                 if k.startswith("form_"):
                     form_name = k[5:]
-                    form_id = form_mapping.get(form_name.upper())
+                    form_id = self.form_id_to_proto.get(form_name.upper())
                     if form_id:
                         self.forms[form_id] = v
                 elif k.startswith("pokemon_name_"):
@@ -69,12 +73,12 @@ class PogoData:
                 stats = settings.get("stats")
                 if not settings or not stats:
                     continue
+
                 mon = settings.get("pokemonId")
-                mon_id = mon_mapping.get(mon, 0)
-                self.mon_mapping[mon] = mon_id
+                mon_id = self.mon_proto_to_id.get(mon, 0)
 
                 form = settings.get("form")
-                form_id = form_mapping.get(form, 0)
+                form_id = self.form_id_to_proto.get(form, 0)
                 base_stats = BaseStats(list(stats.values()))
                 identifier = f"{mon_id}:{form_id}"
                 self.base_stats[f"{identifier}:0"] = base_stats

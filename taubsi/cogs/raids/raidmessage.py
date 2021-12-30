@@ -21,12 +21,7 @@ REMOTE_LIMIT = 10
 
 GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
 AMAPS_LINK = "https://maps.apple.com/maps?daddr={},{}"
-PBATTLER_LINK = (
-    "https://www.pokebattler.com/raids/defenders/{}/levels/RAID_LEVEL_{}/attackers/levels/40/strategies/"
-    "CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER"
-    "&dodgeStrategy=DODGE_REACTION_TIME&aggregation=AVERAGE&includeLegendary=true&includeShadow=true"
-    "&includeMegas=true&attackerTypes=POKEMON_TYPE_ALL"
-)
+PBATTLER_LINK = "https://www.pokebattler.com/raids/{}"
 
 
 """
@@ -116,7 +111,7 @@ class RaidmessageView(discord.ui.View):
 class RaidmessageView(discord.ui.View):
     def __init__(self, raidmessage):
         super().__init__()
-
+        self.raidmessage = raidmessage
         maps_link = GMAPS_LINK.format(
             raidmessage.gym.lat, raidmessage.gym.lon
         )
@@ -129,6 +124,13 @@ class RaidmessageView(discord.ui.View):
                 pb_level = str(raidmessage.raid.level)
             pb_link = PBATTLER_LINK.format(raidmessage.raid.pokebattler_name, pb_level)
             self.add_item(discord.ui.Button(url=pb_link, label="Pokebattler", style=discord.ButtonStyle.link))
+
+    @discord.ui.button(label="PB Test")
+    async def pokebattler(self, _, interaction: discord.Interaction):
+        pb = await bot.pokebattler.get(self.raidmessage.raid.boss, self.raidmessage.raid.level)
+        attackers = pb.best_attackers
+        text = "\n".join([a.pokemon.name for a in attackers])
+        await interaction.response.send_message(text)
 
 
 class RaidMessage:
