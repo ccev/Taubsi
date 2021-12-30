@@ -9,10 +9,12 @@ import arrow
 from taubsi.utils.utils import asyncget, reverse_get
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
+from taubsi.pokebattler.models import Difficulty
 
 if TYPE_CHECKING:
     from datetime import datetime
     from taubsi.core import RaidChannel
+    from taubsi.pokebattler.models import RaidPayload
 
 timeformat = bot.translate("timeformat_short")
 
@@ -129,7 +131,8 @@ class RaidmessageView(discord.ui.View):
     async def pokebattler(self, _, interaction: discord.Interaction):
         pb = await bot.pokebattler.get(self.raidmessage.raid.boss, self.raidmessage.raid.level)
         attackers = pb.best_attackers
-        text = "\n".join([a.pokemon.name for a in attackers])
+        text = str(pb.get_difficulty(self.raidmessage.total_amount))
+        text += "\n".join([a.pokemon.name for a in attackers])
         await interaction.response.send_message(text)
 
 
@@ -155,6 +158,9 @@ class RaidMessage:
     remotes: List[int]
     lates: List[int]
 
+    pokebattler: Optional[RaidPayload]
+    difficulty: Difficulty
+
     notified_5_minutes: bool = False
 
     def __init__(self, gym: Gym, start: arrow.Arrow, channel_id: int):
@@ -173,6 +179,8 @@ class RaidMessage:
         self.lates = []
         self.warnings = set()
         self.static_warnings = set()
+        self.difficulty = Difficulty.UNKNOWN
+        self.pokebattler = None
 
     @classmethod
     async def from_slash(cls, gym: Gym, start_time: arrow.Arrow, interaction: discord.Interaction) -> RaidMessage:
@@ -227,6 +235,9 @@ class RaidMessage:
 
         self.message = message
         self.role = self.message.guild.get_role(role_id)
+
+        await self.set_pokebattler()
+        self.set_difficulty()
 
         try:
             self.init_message = await channel.fetch_message(init_message_id)
@@ -356,75 +367,15 @@ class RaidMessage:
 
             await member.member.send(embed=embed)
 
-    async def get_difficulty(self):
-        # unused
-        if not self.raid.boss:
-            return None
-        try:
-            pb_mon_name = self.raid.boss.base_template
-            if self.raid.boss.temp_evolution_id > 0:
-                pb_mon_name += "_" + self.raid.boss.temp_evolution_template
-            path = f"config/pokebattler/{pb_mon_name}.json"
-            try:
-                with open(path, "r") as f:
-                    pb_data = json.load(f)
-            except FileNotFoundError:
-                if self.raid.level == 6:
-                    level = "MEGA"
-                else:
-                    level = self.raid.level
-                url = f"https://fight.pokebattler.com/raids/defenders/{pb_mon_name}/levels/RAID_LEVEL_{level}/" \
-                      f"attackers/levels/35/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC" \
-                      f"?sort=ESTIMATOR&weatherCondition=NO_WEATHER&dodgeStrategy=DODGE_REACTION_TIME" \
-                      f"&aggregation=AVERAGE&randomAssistants=-1&includeLegendary=true&includeShadow=false" \
-                      f"&attackerTypes=POKEMON_TYPE_ALL"
-                pb_data_raw = await asyncget(url)
-                pb_data_raw = json.loads(pb_data_raw.decode("utf-8"))
-                pb_data = {}
+    def set_difficulty(self):
+        if self.raid.boss and self.pokebattler:
+            self.difficulty = self.pokebattler.get_difficulty(self.total_amount)
+        else:
+            self.difficulty = Difficulty.UNKNOWN
 
-                attackers = pb_data_raw["attackers"][0]
-                for data in attackers["byMove"]:
-                    move1 = data["move1"]
-                    move2 = data["move2"]
-                    pb_data[move1 + "+" + move2] = data["total"]
-                pb_data["?"] = attackers["randomMove"]["total"]
-
-                with open(path, "w+") as f:
-                    f.write(json.dumps(pb_data))
-
-            if not self.raid.is_scanned or not self.raid.moves[0]:
-                estimator = pb_data["?"]
-            else:
-                estimator = pb_data["+".join([m.proto_id for m in self.raid.moves])]
-
-            estimator = estimator["estimator"]
-
-            if self.total_amount < estimator:
-                if self.total_amount < estimator - 0.3:
-                    difficulty = 0
-                else:
-                    difficulty = 1
-            else:
-                if self.total_amount <= ceil(estimator):
-                    difficulty = 2
-                elif self.total_amount <= ceil(estimator) + 1:
-                    difficulty = 3
-                else:
-                    difficulty = 4
-
-            if self.total_amount < floor(estimator):
-                difficulty = 0
-
-            if self.total_amount == 0:
-                difficulty = 0
-
-            return ""
-            self.embed.color = DIFFICULTY_COLORS[difficulty]
-            return DIFFICULTY_NAMES[difficulty] + "\n\n"
-
-        except Exception as e:
-            log.exception(e)
-            return None
+    async def set_pokebattler(self):
+        if self.raid.boss:
+            self.pokebattler = await bot.pokebattler.get(self.raid.boss, self.raid.level)
 
     def make_warnings(self) -> NoReturn:
         self.embed.description = self.text
@@ -456,7 +407,11 @@ class RaidMessage:
         await self.edit_message()
 
     def make_footer(self, amount: int = 0) -> NoReturn:
-        self.embed.set_footer(text=f"{self.footer_prefix}{bot.translate('Total')}: {amount}")
+        if self.difficulty.value > 0:
+            difficulty = " | " + bot.translate(f"difficulty_{self.difficulty.value}")
+        else:
+            difficulty = ""
+        self.embed.set_footer(text=f"{self.footer_prefix}{bot.translate('Total')}: {amount}{difficulty}")
 
     async def make_member_fields(self) -> NoReturn:
         self.embed.clear_fields()
@@ -482,8 +437,6 @@ class RaidMessage:
                         field_value += member.make_text()
                 self.embed.insert_field_at(index=index, name=field_name, value=field_value, inline=False)
 
-        self.make_footer(self.total_amount)
-
         self.warnings.clear()
 
         total_remote = sum(m.amount for m in self.members if m.is_remote)
@@ -500,6 +453,8 @@ class RaidMessage:
             self.warnings.add(bot.translate("warn_is_late"))
 
         self.make_warnings()
+        self.set_difficulty()
+        self.make_footer(self.total_amount)
         await self.edit_message()
 
     async def db_insert(self) -> NoReturn:

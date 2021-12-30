@@ -64,8 +64,8 @@ class PogoData:
                     self.mons[f"{mon_id}:0:{mega_id}"] = v
                 elif k.startswith("move_name_"):
                     self.moves[int(k[10:])] = v
-                elif k == "filter_key_shadow":
-                    self.shadow_translation = v.title()
+                elif k == "filter_label_shadow":
+                    self.shadow_translation = v
 
         result = []
         for entry in raw_gamemaster:
@@ -85,6 +85,7 @@ class PogoData:
                 base_stats = BaseStats(list(stats.values()))
                 identifier = f"{mon_id}:{form_id}"
                 self.base_stats[f"{identifier}:0"] = base_stats
+                print(self.base_stats)
 
                 mega_overrides: Optional[List[dict]] = settings.get("tempEvoOverrides")
                 if not mega_overrides:

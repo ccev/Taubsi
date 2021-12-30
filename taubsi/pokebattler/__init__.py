@@ -8,6 +8,7 @@ from arrow import Arrow
 
 if TYPE_CHECKING:
     from taubsi.pogodata import PogoData, Pokemon
+    from taubsi.core.pogo import Raid
 
 
 BASE_URL = "https://fight.pokebattler.com/raids/defenders/{}/levels/RAID_LEVEL_{}/attackers/levels/40/strategies/" \

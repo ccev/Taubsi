@@ -1,10 +1,21 @@
 from pydantic import BaseModel, validator, PrivateAttr
 from typing import Optional, List
+from enum import Enum
+import math
 from arrow import Arrow
 
 from taubsi.core import bot
 from taubsi.core.pogo import Moveset
 from taubsi.pogodata import Pokemon
+
+
+class Difficulty(Enum):
+    UNKNOWN = 0
+    IMPOSSIBLE = 1
+    HARD = 2
+    MEDIUM = 3
+    EASY = 4
+    VERY_EASY = 5
 
 
 class _BaseModel(BaseModel):
@@ -115,3 +126,25 @@ class RaidPayload(_BaseModel):
     @property
     def estimator(self) -> float:
         return self.attackers[0].randomMove.total.estimator
+
+    def get_difficulty(self, players: int) -> Difficulty:
+        if players < self.estimator:
+            if players < self.estimator - 0.3:
+                difficulty = Difficulty.IMPOSSIBLE
+            else:
+                difficulty = Difficulty.HARD
+        else:
+            if players <= math.ceil(self.estimator):
+                difficulty = Difficulty.MEDIUM
+            elif players <= math.ceil(self.estimator) + 1:
+                difficulty = Difficulty.EASY
+            else:
+                difficulty = Difficulty.VERY_EASY
+
+        if players < math.floor(self.estimator):
+            difficulty = Difficulty.IMPOSSIBLE
+
+        if players == 0:
+            difficulty = Difficulty.IMPOSSIBLE
+
+        return difficulty

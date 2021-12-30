@@ -72,6 +72,7 @@ class Pokemon:
         else:
             self.proto_form = ""
 
+        print(self.id, self.form_id)
         self.base_stats = pogodata.base_stats.get(f"{self.id}:{self.form_id}:0")
         if not self.base_stats:
             self.base_stats = pogodata.base_stats.get(f"{self.id}:0:0")

@@ -84,6 +84,7 @@ class RaidCog(commands.Cog):
                 raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
         self.bot.loop.create_task(raidmessage.set_image())
+        self.bot.loop.create_task(raidmessage.set_pokebattler())
 
         emojis = []
         for number in range(1, 7):
@@ -200,7 +201,7 @@ class RaidCog(commands.Cog):
                             raidmessage.gym.raid.boss.name))
 
                     raidmessage.raid = raidmessage.gym.raid.copy()
-                    await raidmessage.make_base_embed()
+                    raidmessage.make_base_embed()
                     await raidmessage.set_image()
                     await raidmessage.db_insert()
             except Exception as e:
