@@ -5,6 +5,7 @@ import requests
 
 from taubsi.pogodata.pokemon import Pokemon, BaseStats
 from taubsi.pogodata.move import Move
+from taubsi.pogodata.pokemon_type import PokemonType, TypeProto, EFFECTIVENESSES
 from taubsi.utils.utils import asyncget
 
 GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
@@ -23,6 +24,8 @@ class PogoData:
     raids: Dict[int, List[Pokemon]]
     shadow_translation: str
 
+    types: List[PokemonType]
+
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
         self.base_stats = {}
         self.mons = {}
@@ -32,6 +35,7 @@ class PogoData:
         self.form_proto_to_id = {}
         self.form_id_to_proto = {}
         self.raids = {}
+        self.mon_to_types: Dict[str, List[int]] = {}
 
         self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
         self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
@@ -40,6 +44,11 @@ class PogoData:
         mega_mapping = self._enum_to_dict(raw_protos, "HoloTemporaryEvolutionId")
         self.move_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonMove")
         self.move_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
+
+        self.types = []
+        for type_proto in TypeProto:
+            weak_to = EFFECTIVENESSES[type_proto.value][1]
+            self.types.append(PokemonType(type_proto, weak_to))
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -81,11 +90,15 @@ class PogoData:
                 mon_id = self.mon_proto_to_id.get(mon, 0)
 
                 form = settings.get("form")
-                form_id = self.form_id_to_proto.get(form, 0)
+                form_id = self.form_proto_to_id.get(form, 0)
                 base_stats = BaseStats(list(stats.values()))
                 identifier = f"{mon_id}:{form_id}"
                 self.base_stats[f"{identifier}:0"] = base_stats
-                print(self.base_stats)
+
+                types = []
+                self._gamemaster_type_convert(settings, "type", types)
+                self._gamemaster_type_convert(settings, "type2", types)
+                self.mon_to_types[f"{identifier}:0"] = types
 
                 mega_overrides: Optional[List[dict]] = settings.get("tempEvoOverrides")
                 if not mega_overrides:
@@ -97,10 +110,25 @@ class PogoData:
                     base_stats = BaseStats(list(stats.values()))
                     mega = mega_override.get("tempEvoId")
                     mega_id = mega_mapping.get(mega, 0)
-                    self.base_stats[f"{identifier}:{mega_id}"] = base_stats
+                    identifier = f"{identifier}:{mega_id}"
+                    self.base_stats[identifier] = base_stats
+
+                    types = []
+                    self._gamemaster_type_convert(settings, "typeOverride1", types)
+                    self._gamemaster_type_convert(settings, "typeOverride2", types)
+                    self.mon_to_types[f"{identifier}:0"] = types
 
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
+
+    @staticmethod
+    def _gamemaster_type_convert(settings: dict, key: str, types: list):
+        type_ = settings.get(key)
+        if not type_:
+            return
+
+        id_ = TypeProto[type_].value
+        types.append(id_)
 
     @classmethod
     def make_sync(cls, language: str):
@@ -146,3 +174,8 @@ class PogoData:
 
     def get_move(self, move_id: int):
         return Move(move_id, self)
+
+    def get_type(self, type_id: int) -> PokemonType:
+        if type_id >= len(self.types):
+            return self.get_type(type_id=0)
+        return self.types[type_id]

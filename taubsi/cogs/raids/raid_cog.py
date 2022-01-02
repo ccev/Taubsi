@@ -186,7 +186,7 @@ class RaidCog(commands.Cog):
                         await raidmessage.notify(self.bot.translate("notify_raid_starts"))
                         raidmessage.notified_5_minutes = True
 
-                if not raidmessage.raid.is_scanned or not raidmessage.raid.moves:
+                if not raidmessage.raid.is_scanned or not raidmessage.raid.moveset:
                     if raidmessage.raid_channel.is_event:
                         continue
                     if raidmessage.gym.raid is None:
@@ -201,7 +201,7 @@ class RaidCog(commands.Cog):
                             raidmessage.gym.raid.boss.name))
 
                     raidmessage.raid = raidmessage.gym.raid.copy()
-                    raidmessage.make_base_embed()
+                    await raidmessage.make_base_embed()
                     await raidmessage.set_image()
                     await raidmessage.db_insert()
             except Exception as e:

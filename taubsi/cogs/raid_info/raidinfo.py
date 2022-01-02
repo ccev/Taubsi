@@ -96,7 +96,7 @@ class RaidInfo:
             self.embed.description = (
                 f"{bot.translate('Bis')} **{formatted_end}** <t:{self.gym.raid.end.int_timestamp}:R>\n"
                 f"100%: **{self.gym.raid.cp20}** | **{self.gym.raid.cp25}**\n"
-                f"{bot.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.gym.raid.moves])
+                f"{bot.translate('Moves')}: {str(self.gym.raid.moveset)}"
             )
             self.embed.set_thumbnail(url=bot.uicons.raid(self.gym.raid))
 

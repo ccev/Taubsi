@@ -55,6 +55,7 @@ class Pokemon:
     proto_id: str
     proto_form: str
     is_shadow: bool
+    types: List[int]
 
     def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0,
                  is_shadow: bool = False):
@@ -72,12 +73,16 @@ class Pokemon:
         else:
             self.proto_form = ""
 
-        print(self.id, self.form_id)
-        self.base_stats = pogodata.base_stats.get(f"{self.id}:{self.form_id}:0")
+        identifier = f"{self.id}:{self.form_id}:0"
+        self.base_stats = pogodata.base_stats.get(identifier)
+        self.types = pogodata.mon_to_types.get(identifier)
         if not self.base_stats:
-            self.base_stats = pogodata.base_stats.get(f"{self.id}:0:0")
+            identifier = f"{self.id}:0:0"
+            self.base_stats = pogodata.base_stats.get(identifier)
+            self.types = pogodata.mon_to_types.get(identifier)
         if not self.base_stats:
             self.base_stats = BaseStats([10, 10, 10])
+            self.types = [0]
 
         self.mon_name = pogodata.mons.get(f"{self.id}:0:{self.mega_id}", "")
         self.form_name = pogodata.forms.get(self.form_id, "")

@@ -82,6 +82,7 @@
     "dmap_marker_limit": "Es konnten nicht alle Raids angezeigt werden. Zoome mehr hinein oder wähle weniger Level aus",
     "dmap_speed": "Speed: {}",
     "dmap_reset_settings": "Einstellungen zurücksetzen",
+    "error_pokebattler_not_loaded": "❌ Daten konnten nicht geladen werden. Bitte probiere es erneut oder kontaktiere einen Admin",
     "error_invalid_time": "❌ Ich konnte keine richtige Zeit erkennen",
     "error_raid_past": "❌ Du kannst keinen Raid für die Vergangenheit ansetzen",
     "error_max_lvl": "❌ Das Maximallevel ist 50",

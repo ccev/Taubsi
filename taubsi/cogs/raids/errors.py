@@ -11,3 +11,7 @@ class WrongChannel(TaubsiError):
 
 class WrongGymName(TaubsiError):
     """wrong_gym_name"""
+
+
+class PokebattlerNotLoaded(TaubsiError):
+    """pokebattler_not_loaded"""

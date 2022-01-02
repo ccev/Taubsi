@@ -11,7 +11,6 @@ import arrow
 import discord
 from PIL import Image, ImageDraw
 
-from taubsi.pogodata import Move
 from taubsi.utils.utils import asyncget, calculate_cp
 from taubsi.core.logging import log
 from taubsi.pogodata import Pokemon, Move
@@ -34,8 +33,8 @@ class Moveset:
     charge: Optional[Move]
 
     def __init__(self, move_1: Optional[Move] = None, move_2: Optional[Move] = None):
-        self.move_1 = move_1
-        self.move_2 = move_2
+        self.quick = move_1
+        self.charge = move_2
 
     @classmethod
     def from_pokebattler(cls, pogodata: PogoData, **kwargs):
@@ -44,19 +43,28 @@ class Moveset:
         move_2: str
         """
 
-        for k, v in kwargs:
+        for k, v in kwargs.items():
             move_id = pogodata.move_proto_to_id.get(v, 0)
             kwargs[k] = Move(move_id, pogodata)
         return cls(**kwargs)
 
+    def get_name(self, with_markdown: bool = False) -> str:
+        if with_markdown:
+            return f"**{self.quick.name}** | **{self.charge.name}**"
+        else:
+            return f"{self.quick.name} | {self.charge.name}"
+
+    def __str__(self):
+        return self.get_name(with_markdown=True)
+
     def __bool__(self):
-        return self.quick or self.charge
+        return self.quick is not None or self.charge is not None
 
     def __getitem__(self, item):
         if item == 0:
-            return self.move_1
+            return self.quick
         elif item == 1:
-            return self.move_2
+            return self.charge
         raise IndexError
 
 
@@ -73,7 +81,7 @@ class Raid:
 
     start: Optional[arrow.Arrow]
     end: Optional[arrow.Arrow]
-    moves: Optional[List[Move]] = None
+    moveset: Moveset
 
     def __init__(self, bot: TaubsiBot, raid_data: Dict[str, Any]):
         """
@@ -96,8 +104,10 @@ class Raid:
             if raid_data.get("pokemon_id"):
                 move1 = bot.pogodata.get_move(raid_data.get("move_1"))
                 move2 = bot.pogodata.get_move(raid_data.get("move_2"))
-                self.moves = [move1, move2]
+                self.moveset = Moveset(move_1=move1, move_2=move2)
                 self.boss = bot.pogodata.get_pokemon(raid_data)
+            else:
+                self.moveset = Moveset()
 
         if not raid_data.get("pokemon_id"):
             available_bosses = bot.pogodata.raids.get(self.level, [])

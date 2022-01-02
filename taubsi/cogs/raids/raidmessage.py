@@ -7,9 +7,12 @@ import discord
 import arrow
 
 from taubsi.utils.utils import asyncget, reverse_get
+from taubsi.utils.errors import command_error
+from taubsi.cogs.raids.errors import PokebattlerNotLoaded
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
 from taubsi.pokebattler.models import Difficulty
+from taubsi.cogs.raids.boss_details import BossDetails
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -111,7 +114,7 @@ class RaidmessageView(discord.ui.View):
 
 
 class RaidmessageView(discord.ui.View):
-    def __init__(self, raidmessage):
+    def __init__(self, raidmessage: RaidMessage):
         super().__init__()
         self.raidmessage = raidmessage
         maps_link = GMAPS_LINK.format(
@@ -129,11 +132,51 @@ class RaidmessageView(discord.ui.View):
 
     @discord.ui.button(label="PB Test")
     async def pokebattler(self, _, interaction: discord.Interaction):
-        pb = await bot.pokebattler.get(self.raidmessage.raid.boss, self.raidmessage.raid.level)
-        attackers = pb.best_attackers
-        text = str(pb.get_difficulty(self.raidmessage.total_amount))
-        text += "\n".join([a.pokemon.name for a in attackers])
-        await interaction.response.send_message(text)
+        if not self.raidmessage.pokebattler:
+            await command_error(
+                send=interaction.response.send_message,
+                error=PokebattlerNotLoaded.__doc__,
+                delete_error=False,
+                ephemeral=True
+            )
+            return
+
+        embed = discord.Embed()
+        boss = self.raidmessage.raid.boss
+
+        embed.set_thumbnail(url=bot.uicons.pokemon(boss))
+        embed.title = boss.name
+
+        """
+        text = "Schwierigkeit: "
+        for i in range(1, 7):
+            difficulty = self.raidmessage.pokebattler.get_difficulty(i)
+            text += str(difficulty.value)
+        """
+        text = str(boss.types)
+
+        text += f"\nFang WP: {boss.cp(20, [10, 10, 10])} - **{self.raidmessage.raid.cp20}**"
+        text += f"\nGeboostete WP: {boss.cp(25, [10, 10, 10])} - **{self.raidmessage.raid.cp25}** <:weather:926577804018069524>"
+        embed.description = text
+
+        attackers = self.raidmessage.pokebattler.best_attackers
+        """
+        attack_text = ""
+        for attacker in attackers:
+            new_text = f"**{attacker.pokemon.name}**\n{attacker.byMove[0].moveset.get_name()}\n\n"
+            if len(attack_text + new_text) > 1024:
+                break
+            attack_text += new_text
+        embed.add_field(name="Beste Konter", value=attack_text)
+        """
+
+        embed.add_field(name="Sofortattacken", value="Dragon Breath\nSteel Wing")
+        embed.add_field(name="Ladeattacken", value="Blizzard\nDraco Meteor\nDragon Claw")
+        embed.add_field(name="Gute Konter", value="<:diff1:926578683874009108><:diff2:926578683911762020><:diff3:926578683848851506><:diff4:926578683781738556>", inline=False)
+
+        counters = await BossDetails.get_counter_image(attackers)
+        embed.set_image(url=counters)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class RaidMessage:
@@ -179,7 +222,7 @@ class RaidMessage:
         self.lates = []
         self.warnings = set()
         self.static_warnings = set()
-        self.difficulty = Difficulty.UNKNOWN
+        self.difficulty = Difficulty.IMPOSSIBLE
         self.pokebattler = None
 
     @classmethod
@@ -392,9 +435,10 @@ class RaidMessage:
         if self.raid.boss:
             self.text += f"100%: **{self.raid.cp20}** | **{self.raid.cp25}**\n"
         if self.raid.is_scanned:
-            if self.raid.moves:
-                self.text += bot.translate("Moves") + ": " \
-                             + " | ".join(["**" + m.name + "**" for m in self.raid.moves]) + "\n"
+            if self.raid.moveset:
+                self.text += (
+                    f"{bot.translate('Moves')}: {str(self.gym.raid.moveset)}\n"
+                )
 
             format_start = self.raid.start.to('local').strftime(timeformat)
             format_end = self.raid.end.to('local').strftime(timeformat)
