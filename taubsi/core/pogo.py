@@ -1,19 +1,15 @@
 from __future__ import annotations
-from typing import Dict, Any, Optional, TYPE_CHECKING, List
-from io import BytesIO
-from enum import Enum
-from datetime import datetime
-from copy import deepcopy
-import string
+
 import random
+import string
+from copy import deepcopy
+from enum import Enum
+from typing import Dict, Any, Optional, TYPE_CHECKING
 
 import arrow
-import discord
-from PIL import Image, ImageDraw
 
-from taubsi.utils.utils import asyncget, calculate_cp
-from taubsi.core.logging import log
 from taubsi.pogodata import Pokemon, Move
+from taubsi.utils.image_manipulation import get_raid_image
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
@@ -215,65 +211,9 @@ class Gym:
             return self.raid.copy()
 
     async def get_raid_image(self, raid: Optional[Raid] = None) -> str:
-        """
-        Generate a circuar Gym Img with the boss in front of it.
-        Similiar to how it'd show on the in-game nearby view.
-        """
         if raid is None:
             raid = self.raid
         if not raid:
             return ""
 
-        boss_result = await asyncget(self._bot.uicons.raid(raid, shiny_chance=30))
-        log.info(f"Creating a Raid Icon for Gym {self.name}")
-        gym_result = await asyncget(self.img)
-
-        gymstream = BytesIO(gym_result)
-        bossstream = BytesIO(boss_result)
-        gym = Image.open(gymstream).convert("RGBA")
-
-        # gym resizing
-        size = min(gym.size)
-        gym = gym.crop(((gym.width - size) // 2,
-                        (gym.height - size) // 2,
-                        (gym.width + size) // 2,
-                        (gym.height + size) // 2))
-
-        mask = Image.new("L", (size*2, size*2), 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, size*2-2, size*2-2), fill=255)
-        mask = mask.resize(gym.size, Image.ANTIALIAS)
-
-        result = gym.copy()
-        result.putalpha(mask)
-
-        gym = result.resize((128, 128), Image.ANTIALIAS)
-        bg = Image.new("RGBA", (150, 150), 0)
-        bg.paste(gym)
-
-        # boss resizing & combining
-        mon = Image.open(bossstream).convert("RGBA")
-
-        if raid.boss:
-            size = 105
-        else:
-            size = 95
-        multiplier = size / max(mon.size)
-        mon_size = tuple([int(round(multiplier * s)) for s in mon.size])
-
-        monbg = Image.new("RGBA", bg.size, 0)
-        mon = mon.resize(mon_size, Image.ANTIALIAS)
-        monbg.paste(mon, (bg.size[0]-mon.width, bg.size[1]-mon.height))
-
-        final_img = Image.alpha_composite(bg, monbg)
-
-        with BytesIO() as stream:
-            final_img.save(stream, "PNG")
-            stream.seek(0)
-            image_msg = await self._bot.trash_channel.send(file=discord.File(stream, filename=f"{self.name}.png"))
-            final_link = image_msg.attachments[0].url
-
-        gymstream.close()
-        bossstream.close()
-
-        return final_link
+        return await get_raid_image(self, raid)

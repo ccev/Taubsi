@@ -1,15 +1,15 @@
 from __future__ import annotations
-from taubsi.pokebattler.models import RaidPayload
+
 from typing import TYPE_CHECKING, Dict
-from taubsi.utils.utils import asyncget
-from taubsi.core.logging import log
 
 from arrow import Arrow
 
-if TYPE_CHECKING:
-    from taubsi.pogodata import PogoData, Pokemon
-    from taubsi.core.pogo import Raid
+from taubsi.core.logging import log
+from taubsi.pokebattler.models import RaidPayload
+from taubsi.utils.utils import asyncget
 
+if TYPE_CHECKING:
+    from taubsi.pogodata import Pokemon
 
 BASE_URL = "https://fight.pokebattler.com/raids/defenders/{}/levels/RAID_LEVEL_{}/attackers/levels/40/strategies/" \
            "CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC?sort=ESTIMATOR&weatherCondition=NO_WEATHER&" \
@@ -23,18 +23,28 @@ class PokeBattler:
     def __init__(self):
         self._cache = {}
 
-    async def get(self, pokemon: Pokemon, level: int) -> RaidPayload:
+    @staticmethod
+    def get_level(level: int) -> str:
         if level == 6:
-            level = "MEGA"
+            return "MEGA"
+        return str(level)
 
+    @staticmethod
+    def get_name(pokemon: Pokemon) -> str:
         pokebattler_name = pokemon.proto_id
         if pokemon.mega_id > 0:
             pokebattler_name += "_MEGA"
         elif pokemon.form_id > 0 and "NORMAL" not in pokemon.proto_form:
             pokebattler_name = pokemon.proto_form + "_FORM"
+        return pokebattler_name
+
+    async def get(self, pokemon: Pokemon, level: int) -> RaidPayload:
+        level = self.get_level(level)
+
+        pokebattler_name = self.get_name(pokemon)
 
         cached = self._cache.get(pokebattler_name)
-        if cached and cached._time > Arrow.utcnow().shift(days=-1):
+        if cached and cached.time > Arrow.utcnow().shift(days=-1):
             log.info(f"Serving cached pokebattler result for {pokebattler_name}")
             return cached
 

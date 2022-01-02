@@ -1,8 +1,9 @@
-from pydantic import BaseModel, validator, PrivateAttr
-from typing import Optional, List
-from enum import Enum
 import math
+from enum import Enum
+from typing import Optional, List
+
 from arrow import Arrow
+from pydantic import BaseModel, validator, PrivateAttr
 
 from taubsi.core import bot
 from taubsi.core.pogo import Moveset
@@ -118,6 +119,10 @@ class RaidPayload(_BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    @property
+    def time(self):
+        return self._time
 
     @property
     def best_attackers(self) -> List[Defender]:

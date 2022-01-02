@@ -12,7 +12,7 @@ from taubsi.cogs.raids.errors import PokebattlerNotLoaded
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
 from taubsi.pokebattler.models import Difficulty
-from taubsi.cogs.raids.boss_details import BossDetails
+from taubsi.utils.image_manipulation import BossDetails
 
 if TYPE_CHECKING:
     from datetime import datetime
