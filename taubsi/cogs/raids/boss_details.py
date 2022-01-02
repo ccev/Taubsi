@@ -13,7 +13,7 @@ from taubsi.pokebattler.models import Defender
 class BossDetails:
     @staticmethod
     async def pokemon_image(pokemon: Pokemon):
-        mask = Image.open("counter.png").convert("L")
+        mask = Image.open("assets/counter.png").convert("L")
         data = await asyncget(bot.uicons.pokemon(pokemon))
         stream = BytesIO(data)
         mon = Image.open(stream)
