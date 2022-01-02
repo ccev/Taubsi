@@ -12,6 +12,7 @@ from taubsi.core.translator import Translator
 from taubsi.core.config_classes import Server, RaidChannel
 from taubsi.core.logging import log
 from taubsi.core.cogs import Cog
+from taubsi.core.emojis import EmojiManager
 
 if TYPE_CHECKING:
     from taubsi.pokebattler import PokeBattler
@@ -23,6 +24,7 @@ class TaubsiBot(commands.Bot):
     mad_db: Queries
     taubsi_db: Queries
     uicons: UIconManager
+    emojis: EmojiManager
     translate: Translator.translate
     pogodata: PogoData
     pokebattler: PokeBattler
@@ -66,6 +68,9 @@ class TaubsiBot(commands.Bot):
         log.info("Logged in, setting up everything")
 
         self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
+
+        trash_guild = await self.fetch_guild(self.config.TRASH_GUILD_ID)
+        self.emojis = EmojiManager(self, trash_guild)
 
         from taubsi.pokebattler import PokeBattler
         self.pokebattler = PokeBattler()

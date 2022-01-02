@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, List, Union, Tuple, TYPE_CHECKING
 
 import requests
 
-from taubsi.pogodata import Pokemon
+from taubsi.pogodata import Pokemon, PokemonType, Weather
 from taubsi.utils.utils import asyncget
 
 if TYPE_CHECKING:
@@ -44,6 +44,8 @@ class UIconCategory(Enum):
     POKEMON = "pokemon"
     GYM = "gym"
     RAID_EGG = "raid/egg"
+    WEATHER = "weather"
+    TYPE = "type"
 
 
 class IconSet(Enum):
@@ -82,6 +84,12 @@ class UIconManager:
 
     def gym(self, gym: Gym, iconset: Optional[IconSet] = None) -> str:
         return self.get(UIconCategory.GYM, iconset, [("", gym.team.value)])
+
+    def weather(self, weather: Weather, iconset: Optional[IconSet] = None) -> str:
+        return self.get(UIconCategory.WEATHER, iconset, [("", weather.id)])
+
+    def type(self, type_: PokemonType, iconset: Optional[IconSet] = None) -> str:
+        return self.get(UIconCategory.TYPE, iconset, [("", type_.id)])
 
     @staticmethod
     def get(category: UIconCategory,

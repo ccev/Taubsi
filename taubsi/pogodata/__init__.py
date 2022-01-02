@@ -5,7 +5,8 @@ import requests
 
 from taubsi.pogodata.pokemon import Pokemon, BaseStats
 from taubsi.pogodata.move import Move
-from taubsi.pogodata.pokemon_type import PokemonType, TypeProto, EFFECTIVENESSES
+from taubsi.pogodata.pokemon_type import PokemonType, TYPES
+from taubsi.pogodata.weather import Weather, WEATHERS
 from taubsi.utils.utils import asyncget
 
 GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
@@ -25,6 +26,7 @@ class PogoData:
     shadow_translation: str
 
     types: List[PokemonType]
+    weathers: List[Weather]
 
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
         self.base_stats = {}
@@ -46,9 +48,12 @@ class PogoData:
         self.move_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
 
         self.types = []
-        for type_proto in TypeProto:
-            weak_to = EFFECTIVENESSES[type_proto.value][1]
-            self.types.append(PokemonType(type_proto, weak_to))
+        for args in TYPES:
+            self.types.append(PokemonType(*args))
+
+        self.weathers = []
+        for args in WEATHERS:
+            self.weathers.append(Weather(*args))
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -175,7 +180,14 @@ class PogoData:
     def get_move(self, move_id: int):
         return Move(move_id, self)
 
+    @staticmethod
+    def _get_generic(li: list, value: int):
+        if value >= len(li):
+            return li[0]
+        return li[value]
+
     def get_type(self, type_id: int) -> PokemonType:
-        if type_id >= len(self.types):
-            return self.get_type(type_id=0)
-        return self.types[type_id]
+        return self._get_generic(self.types, type_id)
+
+    def get_weather(self, weather_id: int) -> Weather:
+        return self._get_generic(self.weathers, weather_id)

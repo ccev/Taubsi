@@ -238,6 +238,7 @@ class Style:
 
 class BaseConfig:
     TRASH_CHANNEL_ID: int
+    TRASH_GUILD_ID: int
     LANGUAGE: Language = Language.ENGLISH
     BOT_TOKEN: str
     ADMIN_IDS = List[int]
