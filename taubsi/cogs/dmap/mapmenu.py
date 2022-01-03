@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, TYPE_CHECKING
 
 import aiohttp
 import arrow
@@ -10,6 +10,9 @@ import discord
 from taubsi.cogs.dmap.map_pages import MapNavPage, SettingsPage, StartRaidPage, MapPage
 from taubsi.cogs.dmap.usersettings import UserSettings
 from taubsi.core import bot, Gym, log
+
+if TYPE_CHECKING:
+    from taubsi.core.uicons import UIcon
 
 
 class MapMenu(discord.ui.View):
@@ -73,9 +76,9 @@ class MapMenu(discord.ui.View):
             self.add_item(item)
 
     @staticmethod
-    def _get_marker(gym: Gym, url: str, size: int, y_offset: int = 0, x_offset: int = 0) -> dict:
+    def _get_marker(gym: Gym, uicon: UIcon, size: int, y_offset: int = 0, x_offset: int = 0) -> dict:
         return {
-            "url": url,
+            "url": uicon.url,
             "latitude": gym.lat,
             "longitude": gym.lon,
             "width": size,
@@ -106,19 +109,19 @@ class MapMenu(discord.ui.View):
 
                 gym_size = self.get_marker_size(26)
                 markers.append(self._get_marker(gym=gym,
-                                                url=bot.uicons.gym(gym, iconset=self.user_settings.iconset),
+                                                uicon=bot.uicons.gym(gym, iconset=self.user_settings.iconset),
                                                 size=gym_size,
                                                 y_offset=gym_size // -2))
 
                 boss_size = self.get_marker_size(22)
                 if gym.raid.boss:
                     boss_marker = self._get_marker(gym=gym,
-                                                   url=bot.uicons.pokemon(gym.raid.boss,
-                                                                          iconset=self.user_settings.iconset),
+                                                   uicon=bot.uicons.pokemon(gym.raid.boss,
+                                                                            iconset=self.user_settings.iconset),
                                                    size=boss_size)
                 else:
                     boss_marker = self._get_marker(gym=gym,
-                                                   url=bot.uicons.egg(gym.raid, iconset=self.user_settings.iconset),
+                                                   uicon=bot.uicons.egg(gym.raid, iconset=self.user_settings.iconset),
                                                    size=boss_size)
                 boss_marker["y_offset"] = - self.get_marker_size(17)
                 boss_marker["x_offset"] = - self.get_marker_size(2)

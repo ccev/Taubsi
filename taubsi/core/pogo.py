@@ -9,7 +9,6 @@ from typing import Dict, Any, Optional, TYPE_CHECKING
 import arrow
 
 from taubsi.pogodata import Pokemon, Move
-from taubsi.utils.image_manipulation import get_raid_image
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
@@ -209,11 +208,3 @@ class Gym:
             return Raid(self._bot, {"level": level})
         else:
             return self.raid.copy()
-
-    async def get_raid_image(self, raid: Optional[Raid] = None) -> str:
-        if raid is None:
-            raid = self.raid
-        if not raid:
-            return ""
-
-        return await get_raid_image(self, raid)

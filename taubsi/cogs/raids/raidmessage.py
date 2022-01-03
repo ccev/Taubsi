@@ -12,7 +12,7 @@ from taubsi.cogs.raids.errors import PokebattlerNotLoaded
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
 from taubsi.pokebattler.models import Difficulty
-from taubsi.utils.image_manipulation import BossDetails
+from taubsi.utils.image_manipulation import BossDetails, get_raid_image
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -144,7 +144,7 @@ class RaidmessageView(discord.ui.View):
         embed = discord.Embed()
         boss = self.raidmessage.raid.boss
 
-        embed.set_thumbnail(url=bot.uicons.pokemon(boss))
+        embed.set_thumbnail(url=bot.uicons.pokemon(boss).url)
         embed.title = boss.name
 
         """
@@ -154,21 +154,26 @@ class RaidmessageView(discord.ui.View):
             text += str(difficulty.value)
         """
         text = str(boss.types)
+        text = ""
+        for type_ in boss.types:
+            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(type_))
+            text += str(emoji)
 
         text += f"\nFang WP: {boss.cp(20, [10, 10, 10])} - **{self.raidmessage.raid.cp20}**"
         text += f"\nGeboostete WP: {boss.cp(25, [10, 10, 10])} - **{self.raidmessage.raid.cp25}** <:weather:926577804018069524>"
         embed.description = text
 
         attackers = self.raidmessage.pokebattler.best_attackers
-        """
+
         attack_text = ""
-        for attacker in attackers:
-            new_text = f"**{attacker.pokemon.name}**\n{attacker.byMove[0].moveset.get_name()}\n\n"
+        for attacker in attackers[:6]:
+            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.pokemon(attacker.pokemon))
+            new_text = f"{emoji} **{attacker.pokemon.name}**\n{attacker.byMove[0].moveset.get_name()}\n\n"
             if len(attack_text + new_text) > 1024:
                 break
             attack_text += new_text
         embed.add_field(name="Beste Konter", value=attack_text)
-        """
+
 
         embed.add_field(name="Sofortattacken", value="Dragon Breath\nSteel Wing")
         embed.add_field(name="Ladeattacken", value="Blizzard\nDraco Meteor\nDragon Claw")
@@ -446,7 +451,13 @@ class RaidMessage:
         self.make_warnings()
 
     async def set_image(self) -> NoReturn:
-        url = await self.gym.get_raid_image(self.raid)
+        raid = self.raid.copy()
+        if raid is None:
+            raid = self.gym.raid
+        if not raid:
+            url = ""
+        else:
+            url = await get_raid_image(self.gym, raid)
         self.embed.set_thumbnail(url=url)
         await self.edit_message()
 

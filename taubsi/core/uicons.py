@@ -18,10 +18,12 @@ class IconSetManager:
     name: str
     url: str
     index: Dict[str, Any]
+    id: str
 
-    def __init__(self, name: str, url: str):
+    def __init__(self, name: str, url: str, id_: str):
         self.url = url
         self.name = name
+        self.id = id_
 
         result = requests.get(url + "index.json")
         self.index = result.json()
@@ -41,6 +43,7 @@ class IconSetManager:
 
 
 class UIconCategory(Enum):
+    # attention when adding more categories: make sure their first letter isn't duplicated because emoji manager
     POKEMON = "pokemon"
     GYM = "gym"
     RAID_EGG = "raid/egg"
@@ -50,12 +53,35 @@ class UIconCategory(Enum):
 
 class IconSet(Enum):
     POGO_OUTLINE = IconSetManager("Pogo (Outline)", "https://raw.githubusercontent.com/whitewillem/PogoAssets/"
-                                                    "main/uicons-outline/")
-    POGO = IconSetManager("Pogo", "https://raw.githubusercontent.com/WatWowMap/wwm-uicons/main/")
+                                                    "main/uicons-outline/", id_="go")
+    POGO = IconSetManager("Pogo", "https://raw.githubusercontent.com/WatWowMap/wwm-uicons/main/", id_="g")
+
+
+class UIcon:
+    name: str
+    url: str
+    category: UIconCategory
+    iconset: IconSet
+
+    def __init__(self, name: str, category: UIconCategory, iconset: IconSet):
+        self.name = name
+        self.category = category
+        self.iconset = iconset
+
+        self.url = f"{iconset.value.url}{self.category.value}/{name}.png"
+
+    def __repr__(self):
+        return f"<UIcon name={self.name} iconset={self.iconset.name}"
+
+    def __str__(self):
+        return self.url
+
+    def __bool__(self):
+        return bool(self.url)
 
 
 class UIconManager:
-    def pokemon(self, pokemon: Pokemon, shiny: bool = False, iconset: Optional[IconSet] = None) -> str:
+    def pokemon(self, pokemon: Pokemon, shiny: bool = False, iconset: Optional[IconSet] = None) -> UIcon:
         args = [
             ("", pokemon.id),
             ("e", pokemon.mega_id),
@@ -66,13 +92,13 @@ class UIconManager:
             args.append(("s", ""))
         return self.get(UIconCategory.POKEMON, iconset, args)
 
-    def egg(self, raid: Raid, iconset: Optional[IconSet] = None) -> str:
+    def egg(self, raid: Raid, iconset: Optional[IconSet] = None) -> UIcon:
         args = [("", raid.level)]
         # if raid.has_hatched:
         #     args.append(("h", ""))
         return self.get(UIconCategory.RAID_EGG, iconset, args)
 
-    def raid(self, raid: Raid, shiny_chance: int = 0, iconset: Optional[IconSet] = None) -> str:
+    def raid(self, raid: Raid, shiny_chance: int = 0, iconset: Optional[IconSet] = None) -> UIcon:
         if raid.boss:
             if shiny_chance:
                 shiny = random.randint(1, shiny_chance) == 1
@@ -82,19 +108,21 @@ class UIconManager:
         else:
             return self.egg(raid, iconset)
 
-    def gym(self, gym: Gym, iconset: Optional[IconSet] = None) -> str:
+    def gym(self, gym: Gym, iconset: Optional[IconSet] = None) -> UIcon:
         return self.get(UIconCategory.GYM, iconset, [("", gym.team.value)])
 
-    def weather(self, weather: Weather, iconset: Optional[IconSet] = None) -> str:
+    def weather(self, weather: Weather, iconset: Optional[IconSet] = None) -> UIcon:
         return self.get(UIconCategory.WEATHER, iconset, [("", weather.id)])
 
-    def type(self, type_: PokemonType, iconset: Optional[IconSet] = None) -> str:
+    def type(self, type_: PokemonType, iconset: Optional[IconSet] = None) -> UIcon:
+        if iconset is None:
+            iconset = IconSet.POGO_OUTLINE
         return self.get(UIconCategory.TYPE, iconset, [("", type_.id)])
 
     @staticmethod
     def get(category: UIconCategory,
             iconset: Optional[IconSet] = None,
-            args: Optional[List[Tuple[str, Union[str, int]]]] = None) -> str:
+            args: Optional[List[Tuple[str, Union[str, int]]]] = None) -> UIcon:
         if not iconset:
             iconset = IconSet.POGO
         if not args:
@@ -110,8 +138,15 @@ class UIconManager:
                 if subset[0] == fin_args[0]:
                     combinations.append(list(subset))
         combinations.append(["0"])
+
+        name = ""
         for combination in combinations:
-            name = "_".join(combination) + ".png"
-            if name in iconset.value.index.get(category.value, []):
-                return iconset.value.url + f"{category.value}/{name}"
-        return iconset.value.url + "pokemon/0.png"
+            possible_name = "_".join(combination)
+            if possible_name + ".png" in iconset.value.index.get(category.value, []):
+                name = possible_name
+                break
+
+        if not name:
+            name = "0"
+            category = UIconCategory.POKEMON
+        return UIcon(name=name, category=category, iconset=iconset)

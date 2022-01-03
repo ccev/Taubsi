@@ -1,15 +1,18 @@
+from __future__ import annotations
 from io import BytesIO
-from typing import List, Union
+from typing import List, Union, TYPE_CHECKING
 
 import discord
 from PIL import Image, ImageDraw
 
-from taubsi.core import bot
+from taubsi.core.bot import bot
 from taubsi.core.logging import log
-from taubsi.core.pogo import Raid, Gym
 from taubsi.pogodata import Pokemon
-from taubsi.pokebattler.models import Defender
 from taubsi.utils.utils import asyncget
+
+if TYPE_CHECKING:
+    from taubsi.core.pogo import Raid, Gym
+    from taubsi.pokebattler.models import Defender
 
 
 async def upload(image: Image, name: str = "image") -> str:
@@ -24,7 +27,7 @@ async def upload(image: Image, name: str = "image") -> str:
 async def download_image(url: str, mode: Union[str, bool] = "RGBA") -> Image:
     result = await asyncget(url)
     with BytesIO(result) as stream:
-        image = Image.open(stream)
+        image = Image.open(stream).copy()
         if mode:
             image = image.convert(mode)
     return image
@@ -39,7 +42,7 @@ async def get_raid_image(gym: Gym, raid: Raid) -> str:
     log.info(f"Creating a Raid Icon for Gym {gym.name}")
 
     gym_img = await download_image(gym.img)
-    mon = await download_image(bot.uicons.raid(raid, shiny_chance=30))
+    mon = await download_image(bot.uicons.raid(raid, shiny_chance=30).url)
 
 
     # gym resizing
@@ -84,7 +87,7 @@ class BossDetails:
     @staticmethod
     async def pokemon_image(pokemon: Pokemon):
         mask = Image.open("assets/counter.png").convert("L")
-        mon = await download_image(bot.uicons.pokemon(pokemon), mode=False)
+        mon = await download_image(bot.uicons.pokemon(pokemon).url, mode=False)
 
         background = Image.new("RGBA", mask.size, (255, 0, 0, 0))
         size = 120

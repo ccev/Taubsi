@@ -10,6 +10,7 @@ from taubsi.utils.utils import asyncget
 
 if TYPE_CHECKING:
     from taubsi.core.bot import TaubsiBot
+    from taubsi.core.uicons import UIcon
 
 
 class TaubsiEmoji:
@@ -76,7 +77,7 @@ class EmojiManager:
     def __init__(self, bot: TaubsiBot, guild: discord.Guild):
         self._bot = bot
         self.processing = []
-        self.queue = Queue(maxsize=guild.emoji_limit, loop=bot.loop)
+        self.queue = Queue(maxsize=guild.emoji_limit)
         self.guild = guild
 
         self.emojis = []
@@ -125,3 +126,7 @@ class EmojiManager:
         self.processing.append(name)
         await self.queue.join()
         return await self.get_emoji(name, url)
+
+    async def get_from_uicon(self, uicon: UIcon):
+        name = f"{uicon.category.value[0]}{uicon.name.replace('_', '')}{uicon.iconset.value.id}"
+        return await self.get_emoji(name=name, url=uicon.url)

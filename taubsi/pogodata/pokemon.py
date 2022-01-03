@@ -4,7 +4,7 @@ from math import floor
 from taubsi.core.logging import log
 
 if TYPE_CHECKING:
-    from taubsi.pogodata import PogoData
+    from taubsi.pogodata import PogoData, PokemonType
 
 
 MULTIPLIERS = {
@@ -55,7 +55,7 @@ class Pokemon:
     proto_id: str
     proto_form: str
     is_shadow: bool
-    types: List[int]
+    types: List[PokemonType]
 
     def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0,
                  is_shadow: bool = False):
@@ -82,7 +82,7 @@ class Pokemon:
             self.types = pogodata.mon_to_types.get(identifier)
         if not self.base_stats:
             self.base_stats = BaseStats([10, 10, 10])
-            self.types = [0]
+            self.types = [pogodata.get_type(0)]
 
         self.mon_name = pogodata.mons.get(f"{self.id}:0:{self.mega_id}", "")
         self.form_name = pogodata.forms.get(self.form_id, "")

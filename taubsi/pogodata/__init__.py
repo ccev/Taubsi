@@ -37,7 +37,7 @@ class PogoData:
         self.form_proto_to_id = {}
         self.form_id_to_proto = {}
         self.raids = {}
-        self.mon_to_types: Dict[str, List[int]] = {}
+        self.mon_to_types: Dict[str, List[PokemonType]] = {}
 
         self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
         self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
@@ -126,14 +126,15 @@ class PogoData:
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
 
-    @staticmethod
-    def _gamemaster_type_convert(settings: dict, key: str, types: list):
+    def _gamemaster_type_convert(self, settings: dict, key: str, types: list):
         type_ = settings.get(key)
         if not type_:
             return
 
-        id_ = TypeProto[type_].value
-        types.append(id_)
+        for montype in self.types:
+            if montype.proto == type_:
+                types.append(montype)
+                return
 
     @classmethod
     def make_sync(cls, language: str):

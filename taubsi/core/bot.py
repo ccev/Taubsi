@@ -24,7 +24,7 @@ class TaubsiBot(commands.Bot):
     mad_db: Queries
     taubsi_db: Queries
     uicons: UIconManager
-    emojis: EmojiManager
+    emoji_manager: EmojiManager
     translate: Translator.translate
     pogodata: PogoData
     pokebattler: PokeBattler
@@ -70,7 +70,7 @@ class TaubsiBot(commands.Bot):
         self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
 
         trash_guild = await self.fetch_guild(self.config.TRASH_GUILD_ID)
-        self.emojis = EmojiManager(self, trash_guild)
+        self.emoji_manager = EmojiManager(self, trash_guild)
 
         from taubsi.pokebattler import PokeBattler
         self.pokebattler = PokeBattler()
