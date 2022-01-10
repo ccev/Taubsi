@@ -40,6 +40,9 @@ class ChoiceMessage:
     async def send_message(self):
         self.message = await self.init_message.channel.send(embed=self.embed, view=ChoiceMessageView(self))
 
+    async def delete(self):
+        await self.message.delete()
+
     async def button_clicked(self, gym):
         await self.message.delete()
         raidmessage = await RaidMessage.from_command(gym, self.start_time, self.init_message)

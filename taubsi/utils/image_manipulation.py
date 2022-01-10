@@ -83,7 +83,7 @@ async def get_raid_image(gym: Gym, raid: Raid) -> str:
     return final_link
 
 
-class BossDetails:
+class BossDetailsImage:
     @staticmethod
     async def pokemon_image(pokemon: Pokemon):
         mask = Image.open("assets/counter.png").convert("L")
@@ -119,7 +119,7 @@ class BossDetails:
             if count >= 6:
                 break
             count += 1
-            mon_img = await BossDetails.pokemon_image(defender.pokemon)
+            mon_img = await BossDetailsImage.pokemon_image(defender.pokemon)
             mons.append(mon_img)
 
         margin = 10

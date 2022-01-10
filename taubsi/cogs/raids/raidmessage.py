@@ -12,7 +12,8 @@ from taubsi.cogs.raids.errors import PokebattlerNotLoaded
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
 from taubsi.pokebattler.models import Difficulty
-from taubsi.utils.image_manipulation import BossDetails, get_raid_image
+from taubsi.utils.image_manipulation import BossDetailsImage, get_raid_image
+from taubsi.cogs.raids.boss_details import BossDetailsButton
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -26,7 +27,6 @@ REMOTE_LIMIT = 10
 
 GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
 AMAPS_LINK = "https://maps.apple.com/maps?daddr={},{}"
-PBATTLER_LINK = "https://www.pokebattler.com/raids/{}"
 
 
 """
@@ -116,83 +116,14 @@ class RaidmessageView(discord.ui.View):
 class RaidmessageView(discord.ui.View):
     def __init__(self, raidmessage: RaidMessage):
         super().__init__()
-        self.raidmessage = raidmessage
         maps_link = GMAPS_LINK.format(
             raidmessage.gym.lat, raidmessage.gym.lon
         )
+
+        if raidmessage.pokebattler:
+            self.add_item(BossDetailsButton(raidmessage))
+
         self.add_item(discord.ui.Button(url=maps_link, label="Google Maps", style=discord.ButtonStyle.link))
-
-        if raidmessage.raid.boss:
-            if raidmessage.raid.level == 6:
-                pb_level = "MEGA"
-            else:
-                pb_level = str(raidmessage.raid.level)
-            pb_link = PBATTLER_LINK.format(raidmessage.raid.pokebattler_name, pb_level)
-            self.add_item(discord.ui.Button(url=pb_link, label="Pokebattler", style=discord.ButtonStyle.link))
-
-    @discord.ui.button(label="PB Test")
-    async def pokebattler(self, _, interaction: discord.Interaction):
-        if not self.raidmessage.pokebattler:
-            await command_error(
-                send=interaction.response.send_message,
-                error=PokebattlerNotLoaded.__doc__,
-                delete_error=False,
-                ephemeral=True
-            )
-            return
-
-        embed = discord.Embed()
-        boss = self.raidmessage.raid.boss
-
-        embed.set_thumbnail(url=bot.uicons.pokemon(boss).url)
-        embed.title = boss.name
-
-        """
-        text = "Schwierigkeit: "
-        for i in range(1, 7):
-            difficulty = self.raidmessage.pokebattler.get_difficulty(i)
-            text += str(difficulty.value)
-        """
-        text = str(boss.types)
-        text = ""
-        type_emojis = ""
-        weak_emojis = ""
-        weather_emojis = ""
-        weak_against = set()
-        for type_ in boss.types:
-            print(type_.weak_to)
-            weak_against = weak_against.union(set(type_.weak_to))
-            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(type_))
-            type_emojis += str(emoji)
-
-            w = type_.boosted_by
-            w_emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.weather(w))
-            weather_emojis += str(w_emoji)
-        for type_ in weak_against:
-            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(type_))
-            weak_emojis += str(emoji)
-
-        text += f"\nFang WP: {boss.cp(20, [10, 10, 10])} - **{self.raidmessage.raid.cp20}**"
-        text += f"\nGeboostete WP: {boss.cp(25, [10, 10, 10])} - **{self.raidmessage.raid.cp25}** {weather_emojis}"
-        embed.description = text
-
-        quicks = ""
-        charges = ""
-        for move in boss.moves:
-            name = f"{move.name}\n"
-            if move.proto_id.endswith("FAST"):
-                quicks += name
-            else:
-                charges += name
-
-        embed.add_field(name="Sofortattacken", value=quicks)
-        embed.add_field(name="Ladeattacken", value=charges)
-        embed.add_field(name="Raid Guide", value=f"Typen: {type_emojis}, schlecht gegen {weak_emojis}. Man benötigt mindestens 2 Personen, mit 4 ist er ohne Probleme machbar.\n\nGuter Konter: (Ohne Megas & Cryptos)", inline=False)
-
-        attackers = self.raidmessage.pokebattler.best_attackers
-        counters = await BossDetails.get_counter_image(attackers)
-        embed.set_image(url=counters)
-        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class RaidMessage:
@@ -246,7 +177,7 @@ class RaidMessage:
         self = cls(gym, start_time, interaction.channel_id)
         self.author_id = interaction.user.id
         self.init_message = None
-        self.view = self._get_view()
+        self.set_view()
         await self.send_message(interaction)
         return self
 
@@ -259,7 +190,7 @@ class RaidMessage:
         self.author_id = interaction.user.id
         self.footer_prefix = bot.translate("Scheduled_by").format(interaction.user.display_name) + "\n"
         self.init_message = None
-        self.view = self._get_view()
+        self.set_view()
 
         await self.send_message()
         return self
@@ -270,7 +201,7 @@ class RaidMessage:
 
         self.init_message = init_message
         self.author_id = self.init_message.author.id
-        self.view = self._get_view()
+        self.set_view()
 
         await self.send_message()
         return self
@@ -316,7 +247,7 @@ class RaidMessage:
             self.members.append(raidmember)
 
         self.embed = self.message.embeds[0]
-        self.view = self._get_view()
+        self.set_view()
         await self.make_member_fields()
         await self.make_base_embed()
         self.make_warnings()
@@ -324,8 +255,8 @@ class RaidMessage:
 
         return self
 
-    def _get_view(self) -> RaidmessageView:
-        return RaidmessageView(self)
+    def set_view(self):
+        self.view = RaidmessageView(self)
 
     @property
     def total_amount(self) -> int:
