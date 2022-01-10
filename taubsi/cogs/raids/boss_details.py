@@ -38,7 +38,8 @@ class BossDetailsView(discord.ui.View):
 class BossDetailsButton(discord.ui.Button):
     def __init__(self, raidmessage: RaidMessage):
         super(BossDetailsButton, self).__init__(
-            label=bot.translate("boss_details")
+            label=bot.translate("boss_details"),
+            custom_id=f"{raidmessage.message.id}pb"
         )
         self.raidmessage = raidmessage
 

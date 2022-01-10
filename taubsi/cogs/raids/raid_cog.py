@@ -104,7 +104,7 @@ class RaidCog(commands.Cog):
         raid_channel = self.bot.raid_channel_dict.get(message.channel.id)
         if not raid_channel:
             return
-        
+
         log.info(f"Trying to create a Raid Message from {message.id}")
 
         server = [s for s in self.bot.servers if s.id == message.guild.id]
@@ -124,7 +124,7 @@ class RaidCog(commands.Cog):
             if matched_gyms[0][1] > 80:
                 raise InvalidTime
             return
-        
+
         if len(matched_gyms) > 1:
             too_many_gyms = [g[0] for g in matched_gyms]
             choicemessage = ChoiceMessage(message, too_many_gyms, raid_start, self)
@@ -141,7 +141,7 @@ class RaidCog(commands.Cog):
 
         raidmessage = await RaidMessage.from_command(gym, raid_start, message)
         await self.create_raid(raidmessage)
-    
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.user_id == self.bot.user.id:
@@ -175,7 +175,7 @@ class RaidCog(commands.Cog):
         await self.bot.taubsi_db.execute(
             f"delete from raids where message_id = {message.id}", result=False, commit=True)
 
-    @tasks.loop(seconds=10)   
+    @tasks.loop(seconds=10)
     async def raid_loop(self):
         raidmessages: List[RaidMessage] = list(self.raidmessages.copy().values())
         for raidmessage in raidmessages:
@@ -207,7 +207,6 @@ class RaidCog(commands.Cog):
                     raidmessage.raid = raidmessage.gym.raid.copy()
                     await raidmessage.make_base_embed()
                     await raidmessage.set_pokebattler()
-                    raidmessage.set_view()
                     await raidmessage.set_image()
                     await raidmessage.db_insert()
             except Exception as e:

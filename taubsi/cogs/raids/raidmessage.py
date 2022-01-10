@@ -366,6 +366,7 @@ class RaidMessage:
     async def set_pokebattler(self):
         if self.raid.boss:
             self.pokebattler = await bot.pokebattler.get(self.raid.boss, self.raid.level)
+            self.set_view()
 
     def make_warnings(self) -> NoReturn:
         self.embed.description = self.text
