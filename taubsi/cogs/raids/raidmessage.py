@@ -155,30 +155,41 @@ class RaidmessageView(discord.ui.View):
         """
         text = str(boss.types)
         text = ""
+        type_emojis = ""
+        weak_emojis = ""
+        weather_emojis = ""
+        weak_against = set()
         for type_ in boss.types:
+            print(type_.weak_to)
+            weak_against = weak_against.union(set(type_.weak_to))
             emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(type_))
-            text += str(emoji)
+            type_emojis += str(emoji)
+
+            w = type_.boosted_by
+            w_emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.weather(w))
+            weather_emojis += str(w_emoji)
+        for type_ in weak_against:
+            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(type_))
+            weak_emojis += str(emoji)
 
         text += f"\nFang WP: {boss.cp(20, [10, 10, 10])} - **{self.raidmessage.raid.cp20}**"
-        text += f"\nGeboostete WP: {boss.cp(25, [10, 10, 10])} - **{self.raidmessage.raid.cp25}** <:weather:926577804018069524>"
+        text += f"\nGeboostete WP: {boss.cp(25, [10, 10, 10])} - **{self.raidmessage.raid.cp25}** {weather_emojis}"
         embed.description = text
 
+        quicks = ""
+        charges = ""
+        for move in boss.moves:
+            name = f"{move.name}\n"
+            if move.proto_id.endswith("FAST"):
+                quicks += name
+            else:
+                charges += name
+
+        embed.add_field(name="Sofortattacken", value=quicks)
+        embed.add_field(name="Ladeattacken", value=charges)
+        embed.add_field(name="Raid Guide", value=f"Typen: {type_emojis}, schlecht gegen {weak_emojis}. Man benötigt mindestens 2 Personen, mit 4 ist er ohne Probleme machbar.\n\nGuter Konter: (Ohne Megas & Cryptos)", inline=False)
+
         attackers = self.raidmessage.pokebattler.best_attackers
-
-        attack_text = ""
-        for attacker in attackers[:6]:
-            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.pokemon(attacker.pokemon))
-            new_text = f"{emoji} **{attacker.pokemon.name}**\n{attacker.byMove[0].moveset.get_name()}\n\n"
-            if len(attack_text + new_text) > 1024:
-                break
-            attack_text += new_text
-        embed.add_field(name="Beste Konter", value=attack_text)
-
-
-        embed.add_field(name="Sofortattacken", value="Dragon Breath\nSteel Wing")
-        embed.add_field(name="Ladeattacken", value="Blizzard\nDraco Meteor\nDragon Claw")
-        embed.add_field(name="Gute Konter", value="<:diff1:926578683874009108><:diff2:926578683911762020><:diff3:926578683848851506><:diff4:926578683781738556>", inline=False)
-
         counters = await BossDetails.get_counter_image(attackers)
         embed.set_image(url=counters)
         await interaction.response.send_message(embed=embed, ephemeral=True)

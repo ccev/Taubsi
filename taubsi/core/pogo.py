@@ -43,11 +43,11 @@ class Moveset:
             kwargs[k] = Move(move_id, pogodata)
         return cls(**kwargs)
 
-    def get_name(self, with_markdown: bool = False) -> str:
+    def get_name(self, split: str = " | ", with_markdown: bool = False) -> str:
         if with_markdown:
-            return f"**{self.quick.name}** | **{self.charge.name}**"
+            return f"**{self.quick.name}**{split}**{self.charge.name}**"
         else:
-            return f"{self.quick.name} | {self.charge.name}"
+            return f"{self.quick.name}{split}{self.charge.name}"
 
     def __str__(self):
         return self.get_name(with_markdown=True)

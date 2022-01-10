@@ -1,10 +1,10 @@
-from typing import Dict, List, Optional, Any, Union
 import re
+from typing import Dict, List, Optional, Any, Union
 
 import requests
 
-from taubsi.pogodata.pokemon import Pokemon, BaseStats
 from taubsi.pogodata.move import Move
+from taubsi.pogodata.pokemon import Pokemon, BaseStats
 from taubsi.pogodata.pokemon_type import PokemonType, TYPES
 from taubsi.pogodata.weather import Weather, WEATHERS
 from taubsi.utils.utils import asyncget
@@ -38,6 +38,7 @@ class PogoData:
         self.form_id_to_proto = {}
         self.raids = {}
         self.mon_to_types: Dict[str, List[PokemonType]] = {}
+        self.mon_to_moves: Dict[str, List[Move]] = {}
 
         self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
         self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
@@ -51,9 +52,19 @@ class PogoData:
         for args in TYPES:
             self.types.append(PokemonType(*args))
 
+        for type_ in self.types:
+            type_.weak_to = [self.get_type(t) for t in type_.weak_to_ids]
+
         self.weathers = []
         for args in WEATHERS:
             self.weathers.append(Weather(*args))
+
+        for weather_ in self.weathers:
+            weather_.boosts = []
+            for type_id in weather_.boost_ids:
+                type_ = self.get_type(type_id)
+                type_.boosted_by = weather_
+                weather_.boosts.append(type_)
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -105,6 +116,12 @@ class PogoData:
                 self._gamemaster_type_convert(settings, "type2", types)
                 self.mon_to_types[f"{identifier}:0"] = types
 
+                raw_moves = settings.get("quickMoves", []) + settings.get("cinematicMoves", [])
+                moves = []
+                for raw_move in raw_moves:
+                    moves.append(self.get_move(self.move_proto_to_id.get(raw_move, 0)))
+                self.mon_to_moves[f"{identifier}:0"] = moves
+
                 mega_overrides: Optional[List[dict]] = settings.get("tempEvoOverrides")
                 if not mega_overrides:
                     continue
@@ -121,7 +138,8 @@ class PogoData:
                     types = []
                     self._gamemaster_type_convert(settings, "typeOverride1", types)
                     self._gamemaster_type_convert(settings, "typeOverride2", types)
-                    self.mon_to_types[f"{identifier}:0"] = types
+                    self.mon_to_types[f"{identifier}:{mega_id}"] = types
+                    self.mon_to_moves[f"{identifier}:0"] = moves
 
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
