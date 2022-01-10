@@ -84,6 +84,7 @@ class RaidCog(commands.Cog):
                 raidmessage.make_warnings()
         self.raidmessages[raidmessage.message.id] = raidmessage
         self.bot.loop.create_task(raidmessage.set_image())
+        self.bot.loop.create_task(raidmessage.set_pokebattler())
 
         emojis = []
         for number in range(1, 7):
@@ -130,6 +131,10 @@ class RaidCog(commands.Cog):
             choicemessage.make_embed()
             await choicemessage.send_message()
             self.choicemessages[choicemessage.message.id] = choicemessage
+
+            await asyncio.sleep(5*60)
+            self.choicemessages.pop(choicemessage.message.id)
+            await choicemessage.delete()
             return
 
         gym = matched_gyms[0][0]
@@ -185,7 +190,7 @@ class RaidCog(commands.Cog):
                         await raidmessage.notify(self.bot.translate("notify_raid_starts"))
                         raidmessage.notified_5_minutes = True
 
-                if not raidmessage.raid.is_scanned or not raidmessage.raid.moves:
+                if not raidmessage.raid.is_scanned or not raidmessage.raid.moveset:
                     if raidmessage.raid_channel.is_event:
                         continue
                     if raidmessage.gym.raid is None:
@@ -201,6 +206,8 @@ class RaidCog(commands.Cog):
 
                     raidmessage.raid = raidmessage.gym.raid.copy()
                     await raidmessage.make_base_embed()
+                    await raidmessage.set_pokebattler()
+                    raidmessage.set_view()
                     await raidmessage.set_image()
                     await raidmessage.db_insert()
             except Exception as e:

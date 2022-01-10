@@ -1,4 +1,5 @@
-from typing import List, Dict
+from __future__ import annotations
+from typing import List, Dict, TYPE_CHECKING
 
 import discord
 from discord.ext import commands
@@ -11,6 +12,10 @@ from taubsi.core.translator import Translator
 from taubsi.core.config_classes import Server, RaidChannel
 from taubsi.core.logging import log
 from taubsi.core.cogs import Cog
+from taubsi.core.emojis import EmojiManager
+
+if TYPE_CHECKING:
+    from taubsi.pokebattler import PokeBattler
 
 
 class TaubsiBot(commands.Bot):
@@ -19,8 +24,10 @@ class TaubsiBot(commands.Bot):
     mad_db: Queries
     taubsi_db: Queries
     uicons: UIconManager
+    emoji_manager: EmojiManager
     translate: Translator.translate
     pogodata: PogoData
+    pokebattler: PokeBattler
     servers: List[Server]
     server_ids: List[int]
     team_choose_ids: List[int]
@@ -61,6 +68,12 @@ class TaubsiBot(commands.Bot):
         log.info("Logged in, setting up everything")
 
         self.trash_channel = await self.fetch_channel(self.config.TRASH_CHANNEL_ID)
+
+        trash_guild = await self.fetch_guild(self.config.TRASH_GUILD_ID)
+        self.emoji_manager = EmojiManager(self, trash_guild)
+
+        from taubsi.pokebattler import PokeBattler
+        self.pokebattler = PokeBattler()
 
         log.info("Preparing servers")
         for server in self.servers:

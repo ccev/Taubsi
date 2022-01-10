@@ -1,10 +1,12 @@
-from typing import Dict, List, Optional, Any, Union
 import re
+from typing import Dict, List, Optional, Any, Union
 
 import requests
 
-from taubsi.pogodata.pokemon import Pokemon, BaseStats
 from taubsi.pogodata.move import Move
+from taubsi.pogodata.pokemon import Pokemon, BaseStats
+from taubsi.pogodata.pokemon_type import PokemonType, TYPES
+from taubsi.pogodata.weather import Weather, WEATHERS
 from taubsi.utils.utils import asyncget
 
 GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
@@ -19,22 +21,50 @@ class PogoData:
     mons: Dict[str, str]
     forms: Dict[int, str]
     moves: Dict[int, str]
-    mon_mapping: Dict[int, str]
-    move_mapping: Dict[int, str]
+    move_id_to_proto: Dict[int, str]
     raids: Dict[int, List[Pokemon]]
+    shadow_translation: str
+
+    types: List[PokemonType]
+    weathers: List[Weather]
 
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
         self.base_stats = {}
         self.mons = {}
         self.forms = {}
         self.moves = {}
-        self.mon_mapping = {}
+        self.mon_proto_to_id = {}
+        self.form_proto_to_id = {}
+        self.form_id_to_proto = {}
         self.raids = {}
+        self.mon_to_types: Dict[str, List[PokemonType]] = {}
+        self.mon_to_moves: Dict[str, List[Move]] = {}
 
-        mon_mapping = self._enum_to_dict(raw_protos, "HoloPokemonId")
-        form_mapping = self._enum_to_dict(raw_protos, "Form")
+        self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
+        self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
+        self.form_id_to_proto = self._enum_to_dict(raw_protos, "Form", reverse=True)
+        self.form_proto_to_id = self._enum_to_dict(raw_protos, "Form")
         mega_mapping = self._enum_to_dict(raw_protos, "HoloTemporaryEvolutionId")
-        self.move_mapping = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
+        self.move_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonMove")
+        self.move_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
+
+        self.types = []
+        for args in TYPES:
+            self.types.append(PokemonType(*args))
+
+        for type_ in self.types:
+            type_.weak_to = [self.get_type(t) for t in type_.weak_to_ids]
+
+        self.weathers = []
+        for args in WEATHERS:
+            self.weathers.append(Weather(*args))
+
+        for weather_ in self.weathers:
+            weather_.boosts = []
+            for type_id in weather_.boost_ids:
+                type_ = self.get_type(type_id)
+                type_.boosted_by = weather_
+                weather_.boosts.append(type_)
 
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
@@ -46,7 +76,7 @@ class PogoData:
                 v: str = values[i].strip("\r")
                 if k.startswith("form_"):
                     form_name = k[5:]
-                    form_id = form_mapping.get(form_name.upper())
+                    form_id = self.form_id_to_proto.get(form_name.upper())
                     if form_id:
                         self.forms[form_id] = v
                 elif k.startswith("pokemon_name_"):
@@ -59,6 +89,8 @@ class PogoData:
                     self.mons[f"{mon_id}:0:{mega_id}"] = v
                 elif k.startswith("move_name_"):
                     self.moves[int(k[10:])] = v
+                elif k == "filter_label_shadow":
+                    self.shadow_translation = v
 
         result = []
         for entry in raw_gamemaster:
@@ -69,15 +101,26 @@ class PogoData:
                 stats = settings.get("stats")
                 if not settings or not stats:
                     continue
+
                 mon = settings.get("pokemonId")
-                mon_id = mon_mapping.get(mon, 0)
-                self.mon_mapping[mon] = mon_id
+                mon_id = self.mon_proto_to_id.get(mon, 0)
 
                 form = settings.get("form")
-                form_id = form_mapping.get(form, 0)
+                form_id = self.form_proto_to_id.get(form, 0)
                 base_stats = BaseStats(list(stats.values()))
                 identifier = f"{mon_id}:{form_id}"
                 self.base_stats[f"{identifier}:0"] = base_stats
+
+                types = []
+                self._gamemaster_type_convert(settings, "type", types)
+                self._gamemaster_type_convert(settings, "type2", types)
+                self.mon_to_types[f"{identifier}:0"] = types
+
+                raw_moves = settings.get("quickMoves", []) + settings.get("cinematicMoves", [])
+                moves = []
+                for raw_move in raw_moves:
+                    moves.append(self.get_move(self.move_proto_to_id.get(raw_move, 0)))
+                self.mon_to_moves[f"{identifier}:0"] = moves
 
                 mega_overrides: Optional[List[dict]] = settings.get("tempEvoOverrides")
                 if not mega_overrides:
@@ -89,10 +132,27 @@ class PogoData:
                     base_stats = BaseStats(list(stats.values()))
                     mega = mega_override.get("tempEvoId")
                     mega_id = mega_mapping.get(mega, 0)
-                    self.base_stats[f"{identifier}:{mega_id}"] = base_stats
+                    identifier = f"{identifier}:{mega_id}"
+                    self.base_stats[identifier] = base_stats
+
+                    types = []
+                    self._gamemaster_type_convert(settings, "typeOverride1", types)
+                    self._gamemaster_type_convert(settings, "typeOverride2", types)
+                    self.mon_to_types[f"{identifier}:{mega_id}"] = types
+                    self.mon_to_moves[f"{identifier}:0"] = moves
 
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
+
+    def _gamemaster_type_convert(self, settings: dict, key: str, types: list):
+        type_ = settings.get(key)
+        if not type_:
+            return
+
+        for montype in self.types:
+            if montype.proto == type_:
+                types.append(montype)
+                return
 
     @classmethod
     def make_sync(cls, language: str):
@@ -138,3 +198,15 @@ class PogoData:
 
     def get_move(self, move_id: int):
         return Move(move_id, self)
+
+    @staticmethod
+    def _get_generic(li: list, value: int):
+        if value >= len(li):
+            return li[0]
+        return li[value]
+
+    def get_type(self, type_id: int) -> PokemonType:
+        return self._get_generic(self.types, type_id)
+
+    def get_weather(self, weather_id: int) -> Weather:
+        return self._get_generic(self.weathers, weather_id)

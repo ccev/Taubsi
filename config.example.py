@@ -2,7 +2,8 @@ from taubsi.core.config_classes import *
 
 
 class Config(BaseConfig):
-    TRASH_CHANNEL_ID = 124556432123  # ID of a channel to upload picture to
+    TRASH_CHANNEL_ID = 124556432123  # ID of a channel to upload pictures to
+    TRASH_GUILD_ID = 1234567899  # ID of a server to upload emojis to
     LANGUAGE = Language.GERMAN  # Language.ENGLISH / Language.GERMAN
     BOT_TOKEN = ""  # Your Discord Bot Token
     ADMIN_IDS = []  # List of User IDs

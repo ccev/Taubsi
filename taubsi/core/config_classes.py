@@ -100,8 +100,7 @@ class _MatcherMethods:
 
     @staticmethod
     def processor(s, **kwargs):
-        p = utils.full_process(str(s), **kwargs)
-        return p
+        return utils.full_process(str(s), **kwargs)
 
 
 class Server:
@@ -239,6 +238,7 @@ class Style:
 
 class BaseConfig:
     TRASH_CHANNEL_ID: int
+    TRASH_GUILD_ID: int
     LANGUAGE: Language = Language.ENGLISH
     BOT_TOKEN: str
     ADMIN_IDS = List[int]

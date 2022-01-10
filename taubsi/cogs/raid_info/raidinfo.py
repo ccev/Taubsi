@@ -96,9 +96,9 @@ class RaidInfo:
             self.embed.description = (
                 f"{bot.translate('Bis')} **{formatted_end}** <t:{self.gym.raid.end.int_timestamp}:R>\n"
                 f"100%: **{self.gym.raid.cp20}** | **{self.gym.raid.cp25}**\n"
-                f"{bot.translate('Moves')}: " + " | ".join(["**" + m.name + "**" for m in self.gym.raid.moves])
+                f"{bot.translate('Moves')}: {str(self.gym.raid.moveset)}"
             )
-            self.embed.set_thumbnail(url=bot.uicons.raid(self.gym.raid))
+            self.embed.set_thumbnail(url=bot.uicons.raid(self.gym.raid).url)
 
         else:
             formatted_start = self.gym.raid.start.to("local").strftime(bot.translate("timeformat_long"))
@@ -107,7 +107,7 @@ class RaidInfo:
                 f"{bot.translate('Hatches')} <t:{self.gym.raid.start.int_timestamp}:R>\n"
                 f"{bot.translate('Raidzeit')}: **{formatted_start} – {formatted_end}**"
             )
-            self.embed.set_thumbnail(url=bot.uicons.egg(self.gym.raid))
+            self.embed.set_thumbnail(url=bot.uicons.egg(self.gym.raid).url)
 
             if self.gym.raid.boss:
                 self.embed.title += " " + bot.translate("Egg")
