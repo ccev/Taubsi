@@ -19,7 +19,7 @@ PBATTLER_LINK = "https://www.pokebattler.com/raids/{}"
 
 class BossDetailsView(discord.ui.View):
     def __init__(self, raidmessage: RaidMessage):
-        super(BossDetailsView, self).__init__()
+        super(BossDetailsView, self).__init__(timeout=None)
 
         if raidmessage.raid.boss:
             if raidmessage.raid.level == 6:
