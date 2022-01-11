@@ -8,6 +8,25 @@ from taubsi.core import bot, Server, log
 from taubsi.utils.errors import TaubsiError
 
 
+class RaidNotificationCommand(ApplicationCommand, name="raidnachrichten", description="Aktiviere oder deaktiviere Raidnachrichten"):
+    async def callback(self, interaction: discord.Interaction) -> None:
+        found = False
+        for role in interaction.guild.roles:
+            if role.name.lower() == bot.translate("notify_role_name"):
+                found = True
+                break
+
+        if not found:
+            return
+
+        if role not in interaction.user.roles:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message("Du erhälst nun Raidnachrichten")
+        else:
+            await interaction.user.remove_roles(role)
+            await interaction.response.send_message("Du erhälst keine Raidnachrichten")
+
+
 class RaidCommand(ApplicationCommand, name="raid", description=bot.translate("command_raid_desc")):
     arena = option(name=bot.translate("command_raid_gym"),
                    description=bot.translate("command_raid_gym_desc"), required=True)

@@ -1,19 +1,16 @@
 from __future__ import annotations
-import json
-from math import floor, ceil
-from typing import List, Set, Optional, TYPE_CHECKING, NoReturn, Union
 
-import discord
+from typing import List, Set, Optional, TYPE_CHECKING, NoReturn, Dict
+
 import arrow
+import discord
 
-from taubsi.utils.utils import asyncget, reverse_get
-from taubsi.utils.errors import command_error
-from taubsi.cogs.raids.errors import PokebattlerNotLoaded
+from taubsi.cogs.raids.boss_details import BossDetailsButton
 from taubsi.cogs.raids.raidmember import RaidMember
 from taubsi.core import bot, Gym, Raid, Team, log
 from taubsi.pokebattler.models import Difficulty
-from taubsi.utils.image_manipulation import BossDetailsImage, get_raid_image
-from taubsi.cogs.raids.boss_details import BossDetailsButton
+from taubsi.utils.image_manipulation import get_raid_image
+from taubsi.utils.utils import reverse_get
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -27,90 +24,6 @@ REMOTE_LIMIT = 10
 
 GMAPS_LINK = "https://www.google.com/maps/search/?api=1&query={},{}"
 AMAPS_LINK = "https://maps.apple.com/maps?daddr={},{}"
-
-
-"""
-class RaidmessageView(discord.ui.View):
-    def __init__(self, raidmessage):
-        super().__init__()
-        self.raidmessage = raidmessage
-
-    @discord.ui.button(label="Anmelden (+1)", style=discord.ButtonStyle.green)
-    async def join(self, button: discord.ui.Button, interaction: discord.Interaction):
-        member = self.raidmessage.get_member(interaction.user.id)
-        if not member:
-            member = RaidMember(self.raidmessage, interaction.user.id, 0)
-            self.raidmessage.members.append(member)
-
-        amount = member.amount + 1
-        notification = f"▶️ {member.member.display_name} ({amount})"
-
-        member.update(amount)
-        await self.raidmessage.make_member_fields()
-        await self.raidmessage.notify(notification, member.member)
-        await member.make_role()
-        await member.db_insert()
-
-    @discord.ui.button(label="Abmelden (-1)", style=discord.ButtonStyle.grey)
-    async def leave(self, button: discord.ui.Button, interaction: discord.Interaction):
-        member = self.raidmessage.get_member(interaction.user.id)
-
-        amount = member.amount - 1
-        notification = f"▶️ {member.member.display_name} ({amount})"
-
-        member.update(amount)
-        await self.raidmessage.make_member_fields()
-        await self.raidmessage.notify(notification, member.member)
-        await member.make_role()
-        await member.db_insert()
-
-    @discord.ui.button(label="Komme Später", style=discord.ButtonStyle.grey, emoji="🕐")
-    async def late(self, button: discord.ui.Button, interaction: discord.Interaction):
-        member = self.raidmessage.get_member(interaction.user.id)
-        if not member:
-            member = RaidMember(self.raidmessage, interaction.user.id, 1)
-            self.raidmessage.members.append(member)
-
-        notification = False
-
-        if interaction.user.id in self.raidmessage.lates:
-            self.raidmessage.lates.remove(interaction.user.id)
-            if member.amount > 0:
-                notification = f"{member.member.display_name} kommt doch pünktlich", member.member
-        else:
-            self.raidmessage.lates.append(interaction.user.id)
-            notification = f"🕐 {member.member.display_name}"
-
-        member.update()
-        await self.raidmessage.make_member_fields()
-        if notification:
-            await self.raidmessage.notify(notification, member.member)
-        await member.make_role()
-        await member.db_insert()
-
-    @discord.ui.button(label="Mit Fern-Pass", style=discord.ButtonStyle.blurple, emoji="<:fernraid:728917159216021525>")
-    async def remote(self, button: discord.ui.Button, interaction: discord.Interaction):
-        member = self.raidmessage.get_member(interaction.user.id)
-        if not member:
-            member = RaidMember(self.raidmessage, interaction.user.id, 1)
-            self.raidmessage.members.append(member)
-
-        if interaction.user.id in self.raidmessage.remotes:
-            self.raidmessage.remotes.remove(interaction.user.id)
-        else:
-            self.raidmessage.remotes.append(interaction.user.id)
-
-        member.update()
-        await self.raidmessage.make_member_fields()
-        await member.make_role()
-        await member.db_insert()
-
-    @discord.ui.button(label="Löschen", style=discord.ButtonStyle.red, emoji="❌")
-    async def delete(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if interaction.user.id == self.raidmessage.init_message.author.id:
-            await interaction.message.delete()
-            
-"""
 
 
 class RaidmessageView(discord.ui.View):
@@ -355,6 +268,8 @@ class RaidMessage:
             embed.url = self.message.jump_url
             embed.description = message
 
+            embed.set_footer(**self.get_footer())
+
             await member.member.send(embed=embed)
 
     def set_difficulty(self):
@@ -404,12 +319,15 @@ class RaidMessage:
         self.embed.set_thumbnail(url=url)
         await self.edit_message()
 
-    def make_footer(self, amount: int = 0) -> NoReturn:
+    def get_footer(self) -> Dict[str, str]:
         if self.difficulty.value > 0:
             difficulty = " | " + bot.translate(f"difficulty_{self.difficulty.value}")
         else:
             difficulty = ""
-        self.embed.set_footer(text=f"{self.footer_prefix}{bot.translate('Total')}: {amount}{difficulty}")
+        self.embed.set_footer(text=f"{self.footer_prefix}{bot.translate('Total')}: {self.total_amount}{difficulty}")
+        return {
+            "text": f"{self.footer_prefix}{bot.translate('Total')}: {self.total_amount}{difficulty}"
+        }
 
     async def make_member_fields(self) -> NoReturn:
         self.embed.clear_fields()
@@ -452,7 +370,7 @@ class RaidMessage:
 
         self.make_warnings()
         self.set_difficulty()
-        self.make_footer(self.total_amount)
+        self.embed.set_footer(**self.get_footer())
         await self.edit_message()
 
     async def db_insert(self) -> NoReturn:
@@ -481,7 +399,7 @@ class RaidMessage:
     async def send_message(self, interaction: discord.Interaction = None) -> NoReturn:
         channel = await bot.fetch_channel(self.channel_id)
         await self.make_base_embed()
-        self.make_footer()
+        self.embed.set_footer(**self.get_footer())
 
         if interaction:
             await interaction.response.send_message(embed=self.embed, view=self.view)

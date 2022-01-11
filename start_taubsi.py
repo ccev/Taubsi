@@ -1,6 +1,6 @@
 from taubsi.core import bot
 from taubsi.core.config_classes import Cog
-from taubsi.cogs.raids.raid_commands import RaidCommand
+from taubsi.cogs.raids.raid_commands import RaidCommand, RaidNotificationCommand
 from taubsi.cogs.playerstats.playerstats_commands import (StatContext, StatsCommand, LinkCommand,
                                                           UnlinkCommand, LeaderboardCommand)
 from taubsi.cogs.setup.setup_commands import (NameCommand, LevelCommand, LevelUpCommand, TeamCommand)
@@ -35,7 +35,7 @@ for cog_enum, cog_class in bot.cog_dict.items():
     bot.cog_dict[cog_enum] = cog
 
 app_commands = {
-    Cog.RAIDS: [RaidCommand],
+    Cog.RAIDS: [RaidCommand, RaidNotificationCommand],
     Cog.PLAYERSTATS: [StatContext, StatsCommand, LinkCommand, UnlinkCommand, LeaderboardCommand],
     Cog.SETUP: [NameCommand, LevelCommand, LevelUpCommand, TeamCommand]
 }
