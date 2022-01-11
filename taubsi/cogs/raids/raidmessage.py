@@ -115,7 +115,7 @@ class RaidmessageView(discord.ui.View):
 
 class RaidmessageView(discord.ui.View):
     def __init__(self, raidmessage: RaidMessage):
-        super().__init__()
+        super().__init__(timeout=None)
         maps_link = GMAPS_LINK.format(
             raidmessage.gym.lat, raidmessage.gym.lon
         )
