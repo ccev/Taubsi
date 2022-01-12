@@ -7,6 +7,7 @@ from taubsi.cogs.raids.errors import PokebattlerNotLoaded
 from taubsi.core import bot
 from taubsi.utils.image_manipulation import BossDetailsImage
 from taubsi.pokebattler.models import Difficulty
+from taubsi.core.uicons import IconSet
 
 if TYPE_CHECKING:
     from taubsi.pokebattler.models import RaidPayload
@@ -104,7 +105,8 @@ class BossDetailsButton(discord.ui.Button):
         quicks = ""
         charges = ""
         for move in pokemon.moves:
-            name = f"{move.name}\n"
+            emoji = await bot.emoji_manager.get_from_uicon(bot.uicons.type(move.type, iconset=IconSet.POGO))
+            name = f"{emoji} {move.name}\n"
             if move.proto.name.endswith("FAST"):
                 quicks += name
             else:

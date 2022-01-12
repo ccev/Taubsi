@@ -72,3 +72,6 @@ class PokemonSettings(_BasePokemonSettings):
 class MoveSettings(BaseModel):
     uniqueId: str
     type: str
+
+    def get_type(self, pogodata: PogoData):
+        return pogodata.get_type(self.type)
