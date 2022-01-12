@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import floor
-from typing import NoReturn, Callable, Optional, TYPE_CHECKING
+from typing import NoReturn, Callable, Optional, TYPE_CHECKING, List
 
 import arrow
 import discord
@@ -11,11 +11,12 @@ from taubsi.core import bot, Gym, Raid
 
 if TYPE_CHECKING:
     from taubsi.core import InfoChannel
+    from arrow import Arrow
 
 
 class InfoTimeButton(discord.ui.Button):
     def __init__(self, raidinfo: RaidInfo, time: arrow.Arrow):
-        self.time = time.to("local")
+        self.time = time
         label = self.time.strftime(bot.translate("timeformat_short"))
         self.raidinfo = raidinfo
 
@@ -36,24 +37,39 @@ class InfoTimeButton(discord.ui.Button):
 
 
 class RaidInfoView(discord.ui.View):
+    suggested_times: List[Arrow]
+
     def __init__(self, raidinfo: RaidInfo):
         super().__init__(timeout=None)
+        self.raidinfo = raidinfo
+        self.make_suggested_times(init=True)
 
-        seconds_left = raidinfo.gym.raid.end.int_timestamp - arrow.utcnow().int_timestamp
+        for time in self.suggested_times:
+            self.add_item(InfoTimeButton(self.raidinfo, time))
+
+    def make_suggested_times(self, init: bool = False) -> bool:
+        self.suggested_times = []
+        seconds_left = self.raidinfo.gym.raid.end.int_timestamp - arrow.utcnow().int_timestamp
         if floor(seconds_left / 60) < 9:
             return
 
-        if raidinfo.gym.raid.start < arrow.utcnow():
-            self.suggested_times = [arrow.utcnow().shift(minutes=5)]
+        if self.raidinfo.gym.raid.start < arrow.utcnow():
+            self.suggested_times = [arrow.now().shift(minutes=5)]
         else:
-            self.suggested_times = [raidinfo.gym.raid.start]
-        for time in arrow.Arrow.range("minute", raidinfo.gym.raid.start, raidinfo.gym.raid.end):
+            self.suggested_times = [self.raidinfo.gym.raid.start.to("local")]
+        for time in arrow.Arrow.range("minute", self.raidinfo.gym.raid.start, self.raidinfo.gym.raid.end):
             if time.minute % 10 == 0 and \
-                    self.suggested_times[-1].shift(minutes=5) < time < raidinfo.gym.raid.end.shift(minutes=-6):
-                self.suggested_times.append(time)
+                    self.suggested_times[-1].shift(minutes=5) < time < self.raidinfo.gym.raid.end.shift(minutes=-6):
+                self.suggested_times.append(time.to("local"))
 
-        for time in self.suggested_times:
-            self.add_item(InfoTimeButton(raidinfo, time))
+        if not init:
+            changed = False
+            for item in self.children:
+                if item.time not in self.suggested_times:
+                    self.remove_item(item)
+                    changed = True
+            return changed
+        return True
 
 
 class RaidInfo:
@@ -119,20 +135,22 @@ class RaidInfo:
 
         self.embed.set_author(name=self.gym.name, icon_url=self.gym.img)
 
-    def make_view(self):
+    def make_view(self) -> bool:
         if self.info_channel.post_to:
+            if self.view:
+                return self.view.make_suggested_times()
+
             self.view = RaidInfoView(self)
+            return True
+        
+        return False
 
     async def update_buttons(self) -> NoReturn:
         if not self.view:
             return
-        old_view = self.view
-        self.make_view()
 
-        if not self.view:
-            await self.edit_message()
-
-        if len(old_view.children) != len(self.view.children):
+        changed = self.make_view()
+        if changed:
             await self.edit_message()
 
     async def edit_message(self, view: bool = False, embed: bool = False) -> NoReturn:
