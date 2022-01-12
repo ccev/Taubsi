@@ -14,6 +14,8 @@ class PokemonStats(BaseModel):
 
 
 class _BasePokemonSettings(BaseModel):
+    stats: PokemonStats
+
     @property
     def base_stats(self):
         return BaseStats.from_gamemaster(self.stats)
@@ -28,7 +30,6 @@ class _BasePokemonSettings(BaseModel):
 
 class TempEvoOverrides(_BasePokemonSettings):
     tempEvoId: str
-    stats: PokemonStats
     typeOverride1: str
     typeOverride2: Optional[str]
 
@@ -46,7 +47,6 @@ class PokemonSettings(_BasePokemonSettings):
     form: Optional[str]
     type: str
     type2: Optional[str]
-    stats: PokemonStats
     quickMoves: Optional[List[str]]
     cinematicMoves: Optional[List[str]]
     eliteCinematicMove: Optional[List[str]]
