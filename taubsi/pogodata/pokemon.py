@@ -1,10 +1,11 @@
 from __future__ import annotations
-from typing import Dict, List, Union, Any, Optional, Type, TypeVar, TYPE_CHECKING
+from typing import Dict, List, Union, Any, Optional, Type, TypeVar, TYPE_CHECKING, Iterable
 from math import floor
 from taubsi.core.logging import log
 
 if TYPE_CHECKING:
     from taubsi.pogodata import PogoData, PokemonType, Move
+    from .gamemaster_models import PokemonStats
 
 
 MULTIPLIERS = {
@@ -24,6 +25,10 @@ class BaseStats:
         if len(data) != 3:
             self.data = (0, 0, 0)
         self.stamina, self.attack, self.defense = data
+
+    @classmethod
+    def from_gamemaster(cls, stats: PokemonStats):
+        return cls([stats.baseStamina, stats.baseAttack, stats.baseDefense])
 
     def __repr__(self):
         return f"<BaseStats {self.__str__()}>"
@@ -57,6 +62,7 @@ class Pokemon:
     is_shadow: bool
     types: List[PokemonType]
     moves: List[Move]
+    elite_moves: List[Move]
 
     def __init__(self, id_: int, pogodata: PogoData, form: int = 0, costume: int = 0, mega: int = 0,
                  is_shadow: bool = False):
@@ -67,38 +73,39 @@ class Pokemon:
         self.mega_id = mega
         self.is_shadow = is_shadow
 
-        self.proto_id = pogodata.mon_id_to_proto.get(self.id, "UNOWN")
+        identifier = f"{self.id}:{self.form_id}"
+        settings = pogodata.pokemon_settings.get(identifier)
+        if not settings:
+            settings = pogodata.pokemon_settings.get(f"{self.id}:0")
+            if not settings:
+                settings = pogodata.pokemon_settings.get("1:0")
 
+        if mega:
+            mega_enum = pogodata.mega_enum.get(mega)
+            mega_settings = None
+            for evo_overrides in settings.tempEvoOverrides:
+                if evo_overrides.tempEvoId == mega_enum.name:
+                    mega_settings = evo_overrides
+                    break
+            if not mega_settings:
+                mega_settings = settings.tempEvoOverrides[0]
+            # self.base_stats = mega_settings.base_stats  # we need the base mon's cp for raids
+            self.types = mega_settings.get_types(pogodata)
+        else:
+            self.types = settings.get_types(pogodata)
+
+        self.base_stats = settings.base_stats
+        self.moves = settings.get_moves(pogodata)
+        self.elite_moves = settings.get_elite_moves(pogodata)
+
+        self.proto_id = pogodata.pokemon_enum.get(id_).name
         if form > 0:
-            self.proto_form = pogodata.form_id_to_proto.get(form, "")
+            self.proto_form = pogodata.form_enum.get(form).name
         else:
             self.proto_form = ""
 
-        identifier = f"{self.id}:{self.form_id}:0"
-        self.base_stats = pogodata.base_stats.get(identifier)
-        self.types = pogodata.mon_to_types.get(identifier)
-        self.moves = pogodata.mon_to_moves.get(identifier, [])
-        if not self.base_stats:
-            identifier = f"{self.id}:0:0"
-            self.base_stats = pogodata.base_stats.get(identifier)
-            self.types = pogodata.mon_to_types.get(identifier)
-            self.moves = pogodata.mon_to_moves.get(identifier, [])
-        if not self.base_stats:
-            self.base_stats = BaseStats([10, 10, 10])
-            self.types = [pogodata.get_type(0)]
-
-        self.mon_name = pogodata.mons.get(f"{self.id}:0:{self.mega_id}", "")
-        self.form_name = pogodata.forms.get(self.form_id, "")
-
-    @classmethod
-    def from_db(cls, data: Dict[str, Any], pogodata: PogoData):
-        return cls(
-            id_=data.get("pokemon_id", 0),
-            pogodata=pogodata,
-            form=data.get("form", 0),
-            costume=data.get("costume", 0),
-            mega=data.get("evolution", data.get("temp_evolution_id", 0))
-        )
+        self.mon_name = pogodata.mon_translations.get(f"{self.id}:{self.mega_id}", "")
+        self.form_name = pogodata.form_translations.get(self.form_id, "")
 
     @classmethod
     def from_pogoinfo(cls, data: Dict[str, Any], pogodata: PogoData):
@@ -139,13 +146,13 @@ class Pokemon:
             if "SHADOW" in name:
                 is_shadow = True
             name = name.replace("_FORM", "")
-            form_id = pogodata.form_proto_to_id.get(name, 0)
+            form_id = pogodata.form_enum.get(name).value
             name = name.split("_")[0]
 
             if form_id == 0:
                 log.info(f"Could not find form ID for pokebattler mon {name}")
 
-        mon_id = pogodata.mon_proto_to_id.get(name, 0)
+        mon_id = pogodata.pokemon_enum.get(name).value
         if mon_id == 0:
             log.info(f"Could not find Mon ID for pokebattler mon {name}")
 

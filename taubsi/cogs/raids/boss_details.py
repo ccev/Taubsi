@@ -105,7 +105,7 @@ class BossDetailsButton(discord.ui.Button):
         charges = ""
         for move in pokemon.moves:
             name = f"{move.name}\n"
-            if move.proto_id.endswith("FAST"):
+            if move.proto.name.endswith("FAST"):
                 quicks += name
             else:
                 charges += name

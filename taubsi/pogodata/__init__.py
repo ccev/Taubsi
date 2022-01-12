@@ -1,13 +1,17 @@
 import re
+from enum import Enum
 from typing import Dict, List, Optional, Any, Union
 
 import requests
 
-from taubsi.pogodata.move import Move
-from taubsi.pogodata.pokemon import Pokemon, BaseStats
-from taubsi.pogodata.pokemon_type import PokemonType, TYPES
-from taubsi.pogodata.weather import Weather, WEATHERS
 from taubsi.utils.utils import asyncget
+from .move import Move
+from .pokemon import Pokemon, BaseStats
+from .pokemon_type import PokemonType, TYPES
+from .weather import Weather, WEATHERS
+from .gamemaster_models import PokemonSettings, MoveSettings
+from .enum import PogoDataEnum
+
 
 GAMEMASTER_URL = "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
 PROTO_URL = "https://raw.githubusercontent.com/Furtif/POGOProtos/master/base/vbase.proto"
@@ -17,44 +21,41 @@ RAIDS_URL = "https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/raids.jso
 
 
 class PogoData:
-    base_stats: Dict[str, BaseStats]
-    mons: Dict[str, str]
-    forms: Dict[int, str]
-    moves: Dict[int, str]
-    move_id_to_proto: Dict[int, str]
-    raids: Dict[int, List[Pokemon]]
-    shadow_translation: str
-
-    types: List[PokemonType]
-    weathers: List[Weather]
-
     def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
-        self.base_stats = {}
-        self.mons = {}
-        self.forms = {}
-        self.moves = {}
-        self.mon_proto_to_id = {}
-        self.form_proto_to_id = {}
-        self.form_id_to_proto = {}
-        self.raids = {}
-        self.mon_to_types: Dict[str, List[PokemonType]] = {}
-        self.mon_to_moves: Dict[str, List[Move]] = {}
+        self.pokemon_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloPokemonId")
+        self.form_enum: PogoDataEnum = self._convert_enum(raw_protos, "Form")
+        self.mega_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloTemporaryEvolutionId")
+        self.move_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloPokemonMove")
+        self.type_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloPokemonType")
+        self.weather_enum: PogoDataEnum = self._convert_enum(raw_protos, "WeatherCondition")
 
-        self.mon_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonId")
-        self.mon_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonId", reverse=True)
-        self.form_id_to_proto = self._enum_to_dict(raw_protos, "Form", reverse=True)
-        self.form_proto_to_id = self._enum_to_dict(raw_protos, "Form")
-        mega_mapping = self._enum_to_dict(raw_protos, "HoloTemporaryEvolutionId")
-        self.move_proto_to_id = self._enum_to_dict(raw_protos, "HoloPokemonMove")
-        self.move_id_to_proto = self._enum_to_dict(raw_protos, "HoloPokemonMove", reverse=True)
+        self.mon_translations: Dict[str, str] = {}
+        self.form_translations: Dict[int, str] = {}
+        self.move_translations: Dict[int, str] = {}
+        self.shadow_translation: str = ""
 
-        self.types = []
+        self.pokemon_settings: Dict[str, PokemonSettings] = {}
+        self.move_settings: Dict[int, MoveSettings] = {}
+
+        self.raids: Dict[int, List[Pokemon]] = {}
+        self.types: List[PokemonType] = []
+        self.weathers: List[Weather] = []
+
+        self.__make_types()
+        self.__make_weathers()
+        self.__make_locale(language)
+        self.__parse_gamemaster(raw_gamemaster)
+        self.__make_raids(raids)
+
+    def __make_types(self):
+
         for args in TYPES:
             self.types.append(PokemonType(*args))
 
         for type_ in self.types:
             type_.weak_to = [self.get_type(t) for t in type_.weak_to_ids]
 
+    def __make_weathers(self):
         self.weathers = []
         for args in WEATHERS:
             self.weathers.append(Weather(*args))
@@ -66,6 +67,7 @@ class PogoData:
                 type_.boosted_by = weather_
                 weather_.boosts.append(type_)
 
+    def __make_locale(self, language: str):
         for url in [LOCALE_URL, REMOTE_LOCALE_URL]:
             raw = requests.get(url.format(language.title())).text
             keys = re.findall(r"(?<=RESOURCE ID: ).*", raw)
@@ -76,9 +78,9 @@ class PogoData:
                 v: str = values[i].strip("\r")
                 if k.startswith("form_"):
                     form_name = k[5:]
-                    form_id = self.form_id_to_proto.get(form_name.upper())
+                    form_id = self.form_enum.get(form_name.upper()).value
                     if form_id:
-                        self.forms[form_id] = v
+                        self.form_translations[form_id] = v
                 elif k.startswith("pokemon_name_"):
                     parts = k[13:].split("_")
                     if len(parts) == 2:
@@ -86,73 +88,43 @@ class PogoData:
                     else:
                         mega_id = 0
                     mon_id = int(parts[0])
-                    self.mons[f"{mon_id}:0:{mega_id}"] = v
+                    self.mon_translations[f"{mon_id}:{mega_id}"] = v
                 elif k.startswith("move_name_"):
-                    self.moves[int(k[10:])] = v
+                    self.move_translations[int(k[10:])] = v
                 elif k == "filter_label_shadow":
                     self.shadow_translation = v
 
-        result = []
+    def __parse_gamemaster(self, raw_gamemaster: List[Dict]):
         for entry in raw_gamemaster:
             templateid = entry.get("templateId", "")
             if re.search(r"^V\d{4}_POKEMON_", templateid):
                 data = entry.get("data", {})
-                settings = data.get("pokemonSettings", {})
-                stats = settings.get("stats")
-                if not settings or not stats:
+                raw_settings = data.get("pokemonSettings", {})
+                stats = raw_settings.get("stats")
+                if not raw_settings or not stats:
                     continue
 
-                mon = settings.get("pokemonId")
-                mon_id = self.mon_proto_to_id.get(mon, 0)
+                settings = PokemonSettings(**raw_settings)
 
-                form = settings.get("form")
-                form_id = self.form_proto_to_id.get(form, 0)
-                base_stats = BaseStats(list(stats.values()))
+                mon_id = self.pokemon_enum.get(settings.pokemonId).value
+                form_id = self.form_enum.get(settings.form).value
                 identifier = f"{mon_id}:{form_id}"
-                self.base_stats[f"{identifier}:0"] = base_stats
 
-                types = []
-                self._gamemaster_type_convert(settings, "type", types)
-                self._gamemaster_type_convert(settings, "type2", types)
-                self.mon_to_types[f"{identifier}:0"] = types
+                self.pokemon_settings[identifier] = settings
 
-                raw_moves = settings.get("quickMoves", []) + settings.get("cinematicMoves", [])
-                moves = []
-                for raw_move in raw_moves:
-                    moves.append(self.get_move(self.move_proto_to_id.get(raw_move, 0)))
-                self.mon_to_moves[f"{identifier}:0"] = moves
-
-                mega_overrides: Optional[List[dict]] = settings.get("tempEvoOverrides")
-                if not mega_overrides:
+            elif re.search(r"^COMBAT_V\d{4}_MOVE_", templateid):
+                data = entry.get("data", {})
+                raw_settings = data.get("combatMove", {})
+                if not raw_settings:
                     continue
-                for mega_override in mega_overrides:
-                    stats = mega_override.get("stats")
-                    if not stats:
-                        continue
-                    base_stats = BaseStats(list(stats.values()))
-                    mega = mega_override.get("tempEvoId")
-                    mega_id = mega_mapping.get(mega, 0)
-                    identifier = f"{identifier}:{mega_id}"
-                    self.base_stats[identifier] = base_stats
 
-                    types = []
-                    self._gamemaster_type_convert(settings, "typeOverride1", types)
-                    self._gamemaster_type_convert(settings, "typeOverride2", types)
-                    self.mon_to_types[f"{identifier}:{mega_id}"] = types
-                    self.mon_to_moves[f"{identifier}:0"] = moves
+                settings = MoveSettings(**raw_settings)
+                move_id = self.move_enum.get(settings.uniqueId).value
+                self.move_settings[move_id] = settings
 
+    def __make_raids(self, raids: Dict[str, List[dict]]):
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
-
-    def _gamemaster_type_convert(self, settings: dict, key: str, types: list):
-        type_ = settings.get(key)
-        if not type_:
-            return
-
-        for montype in self.types:
-            if montype.proto == type_:
-                types.append(montype)
-                return
 
     @classmethod
     def make_sync(cls, language: str):
@@ -169,44 +141,43 @@ class PogoData:
         return cls(language, raw_protos, raw_gamemaster, raids)
 
     @staticmethod
-    def _enum_to_dict(protos: str, enum: str, reverse: bool = False) -> Union[Dict[str, int], Dict[int, str]]:
+    def _convert_enum(protos: str, enum: str) -> PogoDataEnum:
         proto = re.findall(f"enum {enum} " + r"{[^}]*}", protos, re.IGNORECASE)
 
-        final = {}
+        final = []
         for entry in proto[0].split("\n"):
             if "}" in entry or "{" in entry:
                 continue
-            k: str = entry.split(" =")[0].strip()
-            v: int = int(entry.split("= ")[1].split(";")[0].strip())
-            if reverse:
-                final[v] = k
-            else:
-                final[k] = v
+            entry = entry.replace(" ", "").replace(";", "").split("=")
+            final.append(
+                (
+                    entry[0].strip(),
+                    int(entry[1].strip())
+                )
+            )
 
-        return final
+        return PogoDataEnum(enum, final)
 
-    def get_pokemon(self, data: Dict[str, Any]):
-        """
-        data = {
-            "pokemon_id": int,
-            "form": int,
-            "costume": int,
-            "temp_evolution_id": int
-        }
-        """
-        return Pokemon.from_db(data, self)
+    def get_pokemon(self,
+                    pokemon_id: int = 0,
+                    form: int = 0,
+                    costume: int = 0,
+                    temp_evolution_id: int = 0,
+                    **kwargs) -> Pokemon:
+        return Pokemon(pokemon_id, self, form, costume, temp_evolution_id)
 
-    def get_move(self, move_id: int):
+    def get_move(self, move_id: Union[int, str]):
         return Move(move_id, self)
 
     @staticmethod
-    def _get_generic(li: list, value: int):
-        if value >= len(li):
+    def _get_generic(li: list, generic_enum: PogoDataEnum, generic_id: Union[str, int]):
+        index = generic_enum.get(generic_id).value
+        if index >= len(li):
             return li[0]
-        return li[value]
+        return li[index]
 
-    def get_type(self, type_id: int) -> PokemonType:
-        return self._get_generic(self.types, type_id)
+    def get_type(self, type_id: Union[str, int]) -> PokemonType:
+        return self._get_generic(self.types, self.type_enum, type_id)
 
-    def get_weather(self, weather_id: int) -> Weather:
-        return self._get_generic(self.weathers, weather_id)
+    def get_weather(self, weather_id: Union[str, int]) -> Weather:
+        return self._get_generic(self.weathers, self.weather_enum, weather_id)

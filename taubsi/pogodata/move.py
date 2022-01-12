@@ -1,22 +1,20 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from taubsi.pogodata import PogoData
+    from . import PogoData, PogoDataEnum
 
 
 class Move:
-    id: int
     name: str
-    proto_id: str
+    proto: PogoDataEnum
 
-    def __init__(self, id_: int, pogodata: PogoData):
-        self.id = id_
-        self.name = pogodata.moves.get(id_, "")
-        self.proto_id = pogodata.move_id_to_proto.get(id_, "SIGNAL_BEAM")
+    def __init__(self, move_id: Union[str, int], pogodata: PogoData):
+        self.proto = pogodata.move_enum.get(move_id)
+        self.name = pogodata.move_translations.get(self.proto.value, "")
 
     def __repr__(self):
-        return f"<Move {self.id}>"
+        return f"<Move {self.proto.name}>"
 
     def __str__(self):
         return self.name

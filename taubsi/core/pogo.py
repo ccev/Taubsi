@@ -100,7 +100,7 @@ class Raid:
                 move1 = bot.pogodata.get_move(raid_data.get("move_1"))
                 move2 = bot.pogodata.get_move(raid_data.get("move_2"))
                 self.moveset = Moveset(move_1=move1, move_2=move2)
-                self.boss = bot.pogodata.get_pokemon(raid_data)
+                self.boss = bot.pogodata.get_pokemon(**raid_data)
             else:
                 self.moveset = Moveset()
 
