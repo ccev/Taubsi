@@ -25,7 +25,7 @@
     "charge_moves": "Ladeattacken",
     "catch_cp": "Fang-WP",
     "boosted_cp": "Geboostete WP",
-    "loading": "Einen Moment bitte...",
+    "loading": "Das kann kurz dauern...",
     "raid_guide": "{name} ist vom Typ {types}, somit ist er besonders anfällig gegen {weak}. Man benötigt zumindest **{min} Spieler**, mit **{max}** gibt es keine Probleme.\n\n**Beste Konter**",
     "no_megas_cryptos": "Ohne Mega-Entwicklungen und Crypto-Pokémon",
     "more_on_pokebattler": "Mehr auf Pokebattler",

@@ -243,6 +243,7 @@ class BaseConfig:
     BOT_TOKEN: str
     ADMIN_IDS = List[int]
     COGS: List[Cog]
+    LOADING_GIF: str = "https://mir-s3-cdn-cf.behance.net/project_modules/disp/c3c4d331234507.564a1d23db8f9.gif"
 
     FRIEND_CODE: str
 

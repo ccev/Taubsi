@@ -17,7 +17,7 @@ class BackToNavButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.dmap.set_page(self.dmap.map_nav_page)
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
 
 
 class BaseMapControlButton(discord.ui.Button):
@@ -57,7 +57,7 @@ class MultiplierButton(discord.ui.Button):
         self.multipliers.append(multiplier)
         self.dmap.user_settings.move_multiplier = multiplier
         self.label = self.get_label()
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
         await self.dmap.user_settings.update_db()
 
 
@@ -68,7 +68,7 @@ class StartRaidButton(discord.ui.Button):
 
     async def callback(self, interction: discord.Interaction):
         self.dmap.set_page(self.dmap.start_raid_page)
-        await self.dmap.edit(interction)
+        await self.dmap.edit()
 
 
 class SettingsButton(discord.ui.Button):
@@ -78,7 +78,7 @@ class SettingsButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.dmap.set_page(self.dmap.settings_page)
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
 
 
 class UpButton(BaseMapControlButton):
