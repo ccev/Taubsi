@@ -60,7 +60,7 @@ class BossDetailsButton(discord.ui.Button):
         loading_embed = discord.Embed()
         loading_embed.set_footer(
             text=bot.translate("loading"),
-            icon_url="https://mir-s3-cdn-cf.behance.net/project_modules/disp/c3c4d331234507.564a1d23db8f9.gif"
+            icon_url=bot.config.LOADING_GIF
         )
         await interaction.response.send_message(
             embed=loading_embed,

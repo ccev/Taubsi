@@ -38,7 +38,7 @@ class RaidSelect(discord.ui.Select):
         else:
             self.options = []
             gyms = sorted(gyms, key=lambda g: g.raid.end)
-            for gym in gyms:
+            for gym in gyms[:25]:
                 start = gym.raid.start.to("local").strftime(bot.translate("timeformat_short"))
                 end = gym.raid.end.to("local").strftime(bot.translate("timeformat_short"))
                 default = self.page.gym and self.page.gym.id == gym.id
@@ -121,7 +121,7 @@ class StartButton(discord.ui.Button):
                                                     ephemeral=True)
             return
         self.page.map_menu.set_page(self.page.map_menu.map_nav_page)
-        await self.page.map_menu.edit(interaction)
+        await self.page.map_menu.edit()
         for message_id in self.page.map_menu.post_to[self.page.gym.raid.level]:
             raidmessage = await RaidMessage.from_raidinfo(self.page.gym, self.page.start,
                                                           interaction, message_id)

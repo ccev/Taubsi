@@ -82,12 +82,12 @@ class StartRaidPage(MapPage):
         self.start = None
         self.time_select.set_times(gym)
         self.gym = gym
-        await self.map_menu.edit(interaction)
+        await self.map_menu.edit()
 
     async def set_time(self, time: arrow.Arrow, interaction: discord.Interaction):
         self.start_button.disabled = False
         self.start = time
-        await self.map_menu.edit(interaction)
+        await self.map_menu.edit()
 
     def add_to_embed(self):
         text = ""

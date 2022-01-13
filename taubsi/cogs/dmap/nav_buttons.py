@@ -16,9 +16,8 @@ class BackToNavButton(discord.ui.Button):
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):
-        await self.dmap.start_load(interaction)
         self.dmap.set_page(self.dmap.map_nav_page)
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
 
 
 class BaseMapControlButton(discord.ui.Button):
@@ -58,7 +57,7 @@ class MultiplierButton(discord.ui.Button):
         self.multipliers.append(multiplier)
         self.dmap.user_settings.move_multiplier = multiplier
         self.label = self.get_label()
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
         await self.dmap.user_settings.update_db()
 
 
@@ -69,7 +68,7 @@ class StartRaidButton(discord.ui.Button):
 
     async def callback(self, interction: discord.Interaction):
         self.dmap.set_page(self.dmap.start_raid_page)
-        await self.dmap.edit(interction)
+        await self.dmap.edit()
 
 
 class SettingsButton(discord.ui.Button):
@@ -79,7 +78,7 @@ class SettingsButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         self.dmap.set_page(self.dmap.settings_page)
-        await self.dmap.edit(interaction)
+        await self.dmap.edit()
 
 
 class UpButton(BaseMapControlButton):
@@ -87,7 +86,6 @@ class UpButton(BaseMapControlButton):
         super().__init__(dmap, "up")
 
     async def callback(self, interaction: discord.Interaction):
-        await self.dmap.start_load(interaction)
         self.dmap.user_settings.lat += self.dmap.get_lat_offset()
         await self.dmap.update(interaction)
         await self.dmap.user_settings.update_db()
@@ -98,7 +96,6 @@ class LeftButton(BaseMapControlButton):
         super().__init__(dmap, "left", 3)
 
     async def callback(self, interaction: discord.Interaction):
-        await self.dmap.start_load(interaction)
         self.dmap.user_settings.lon -= self.dmap.get_lon_offset()
         await self.dmap.update(interaction)
         await self.dmap.user_settings.update_db()
