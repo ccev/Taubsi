@@ -30,6 +30,8 @@ class LoopCog(commands.Cog):
         for iconset in IconSet:
             await iconset.value.reload()
 
+        await self.bot.pogodata.update_raids()
+
     @tasks.loop(hours=6)
     async def pogodata_loop(self):
         if self._first_pogodata:

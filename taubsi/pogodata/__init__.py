@@ -21,7 +21,12 @@ RAIDS_URL = "https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/raids.jso
 
 
 class PogoData:
-    def __init__(self, language: str, raw_protos: str, raw_gamemaster: List[dict], raids: Dict[str, List[dict]]):
+    def __init__(self,
+                 language: str,
+                 raw_protos: str,
+                 raw_gamemaster: List[dict],
+                 raids: Optional[Dict[str, List[dict]]] = None
+                 ):
         self.pokemon_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloPokemonId")
         self.form_enum: PogoDataEnum = self._convert_enum(raw_protos, "Form")
         self.mega_enum: PogoDataEnum = self._convert_enum(raw_protos, "HoloTemporaryEvolutionId")
@@ -37,7 +42,6 @@ class PogoData:
         self.pokemon_settings: Dict[str, PokemonSettings] = {}
         self.move_settings: Dict[int, MoveSettings] = {}
 
-        self.raids: Dict[int, List[Pokemon]] = {}
         self.types: List[PokemonType] = []
         self.weathers: List[Weather] = []
 
@@ -45,7 +49,10 @@ class PogoData:
         self.__make_weathers()
         self.__make_locale(language)
         self.__parse_gamemaster(raw_gamemaster)
-        self.__make_raids(raids)
+
+        if raids is not None:
+            self.raids: Dict[int, List[Pokemon]] = {}
+            self.__make_raids(raids)
 
     def __make_types(self):
 
@@ -126,6 +133,10 @@ class PogoData:
         for level, raids in raids.items():
             self.raids[int(level)] = [Pokemon.from_pogoinfo(d, self) for d in raids]
 
+    @staticmethod
+    async def _get_raids():
+        return await asyncget(RAIDS_URL, as_json=True)
+
     @classmethod
     def make_sync(cls, language: str):
         raw_protos = requests.get(PROTO_URL).text
@@ -137,8 +148,11 @@ class PogoData:
     async def make_async(cls, language: str):
         raw_protos = await asyncget(PROTO_URL, as_text=True)
         raw_gamemaster = await asyncget(GAMEMASTER_URL, as_json=True)
-        raids = await asyncget(RAIDS_URL, as_json=True)
-        return cls(language, raw_protos, raw_gamemaster, raids)
+        return cls(language, raw_protos, raw_gamemaster)
+
+    async def update_raids(self):
+        raids = await self._get_raids()
+        self.__make_raids(raids)
 
     @staticmethod
     def _convert_enum(protos: str, enum: str) -> PogoDataEnum:
