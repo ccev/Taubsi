@@ -162,9 +162,9 @@ class PogoData:
                     pokemon_id: int = 0,
                     form: int = 0,
                     costume: int = 0,
-                    temp_evolution_id: int = 0,
+                    evolution: int = 0,
                     **kwargs) -> Pokemon:
-        return Pokemon(pokemon_id, self, form, costume, temp_evolution_id)
+        return Pokemon(pokemon_id, self, form, costume, evolution)
 
     def get_move(self, move_id: Union[int, str]):
         return Move(move_id, self)
