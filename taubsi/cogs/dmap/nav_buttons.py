@@ -16,6 +16,7 @@ class BackToNavButton(discord.ui.Button):
         self.dmap = dmap
 
     async def callback(self, interaction: discord.Interaction):
+        await self.dmap.start_load(interaction)
         self.dmap.set_page(self.dmap.map_nav_page)
         await self.dmap.edit(interaction)
 
@@ -86,6 +87,7 @@ class UpButton(BaseMapControlButton):
         super().__init__(dmap, "up")
 
     async def callback(self, interaction: discord.Interaction):
+        await self.dmap.start_load(interaction)
         self.dmap.user_settings.lat += self.dmap.get_lat_offset()
         await self.dmap.update(interaction)
         await self.dmap.user_settings.update_db()
@@ -96,6 +98,7 @@ class LeftButton(BaseMapControlButton):
         super().__init__(dmap, "left", 3)
 
     async def callback(self, interaction: discord.Interaction):
+        await self.dmap.start_load(interaction)
         self.dmap.user_settings.lon -= self.dmap.get_lon_offset()
         await self.dmap.update(interaction)
         await self.dmap.user_settings.update_db()

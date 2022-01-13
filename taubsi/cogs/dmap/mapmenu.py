@@ -36,6 +36,7 @@ class MapMenu(discord.ui.View):
     @classmethod
     async def start(cls, interaction: discord.Interaction):
         self = cls(timeout=None)
+        self.interaction = interaction
 
         query = "select * from dmap where user_id = %s"
         result = await bot.taubsi_db.execute(query, args=interaction.user.id)
@@ -215,12 +216,21 @@ class MapMenu(discord.ui.View):
 
         self.start_raid_page.raid_select.set_gyms(self.display_gyms)
 
+    async def edit_loading(self, interaction: discord.Interaction):
+        self.embeds[0].set_footer(text="Lädt...")
+        await interaction.response.edit_message(embeds=self.embeds)
+
+    async def start_load(self, interaction: discord.Interaction):
+        bot.loop.create_task(self.edit_loading(interaction))
+
     async def edit(self, interaction: discord.Interaction):
+        # await interaction.response.defer()
         self.current_page.add_to_embed()
-        embeds = [self.embed]
+        self.embed.remove_footer()
+        self.embeds = [self.embed]
         if self.extra_embed:
-            embeds.append(self.extra_embed)
-        await interaction.response.edit_message(embeds=embeds, view=self)
+            self.embeds.append(self.extra_embed)
+        await self.interaction.edit_original_message(embeds=self.embeds, view=self)
 
     async def send(self):
         self.set_gyms()
