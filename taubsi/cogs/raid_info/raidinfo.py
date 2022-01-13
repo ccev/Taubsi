@@ -24,7 +24,7 @@ class InfoTimeButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction) -> NoReturn:
         self.disabled = True
-        await interaction.message.edit(embed=self.raidinfo.embed, view=self.view)
+        await interaction.message.edit()
         await interaction.response.defer()
 
         if self.time < arrow.now().shift(minutes=4):

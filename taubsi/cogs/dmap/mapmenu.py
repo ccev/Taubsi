@@ -36,6 +36,7 @@ class MapMenu(discord.ui.View):
     @classmethod
     async def start(cls, interaction: discord.Interaction):
         self = cls(timeout=None)
+        self.interaction = interaction
 
         query = "select * from dmap where user_id = %s"
         result = await bot.taubsi_db.execute(query, args=interaction.user.id)
@@ -215,19 +216,35 @@ class MapMenu(discord.ui.View):
 
         self.start_raid_page.raid_select.set_gyms(self.display_gyms)
 
-    async def edit(self, interaction: discord.Interaction):
-        self.current_page.add_to_embed()
+    @property
+    def embeds(self) -> List[discord.Embed]:
         embeds = [self.embed]
         if self.extra_embed:
             embeds.append(self.extra_embed)
-        await interaction.response.edit_message(embeds=embeds, view=self)
+        return embeds
+
+    async def edit_loading(self, interaction: discord.Interaction):
+        self.embed.set_footer(text=bot.translate("loading"), icon_url=bot.config.LOADING_GIF)
+        await interaction.response.edit_message(embeds=self.embeds)
+
+    async def start_load(self, interaction: discord.Interaction):
+        bot.loop.create_task(self.edit_loading(interaction))
+
+    async def edit(self):
+        # await interaction.response.defer()
+        self.current_page.add_to_embed()
+        self.embed.remove_footer()
+        await self.interaction.edit_original_message(embeds=self.embeds, view=self)
 
     async def send(self):
+        embed = discord.Embed().set_footer(text=bot.translate("loading"), icon_url=bot.config.LOADING_GIF)
+        await self.interaction.response.send_message(embed=embed, ephemeral=True)
         self.set_gyms()
         await self.set_map()
-        await self.interaction.response.send_message(embed=self.embed, view=self, ephemeral=True)
+        await self.edit()
 
     async def update(self, interaction: discord.Interaction):
+        await self.start_load(interaction)
         self.set_gyms()
         await self.set_map()
-        await self.edit(interaction)
+        await self.edit()
