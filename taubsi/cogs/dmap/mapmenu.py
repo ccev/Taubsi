@@ -225,7 +225,7 @@ class MapMenu(discord.ui.View):
 
     async def edit_loading(self, interaction: discord.Interaction):
         self.embed.set_footer(text=bot.translate("loading"), icon_url=bot.config.LOADING_GIF)
-        await interaction.response.edit_message(embeds=self.embeds)
+        await interaction.response.edit_message(embeds=self.embeds, view=self)
 
     async def start_load(self, interaction: discord.Interaction):
         bot.loop.create_task(self.edit_loading(interaction))
