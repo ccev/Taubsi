@@ -27,10 +27,11 @@ class LoopCog(commands.Cog):
         if self._first_uicon:
             self._first_uicon = False
             return
-        for iconset in IconSet:
-            await iconset.value.reload()
 
         await self.bot.pogodata.update_raids()
+
+        for iconset in IconSet:
+            await iconset.value.reload()
 
     @tasks.loop(hours=6)
     async def pogodata_loop(self):

@@ -38,7 +38,7 @@ class IconSetManager:
             self.index.pop(key)
 
     async def reload(self):
-        self.index = await asyncget(self.url + "Index.json", as_json=True)
+        self.index = await asyncget(self.url + "index.json", as_json=True)
         self.reload_index()
 
 
