@@ -74,8 +74,8 @@ class Raid:
     name: str = "?"
     pokebattler_name: str = "UNOWN"
 
-    start: Optional[arrow.Arrow]
-    end: Optional[arrow.Arrow]
+    start: Optional[arrow.Arrow] = None
+    end: Optional[arrow.Arrow] = None
     moveset: Moveset
 
     def __init__(self, bot: TaubsiBot, raid_data: Dict[str, Any]):
@@ -91,6 +91,10 @@ class Raid:
         }
         """
         self.level = raid_data["level"]
+
+        if self.level == 7:
+            self.level = 6
+
         self.is_scanned = bool(raid_data.get("start"))
 
         if self.is_scanned:
@@ -193,7 +197,7 @@ class Gym:
             self.name = "".join(random.choice(string.ascii_uppercase + " .-") for _ in range(len(self.name))).title()
             self.img = "https://lh3.googleusercontent.com/" + random.choice(images)
 
-        if not data.get("end"):
+        if not data.get("level"):
             return
 
         raid = Raid(self._bot, data)

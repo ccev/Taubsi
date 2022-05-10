@@ -22,6 +22,7 @@ class TaubsiBot(commands.Bot):
     _startup: bool = True
     config: Config
     mad_db: Queries
+    rdm_db: Queries
     taubsi_db: Queries
     uicons: UIconManager
     emoji_manager: EmojiManager
@@ -42,6 +43,7 @@ class TaubsiBot(commands.Bot):
         self.config = Config()
         self.mad_db = Queries(self.config, self.loop, self.config.MAD_DB_NAME)
         self.taubsi_db = Queries(self.config, self.loop, self.config.TAUBSI_DB_NAME)
+        self.rdm_db = Queries(self.config, self.loop, self.config.RDM_DB_NAME)
         self.uicons = UIconManager()
         self.servers = self.config.SERVERS
 

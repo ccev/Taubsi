@@ -179,15 +179,23 @@ class Server:
         self.gym_dict[gym.id] = gym
 
     async def update_gyms(self):
+        # query = (
+        #     f"select gym.gym_id as id, url, team_id as team, latitude, longitude, raid.level, raid.start, raid.end, "
+        #     f"raid.move_1, raid.move_2, raid.pokemon_id, raid.form, raid.costume, raid.evolution "
+        #     f"from gym "
+        #     f"left join gymdetails on gymdetails.gym_id = gym.gym_id "
+        #     f"left join raid on raid.gym_id = gym.gym_id "
+        #     f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude))"
+        # )
         query = (
-            f"select gym.gym_id as id, url, team_id as team, latitude, longitude, raid.level, raid.start, raid.end, "
-            f"raid.move_1, raid.move_2, raid.pokemon_id, raid.form, raid.costume, raid.evolution "
+            f"select id, url, team_id as team, lat as latitude, lon as longitude, raid_level as level, "
+            f"raid_battle_timestamp as start, raid_end_timestamp as end, raid_pokemon_move_1 as move_1, "
+            f"raid_pokemon_move_2 as move_2, raid_pokemon_id as pokemon_id, raid_pokemon_form as form, "
+            f"raid_pokemon_costume as costume, raid_pokemon_evolution as evolution "
             f"from gym "
-            f"left join gymdetails on gymdetails.gym_id = gym.gym_id "
-            f"left join raid on raid.gym_id = gym.gym_id "
-            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(latitude, longitude))"
+            f"where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({self._sql_fence})'), point(lat, lon))"
         )
-        gyms = await self._bot.mad_db.execute(query)
+        gyms = await self._bot.rdm_db.execute(query)
         for data in gyms:
             gym = self.get_gym(data["id"])
             if gym:
@@ -249,6 +257,7 @@ class BaseConfig:
 
     MAD_DB_NAME: str
     TAUBSI_DB_NAME: str
+    RDM_DB_NAME: str = "rdm"
     DB_HOST: str = "0.0.0.0"
     DB_PORT: int = 3306
     DB_USER: str
