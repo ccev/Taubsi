@@ -21,10 +21,10 @@ class Language(Enum):
 
 class RaidChannel:
     id: int
-    level: int
+    level: List[int] | int
     is_event: bool
 
-    def __init__(self, id_: int, level: int, is_event: bool = False):
+    def __init__(self, id_: int, level: List[int] | int, is_event: bool = False):
         self.id = id_
         self.level = level
         self.is_event = is_event

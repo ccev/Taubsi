@@ -25,8 +25,10 @@ class PokeBattler:
 
     @staticmethod
     def get_level(level: int) -> str:
-        if level == 6:
+        if level in (6, 7):
             return "MEGA"
+        elif level == 8:
+            return "ULTRA_BEAST"
         return str(level)
 
     @staticmethod

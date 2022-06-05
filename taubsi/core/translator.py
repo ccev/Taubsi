@@ -13,5 +13,5 @@ class Translator:
                 with open(entry.path, "r", encoding="utf-8") as f:
                     self.texts = json.load(f)
 
-    def translate(self, string: str) -> str:
-        return self.texts.get(string, "?")
+    def translate(self, string: str, default="?") -> str:
+        return self.texts.get(string, default)

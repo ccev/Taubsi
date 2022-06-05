@@ -4,7 +4,7 @@ import random
 import string
 from copy import deepcopy
 from enum import Enum
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import Dict, Any, Optional, TYPE_CHECKING, List
 
 import arrow
 
@@ -78,7 +78,8 @@ class Raid:
     end: Optional[arrow.Arrow] = None
     moveset: Moveset
 
-    def __init__(self, bot: TaubsiBot, raid_data: Dict[str, Any]):
+    @classmethod
+    def from_data(cls, bot: TaubsiBot, data: Dict[str, Any]):
         """
         raid_data:
         {
@@ -90,29 +91,58 @@ class Raid:
             "pokemon_id" ...
         }
         """
-        self.level = raid_data["level"]
+        self = cls()
+        self.is_scanned = True
+        self.start = arrow.get(data.get("start"))
+        self.end = arrow.get(data.get("end"))
+        self.level = data.get("level", 0)
 
-        if self.level == 7:
-            self.level = 6
+        if data.get("pokemon_id"):
+            move1 = bot.pogodata.get_move(data.get("move_1"))
+            move2 = bot.pogodata.get_move(data.get("move_2"))
+            self.moveset = Moveset(move_1=move1, move_2=move2)
+            self.boss = bot.pogodata.get_pokemon(**data)
+        else:
+            self.moveset = Moveset()
 
-        self.is_scanned = bool(raid_data.get("start"))
-
-        if self.is_scanned:
-            self.start = arrow.get(raid_data.get("start"))
-            self.end = arrow.get(raid_data.get("end"))
-            if raid_data.get("pokemon_id"):
-                move1 = bot.pogodata.get_move(raid_data.get("move_1"))
-                move2 = bot.pogodata.get_move(raid_data.get("move_2"))
-                self.moveset = Moveset(move_1=move1, move_2=move2)
-                self.boss = bot.pogodata.get_pokemon(**raid_data)
-            else:
-                self.moveset = Moveset()
-
-        if not raid_data.get("pokemon_id"):
+        if not data.get("pokemon_id"):
             available_bosses = bot.pogodata.raids.get(self.level, [])
             if len(available_bosses) == 1:
                 self.boss = available_bosses[0]
                 self.is_predicted = True
+
+        self._cleanup(bot)
+        return self
+
+    @classmethod
+    def predict(cls, bot: TaubsiBot, levels: List[int]):
+        self = cls()
+        self.is_scanned = False
+
+        available_bosses = []
+        real_level = 0
+        for pd_level, pd_bosses in bot.pogodata.raids.items():
+            if pd_level in levels:
+                available_bosses += pd_bosses
+                real_level = pd_level
+
+        if len(available_bosses) == 1:
+            self.boss = available_bosses[0]
+            self.is_predicted = True
+            self.level = real_level
+
+        if len(levels) == 1:
+            self.level = levels[0]
+
+        if not hasattr(self, "level"):
+            self.level = 0
+
+        self._cleanup(bot)
+        return self
+
+    def _cleanup(self, bot: TaubsiBot):
+        if self.level == 7:
+            self.level = 6
 
         if self.boss:
             self.name = self.boss.name
@@ -125,10 +155,12 @@ class Raid:
             self.cp20 = self.boss.cp(20, ivs)
             self.cp25 = self.boss.cp(25, ivs)
         else:
-            if self.level != 6:
+            name = bot.translate(f"{self.level}_egg", None)
+
+            if name is None:
                 self.name = bot.translate("level_egg").format(str(self.level))
             else:
-                self.name = bot.translate("mega_egg")
+                self.name = name
 
     def __eq__(self, other: Raid):
         if other is None:
@@ -200,15 +232,18 @@ class Gym:
         if not data.get("level"):
             return
 
-        raid = Raid(self._bot, data)
+        raid = Raid.from_data(self._bot, data)
         if raid != self.raid:
             self.raid = raid
 
-    def get_raid(self, level: int = 0) -> Raid:
+    def get_raid(self, levels: List[int] | int = 0) -> Raid:
         """
         Returns current raid or makes one up
         """
-        if self.raid.end < arrow.utcnow() or not self.raid or (level and self.raid.level != level):
-            return Raid(self._bot, {"level": level})
+        if isinstance(levels, int):
+            levels = [levels]
+
+        if self.raid is None or self.raid.end < arrow.utcnow() or not self.raid or self.raid.level not in levels:
+            return Raid.predict(self._bot, levels)
         else:
             return self.raid.copy()

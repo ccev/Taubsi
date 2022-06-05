@@ -93,7 +93,9 @@ class UIconManager:
         return self.get(UIconCategory.POKEMON, iconset, args)
 
     def egg(self, raid: Raid, iconset: Optional[IconSet] = None) -> UIcon:
-        args = [("", raid.level)]
+        level = raid.level if raid.level != 0 else 5
+
+        args = [("", level)]
         # if raid.has_hatched:
         #     args.append(("h", ""))
         return self.get(UIconCategory.RAID_EGG, iconset, args)
