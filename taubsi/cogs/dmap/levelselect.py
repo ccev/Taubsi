@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class LevelSelect(discord.ui.Select):
     def __init__(self, dmap: MapMenu):
-        self.available_levels = [1, 3, 5, 6]
+        self.available_levels = [1, 3, 5, 6, 7, 8]
         super().__init__(placeholder=bot.translate("dmap_select_levels"), min_values=0,
                          max_values=len(self.available_levels), row=0)
 

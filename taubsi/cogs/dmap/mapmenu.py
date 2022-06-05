@@ -85,7 +85,7 @@ class MapMenu(discord.ui.View):
             "width": size,
             "height": size,
             "x_offset": x_offset,
-            "y_offset": y_offset
+            "y_offset": y_offset,
         }
 
     def get_data(self):
@@ -97,7 +97,7 @@ class MapMenu(discord.ui.View):
             "width": self.user_settings.size.width,
             "height": self.user_settings.size.height,
             "format": "png",
-            "scale": self.scale
+            "scale": self.scale,
         }
         if self.display_gyms:
             # i hate this logic
@@ -109,32 +109,35 @@ class MapMenu(discord.ui.View):
                     break
 
                 gym_size = self.get_marker_size(26)
-                markers.append(self._get_marker(gym=gym,
-                                                uicon=bot.uicons.gym(gym, iconset=self.user_settings.iconset),
-                                                size=gym_size,
-                                                y_offset=gym_size // -2))
+                markers.append(
+                    self._get_marker(
+                        gym=gym,
+                        uicon=bot.uicons.gym(gym, iconset=self.user_settings.iconset),
+                        size=gym_size,
+                        y_offset=gym_size // -2,
+                    )
+                )
 
                 boss_size = self.get_marker_size(22)
                 if gym.raid.boss:
-                    boss_marker = self._get_marker(gym=gym,
-                                                   uicon=bot.uicons.pokemon(gym.raid.boss,
-                                                                            iconset=self.user_settings.iconset),
-                                                   size=boss_size)
+                    boss_marker = self._get_marker(
+                        gym=gym,
+                        uicon=bot.uicons.pokemon(gym.raid.boss, iconset=self.user_settings.iconset),
+                        size=boss_size,
+                    )
                 else:
-                    boss_marker = self._get_marker(gym=gym,
-                                                   uicon=bot.uicons.egg(gym.raid, iconset=self.user_settings.iconset),
-                                                   size=boss_size)
-                boss_marker["y_offset"] = - self.get_marker_size(17)
-                boss_marker["x_offset"] = - self.get_marker_size(2)
+                    boss_marker = self._get_marker(
+                        gym=gym, uicon=bot.uicons.egg(gym.raid, iconset=self.user_settings.iconset), size=boss_size
+                    )
+                boss_marker["y_offset"] = -self.get_marker_size(17)
+                boss_marker["x_offset"] = -self.get_marker_size(2)
                 markers.append(boss_marker)
-            data.update({
-                "markers": markers
-            })
+            data.update({"markers": markers})
         return data
 
     def point_to_lat(self, wanted_points):
         # copied from https://help.openstreetmap.org/questions/75611/transform-xy-pixel-values-into-lat-and-long
-        c = (256 / (2 * math.pi)) * 2 ** self.user_settings.zoom
+        c = (256 / (2 * math.pi)) * 2**self.user_settings.zoom
 
         xcenter = c * (math.radians(self.user_settings.lon) + math.pi)
         ycenter = c * (math.pi - math.log(math.tan((math.pi / 4) + math.radians(self.user_settings.lat) / 2)))
@@ -142,12 +145,12 @@ class MapMenu(discord.ui.View):
         xpoint = xcenter - (self.user_settings.size.width / 2 - wanted_points[0])
         ypoint = ycenter - (self.user_settings.size.height / 2 - wanted_points[1])
 
-        c = (256 / (2 * math.pi)) * 2 ** self.user_settings.zoom
+        c = (256 / (2 * math.pi)) * 2**self.user_settings.zoom
         m = (xpoint / c) - math.pi
         n = -(ypoint / c) + math.pi
 
         fin_lon = math.degrees(m)
-        fin_lat = math.degrees((math.atan(math.e ** n) - (math.pi / 4)) * 2)
+        fin_lat = math.degrees((math.atan(math.e**n) - (math.pi / 4)) * 2)
 
         return fin_lat, fin_lon
 
@@ -210,8 +213,13 @@ class MapMenu(discord.ui.View):
 
         if self.user_settings.levels:
             for gym in self.gyms:
-                if gym.raid.end > arrow.utcnow() and gym.raid.level in self.user_settings.levels and \
-                        bbox[0] <= gym.lat <= bbox[1] and bbox[2] <= gym.lon <= bbox[3]:
+                if (
+                    gym.raid is not None
+                    and gym.raid.end > arrow.utcnow()
+                    and gym.raid.level in self.user_settings.levels
+                    and bbox[0] <= gym.lat <= bbox[1]
+                    and bbox[2] <= gym.lon <= bbox[3]
+                ):
                     self.display_gyms.append(gym)
 
         self.start_raid_page.raid_select.set_gyms(self.display_gyms)
