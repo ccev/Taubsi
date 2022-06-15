@@ -29,8 +29,8 @@ class _BasePokemonSettings(BaseModel):
 
 
 class TempEvoOverrides(_BasePokemonSettings):
-    tempEvoId: str
-    typeOverride1: str
+    tempEvoId: Optional[str]
+    typeOverride1: Optional[str]
     typeOverride2: Optional[str]
 
     @property
