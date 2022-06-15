@@ -14,7 +14,7 @@ class PokemonStats(BaseModel):
 
 
 class _BasePokemonSettings(BaseModel):
-    stats: PokemonStats
+    stats: PokemonStats = PokemonStats()
 
     @property
     def base_stats(self):
