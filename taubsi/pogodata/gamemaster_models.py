@@ -8,9 +8,9 @@ if TYPE_CHECKING:
 
 
 class PokemonStats(BaseModel):
-    baseStamina: int
-    baseAttack: int
-    baseDefense: int
+    baseStamina: int = 0
+    baseAttack: int = 0
+    baseDefense: int = 0
 
 
 class _BasePokemonSettings(BaseModel):
