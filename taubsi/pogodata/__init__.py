@@ -152,6 +152,7 @@ class PogoData:
 
     async def update_raids(self):
         raids = await self._get_raids()
+        print("got raids")
         self.__make_raids(raids)
 
     @staticmethod

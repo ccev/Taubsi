@@ -1,5 +1,6 @@
 import aiohttp
 from math import floor
+import ujson
 
 
 def reverse_get(dict_, value):
@@ -10,9 +11,11 @@ async def asyncget(url, as_json=False, as_text=False):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if as_json:
-                return await resp.json()
+                r = await resp.read()
+                return ujson.loads(r)
             if as_text:
                 return await resp.text()
+
             return await resp.read()
 
 

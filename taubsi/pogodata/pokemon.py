@@ -80,7 +80,7 @@ class Pokemon:
             if not settings:
                 settings = pogodata.pokemon_settings.get("1:0")
 
-        if mega:
+        if mega and settings.tempEvoOverrides:
             mega_enum = pogodata.mega_enum.get(mega)
             mega_settings = None
             for evo_overrides in settings.tempEvoOverrides:
