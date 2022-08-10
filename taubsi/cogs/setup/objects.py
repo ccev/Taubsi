@@ -101,7 +101,7 @@ class TaubsiUser:
             keyvals["team_id"] = self.team.value
         if self.friendcode is not None:
             keyvals["friendcode"] = self.friendcode
-        if len(self.name) > 0:
+        if self.name:
             keyvals["name"] = self.name
         
         await bot.taubsi_db.insert("users", keyvals)

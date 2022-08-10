@@ -24,7 +24,6 @@ class LoopCog(commands.Cog):
 
     @tasks.loop(hours=3)
     async def uicon_loop(self):
-        print(self._first_uicon)
         if self._first_uicon:
             self._first_uicon = False
             return
