@@ -7,7 +7,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", action='store_true', help="Run the script in debug mode")
 args = parser.parse_args()
 
-success_level = 25
 if args.debug:
     log_level = logging.DEBUG
 else:
@@ -57,7 +56,6 @@ logger.add(
     enqueue=True
 )
 
-logger.configure(extra={"identifier": "unknown"})
 logging.basicConfig(handlers=[InterceptHandler()], level=0)
 
 log = logger

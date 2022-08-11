@@ -50,8 +50,8 @@ class PogoData:
         self.__make_locale(language)
         self.__parse_gamemaster(raw_gamemaster)
 
+        self.raids: Dict[int, List[Pokemon]] = {}
         if raids is not None:
-            self.raids: Dict[int, List[Pokemon]] = {}
             self.__make_raids(raids)
 
     def __make_types(self):
@@ -148,7 +148,8 @@ class PogoData:
     async def make_async(cls, language: str):
         raw_protos = await asyncget(PROTO_URL, as_text=True)
         raw_gamemaster = await asyncget(GAMEMASTER_URL, as_json=True)
-        return cls(language, raw_protos, raw_gamemaster)
+        raids = await asyncget(RAIDS_URL, as_json=True)
+        return cls(language, raw_protos, raw_gamemaster, raids)
 
     async def update_raids(self):
         raids = await self._get_raids()
